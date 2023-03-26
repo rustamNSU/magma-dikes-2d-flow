@@ -33,9 +33,9 @@ class FixedChannel:
         self.alpha = alpha
         self.k = k
         
-        for ix in range(self.nx):
-            Tix = np.linspace(T0, self.Tr[ix], self.ny)
-            self.T2d[ix, :] = Tix
+        # for ix in range(self.nx):
+        #     Tix = np.linspace(T0, self.Tr[ix], self.ny)
+        #     self.T2d[ix, :] = Tix
     
     def define_mobility(self, ix):
         mu = self.mu2d[ix, :]
@@ -72,16 +72,16 @@ class FixedChannel:
             Vnew = self.w2d[ix, :] * dx[ix]
             Tnew = self.T2d[ix, :]
             
-            Vall = np.concatenate((-Vr, Vold, Vl))
-            Tall = np.concatenate((Tr, Told, Tl))
+            Vall = np.concatenate((Vold, Vl))
+            Tall = np.concatenate((Told, Tl))
             indxs = np.argsort(Tall, kind='stable')    
             
             Vstack = deque(Vall[indxs][::-1])
             Tstack = deque(Tall[indxs][::-1])
             
-            E = 0.0
             i = 1
-            V = Vnew[-i]
+            E = -Vr[-i] * Tr[-i]
+            V = Vnew[-i] + Vr[-i]
             while Vstack:
                 Vi = Vstack.pop()
                 Ti = Tstack.pop()
@@ -94,8 +94,8 @@ class FixedChannel:
                     Vstack.append(Vi - V)
                     Tstack.append(Ti)
                     i = i + 1
-                    V = Vnew[-i]
-                    E = 0.0
+                    V = Vnew[-i] + Vr[-i]
+                    E = -Vr[-i] * Tr[-i]
                 else:   
                     V = V - Vi
                     E = E + Ti * Vi

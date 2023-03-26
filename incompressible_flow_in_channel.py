@@ -1,18 +1,19 @@
 import numpy as np
 from typing import Sequence
 from copy import deepcopy
-import matplotlib.pyplot as plt
+import pickle
 
 
 from src.utils.base_magma_state import mu_melt, beta_T, theta
 from src.core.fixed_channel import FixedChannel
 
+simID = 140100
 TL = 1250 + 273.15 # [K]
 TS = 1000 + 273.15 # [K]
-alpha = 5          # [J/(m^2*K)]
+alpha = 50          # [J/(m^2*K)]
 rho = 2300         # [kg/m^3]
 Cp = 1200          # [J/(kg*K)]
-k = 2              # [J/()]
+k = 20              # [J/()]
 
 T1 = 1300.0 + 273.15
 T2 = 800.0 + 273.15
@@ -28,11 +29,11 @@ P2 = 0.0
 t_start = 0.0
 t_end = 10000.0
 t_cur = 0.0
-dt = 100.0
+dt = 25.0
 Nx = 100
-Ny = 10
+Ny = 40
 
-tolerance = 1e-4
+tolerance = 1e-6
 max_iter = 30
 
 Tr = lambda x: (X2 - x) / (X2 - X1) * T1 + (x - X1) / (X2 - X1) * T2
@@ -61,13 +62,15 @@ fc_old.set_initial_state(
 fc_old.update_beta(beta_T1)
 fc_old.update_viscosity(mu_magma)
 
-
+level_dt = 0
+leaf_dt = 0
 t_cur = t_start + dt
 while t_cur < t_end:
     fc_new = deepcopy(fc_old)
     fc_new.time = t_cur
     err_T = 1.0
-    for iter in range(max_iter):
+    iter = 1
+    while iter < max_iter:
         # Solve lubrication
         for ix in range(Nx):
             fc_new.define_mobility(ix)
@@ -77,12 +80,33 @@ while t_cur < t_end:
         iterT2d = deepcopy(fc_new.T2d)
         fc_new.solve_convect_heat_equation(fc_old)
         fc_new.solve_diffusion_heat_equation(fc_old)
+        
+        fc_new.update_beta(beta_T1)
+        fc_new.update_viscosity(mu_magma)
         err_T = np.linalg.norm(iterT2d - fc_new.T2d) / np.linalg.norm(iterT2d)
-        if err_T < 1e-6:
+        if err_T < tolerance:
             break
+        iter += 1
     print("iter = {}, error = {}".format(iter, err_T))
+    
+    if iter >= max_iter:
+        t_cur -= dt / 2
+        dt /= 2
+        level_dt += 1
+        leaf_dt = 1
+        continue
+    
+    if leaf_dt == 0 and level_dt != 0:
+        level_dt -= 1
+        dt *= 2
+    leaf_dt = 0
     fc_old = fc_new
+    t_cur += dt
+    
 
+filename = "simulations" + "/simID{}.pkl".format(simID)
+with open(filename, 'wb') as outp:
+    pickle.dump(fc_new, outp, pickle.HIGHEST_PROTOCOL)
 
 
 a = 10
