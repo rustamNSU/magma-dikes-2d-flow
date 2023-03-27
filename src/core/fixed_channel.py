@@ -16,7 +16,10 @@ class FixedChannel:
         self.xc2d, self.yc2d = np.meshgrid(self.xc, self.yc, indexing='ij')
         self.shape2d = self.xc2d.shape
         self.dp = np.zeros(self.xc.shape)
+        self.p = np.zeros(self.xc.shape)
+        self.pmax = 0.0
         self.q = np.zeros(self.xc.shape)
+        
     
     def set_initial_state(self, T0, Cp, rho, mu0, beta0, t0, Tr, alpha, k):
         self.w2d  = np.full(self.shape2d, self.yb[1:] - self.yb[:-1])
@@ -33,9 +36,6 @@ class FixedChannel:
         self.alpha = alpha
         self.k = k
         
-        # for ix in range(self.nx):
-        #     Tix = np.linspace(T0, self.Tr[ix], self.ny)
-        #     self.T2d[ix, :] = Tix
     
     def define_mobility(self, ix):
         mu = self.mu2d[ix, :]
@@ -50,8 +50,13 @@ class FixedChannel:
         self.c2d[ix, :] = c
         self.q[ix] = np.sum(qy)
         
+        
     def define_dp(self, ix, Q):
         self.dp[ix] = Q / self.q[ix]
+        self.p[-1] = self.pmax - self.dp[-1] * (self.xmax - self.xc[-1])
+        for ix in range(2, self.nx + 1):
+            self.p[-ix] = self.p[-ix + 1] - self.dp[-ix] * (self.xc[-ix+1] - self.xc[-ix])
+        
         
     def solve_convect_heat_equation(self, fc_old):
         dt = self.time - fc_old.time
@@ -138,6 +143,7 @@ class FixedChannel:
     
     def update_viscosity(self, mu_T):
         self.mu2d = mu_T(self.T2d)
+        
     
     def update_beta(self, beta_T):
         self.beta2d = beta_T(self.T2d)

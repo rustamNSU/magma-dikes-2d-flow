@@ -6,8 +6,9 @@ import pickle
 
 from src.utils.base_magma_state import mu_melt, beta_T, theta
 from src.core.fixed_channel import FixedChannel
+from src.utils.adaptive_timestep import AdaptiveTimestep
 
-simID = 140100
+simID = 105100
 TL = 1250 + 273.15 # [K]
 TS = 1000 + 273.15 # [K]
 alpha = 50          # [J/(m^2*K)]
@@ -29,12 +30,12 @@ P2 = 0.0
 t_start = 0.0
 t_end = 10000.0
 t_cur = 0.0
-dt = 25.0
+basic_dt = 25.0
 Nx = 100
-Ny = 40
+Ny = 5
 
 tolerance = 1e-6
-max_iter = 30
+max_iter = 20
 
 Tr = lambda x: (X2 - x) / (X2 - X1) * T1 + (x - X1) / (X2 - X1) * T2
 mu_magma = lambda T: mu_melt(T) * theta(beta_T(T, TL, TS))
@@ -62,12 +63,15 @@ fc_old.set_initial_state(
 fc_old.update_beta(beta_T1)
 fc_old.update_viscosity(mu_magma)
 
-level_dt = 0
-leaf_dt = 0
-t_cur = t_start + dt
-while t_cur < t_end:
+timestep_controller = AdaptiveTimestep(basic_dt)
+t_cur = t_start
+dt = timestep_controller.get_timestep()
+while t_cur + dt < t_end:
+    if abs(dt - basic_dt) < 1e-9:
+        print("{:10.4f} -> {:10.4f}:".format(t_cur, t_cur + dt))
+    print("-- dt = {}".format(dt))
     fc_new = deepcopy(fc_old)
-    fc_new.time = t_cur
+    fc_new.time = t_cur + dt
     err_T = 1.0
     iter = 1
     while iter < max_iter:
@@ -87,21 +91,17 @@ while t_cur < t_end:
         if err_T < tolerance:
             break
         iter += 1
-    print("iter = {}, error = {}".format(iter, err_T))
     
     if iter >= max_iter:
-        t_cur -= dt / 2
-        dt /= 2
-        level_dt += 1
-        leaf_dt = 1
+        timestep_controller.divide_timestep(dt)
+        dt = timestep_controller.get_timestep()
+        print("  divide timestep")
         continue
-    
-    if leaf_dt == 0 and level_dt != 0:
-        level_dt -= 1
-        dt *= 2
-    leaf_dt = 0
+    print("  iter = {}, err = {}".format(iter, err_T))
+
     fc_old = fc_new
     t_cur += dt
+    dt = timestep_controller.get_timestep()
     
 
 filename = "simulations" + "/simID{}.pkl".format(simID)
