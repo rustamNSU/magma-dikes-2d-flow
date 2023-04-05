@@ -8,7 +8,7 @@ from src.utils.base_magma_state import mu_melt, beta_T, theta
 from src.core.fixed_channel import FixedChannel
 from src.utils.adaptive_timestep import AdaptiveTimestep
 
-simID = 102100
+simID = 21050
 TL = 1250 + 273.15 # [K]
 TS = 1000 + 273.15 # [K]
 alpha = 50          # [J/(m^2*K)]
@@ -31,13 +31,13 @@ t_start = 0.0
 t_end = 10000.0
 t_cur = 0.0
 basic_dt = 25.0
-Nx = 100
-Ny = 2
+Nx = 50
+Ny = 10
 
 tolerance = 1e-6
 max_iter = 20
 
-Tr = lambda x: (X2 - x) / (X2 - X1) * T1 + (x - X1) / (X2 - X1) * T2
+Tr = lambda x: T0 if (x < 3000.0 and x > 6000) else T2
 mu_magma = lambda T: mu_melt(T) * theta(beta_T(T, TL, TS))
 beta_T1 = lambda T: beta_T(T, TL, TS)
 
@@ -55,7 +55,7 @@ fc_old.set_initial_state(
     mu0=mu_magma(T0),
     beta0=beta_T(T0, TL, TS),
     t0=t_start,
-    Tr=np.minimum(T0, Tr(fc_old.xc)),
+    Tr=np.array([Tr(x) for x in fc_old.xc]),
     alpha=alpha,
     k=k
 )

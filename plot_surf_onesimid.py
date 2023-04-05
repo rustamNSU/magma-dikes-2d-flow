@@ -9,6 +9,7 @@ from matplotlib.ticker import LinearLocator
 
 sim_dir = "simulations"
 simID = 140100
+# simID = 21050
 with open(sim_dir + "/simID{}.pkl".format(simID), 'rb') as inp:
     fc = pickle.load(inp)
 
