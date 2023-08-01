@@ -46,7 +46,7 @@ U = np.multiply(fc.q2d, fc.dp[:, np.newaxis])
 
 ch = ax[0].contourf(X, Y, T)
 clb = fig.colorbar(ch, ax=ax[0])
-vf = ax[0].quiver(X, Y, U, 0)
+# vf = ax[0].quiver(X, Y, U, 0)
 
 ch = ax[1].contourf(X, Y, -fc.q2d)
 clb = fig.colorbar(ch, ax=ax[1])

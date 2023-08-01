@@ -4,13 +4,40 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+        // {
+        //     "name": "runner",
+        //     "type": "cppdbg",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/build/bin/runner",
+        //     "cwd": "${workspaceFolder}",
+        //     "stopAtEntry": false,
+        //     "externalConsole": false,
+        //     "internalConsoleOptions":"neverOpen",
+        //     "linux": {
+        //         "MIMode": "gdb",
+        //         "miDebuggerPath": "/usr/bin/gdb"
+        //     },
+        //     "osx": {
+        //         "MIMode": "lldb",
+        //         "miDebuggerArgs": "",
+        //     },
+        //     // "initCommands": ["command source ${workspaceRoot}/.lldbinit"]
+        // },
         {
-            "name": "incompressible_flow",
-            "type": "python",
+            "name": "runner",
+            "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/incompressible_flow_in_channel.py",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
+            "program": "${workspaceFolder}/build/bin/runner",
+            "cwd": "${workspaceFolder}",
+            "initCommands": ["command source ${workspaceFolder}/.vscode/.lldbinit"]
+        },
+        // {
+        //     "name": "incompressible_flow",
+        //     "type": "python",
+        //     "request": "launch",
+        //     "program": "${workspaceFolder}/incompressible_flow_in_channel.py",
+        //     "console": "integratedTerminal",
+        //     "justMyCode": true
+        // },
     ]
 }

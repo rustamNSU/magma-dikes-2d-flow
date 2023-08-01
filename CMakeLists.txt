@@ -1,0 +1,12 @@
+cmake_minimum_required (VERSION 3.12)
+project("dike-2d-flow")
+
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/Installation)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# set(Eigen3_DIR "${PROJECT_SOURCE_DIR}/3rdparty/eigen-3.4.0")
+find_package (Eigen3 3.4 REQUIRED NO_MODULE)
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")
