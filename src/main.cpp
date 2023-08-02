@@ -28,7 +28,7 @@ int main(int argc, char ** argv){
     dike.setViscosity(vec);
     DikeData old_dike = dike;
     dike.setTime(10.0);
-    InputData input(input_json);
+    InputData input(input_json, &mesh);
     MassBalance mass_balance(
         &input,
         &elasticity,
@@ -37,10 +37,5 @@ int main(int argc, char ** argv){
     );
     mass_balance.setNewTimestepData(&dike, &old_dike);
     mass_balance.solve();
-
-    std::cout << mesh.getx() << std::endl;
-    std::cout << mesh.getxl() << std::endl;
-    std::cout << mesh.getxr() << std::endl;
-    std::cout << elasticity.getMatrix() << std::endl;
     return 0;
 }

@@ -43,6 +43,7 @@ void MassBalance::solve(){
         VectorXd sol = mat.fullPivLu().solve(rhs);
         err_width = (witer - sol).norm() / std::max(1.0, witer.norm());
         err_list.push_back(err_width);
+        new_dike->setWidth(sol);
         if (err_width < TOLERANCE){
             ++min_stab_iter;
         }
@@ -62,6 +63,8 @@ void MassBalance::generateMatrix(){
     int n = mesh->size();
     double dx = mesh->getdx();
     new_dike->calculateMobility();
+    mat.resize(n, n);
+    rhs.resize(n);
     mat.fill(0.0);
     rhs.fill(0.0);
     auto C = elasticity->getMatrix();

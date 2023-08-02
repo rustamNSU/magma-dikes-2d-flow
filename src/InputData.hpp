@@ -12,11 +12,12 @@ class InputData{
         double KIc;
         double g = 9.81;
         
+        Mesh* mesh;
         Eigen::VectorXd rhoR;
         Eigen::VectorXd plith;
     
     public:
-        InputData(const nlohmann::json input);
+        InputData(const nlohmann::json input, Mesh* mesh);
         const Eigen::VectorXd& getPlith() const;
         double getg() const;
 };
