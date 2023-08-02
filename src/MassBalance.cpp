@@ -9,8 +9,9 @@ MassBalance::MassBalance(
     InputData* input,
     Elasticity* elasticity,
     Mesh* mesh,
-    Schedule* schedule
-) : input(input), elasticity(elasticity), mesh(mesh), schedule(schedule)
+    Schedule* schedule,
+    MagmaState* magma_state
+) : input(input), elasticity(elasticity), mesh(mesh), schedule(schedule), magma_state(magma_state)
 {
 
 }
@@ -34,7 +35,7 @@ void MassBalance::solve(){
     int iter = 0;
     int min_stab_iter = 0;
     double err_width;
-    bool convergence = false;
+    bool is_convergence = false;
     std::vector<double> err_list;
     err_list.reserve(MAX_ITERATIONS);
     for (; iter < MAX_ITERATIONS; ++iter){
@@ -44,6 +45,9 @@ void MassBalance::solve(){
         err_width = (witer - sol).norm() / std::max(1.0, witer.norm());
         err_list.push_back(err_width);
         new_dike->setWidth(sol);
+        magma_state->updateDensity(new_dike);
+        magma_state->updateViscosity(new_dike);
+        new_dike->pressure = elasticity->getMatrix() * new_dike->width + input->getPlith();
         if (err_width < TOLERANCE){
             ++min_stab_iter;
         }
@@ -51,10 +55,11 @@ void MassBalance::solve(){
             min_stab_iter = 0;
         }
         if (min_stab_iter >= MIN_STAB_ITERATIONS){
-            convergence = true;
+            is_convergence = true;
             break;
         }
     }
+    int a = 1;
     return;
 }
 
@@ -62,6 +67,7 @@ void MassBalance::solve(){
 void MassBalance::generateMatrix(){
     int n = mesh->size();
     double dx = mesh->getdx();
+    double Mch = schedule->getMassRate(old_time, new_time);
     new_dike->calculateMobility();
     mat.resize(n, n);
     rhs.resize(n);
@@ -70,6 +76,7 @@ void MassBalance::generateMatrix(){
     auto C = elasticity->getMatrix();
     auto plith = input->getPlith();
 
+    rhs[0] += Mch / dx;
     for (int i = 1; i < n; i++){
         double lambda = new_dike->getMobility()[i];
         auto c1 = -lambda / dx / dx;

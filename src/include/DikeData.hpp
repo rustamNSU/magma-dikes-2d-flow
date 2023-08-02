@@ -3,6 +3,9 @@
 #include "Mesh.hpp"
 
 
+class MagmaState;
+class MassBalance;
+class DikeDataWriter;
 class DikeData{
     private:
         Mesh* mesh;
@@ -29,4 +32,8 @@ class DikeData{
         void setPressure(const Eigen::VectorXd& vec);
 
         void calculateMobility();
+
+        friend class MagmaState;
+        friend class MassBalance;
+        friend class DikeDataWriter;
 };

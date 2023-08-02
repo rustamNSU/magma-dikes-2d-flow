@@ -5,7 +5,7 @@
 #include "DikeData.hpp"
 #include "InputData.hpp"
 #include "Schedule.hpp"
-
+#include "MagmaState.hpp"
 
 class MassBalance{
     private:
@@ -13,6 +13,7 @@ class MassBalance{
         Elasticity* elasticity;
         Mesh* mesh;
         Schedule* schedule;
+        MagmaState* magma_state;
         DikeData* new_dike;
         DikeData* old_dike;
 
@@ -32,7 +33,8 @@ class MassBalance{
             InputData* input,
             Elasticity* elasticity,
             Mesh* mesh,
-            Schedule* schedule
+            Schedule* schedule,
+            MagmaState* magma_state
         );
 
         void setNewTimestepData(
