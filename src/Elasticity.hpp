@@ -20,5 +20,5 @@ class Elasticity{
         );
 
         void generateMatrix();
-        const Eigen::MatrixXd& get_matrix() const;
+        const Eigen::MatrixXd& getMatrix() const;
 };

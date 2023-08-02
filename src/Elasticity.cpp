@@ -32,6 +32,6 @@ void Elasticity::generateMatrix(){
 }
 
 
-const MatrixXd& Elasticity::get_matrix() const{
+const MatrixXd& Elasticity::getMatrix() const{
     return matrix;
 }

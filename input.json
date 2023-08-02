@@ -1,0 +1,12 @@
+{
+    "algorithmProperties": {
+        "isDebug": true,
+        "isNonOrthogonalCorrection": true
+    },
+    "reservoirProperties": {
+        "E": 14000000000.0,
+        "nu": 0.22,
+        "g": 9.81,
+        "KIc": 0.0
+    }
+}

@@ -24,12 +24,27 @@
         //     // "initCommands": ["command source ${workspaceRoot}/.lldbinit"]
         // },
         {
-            "name": "runner",
+            "name": "runner-codelldb",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/runner",
             "cwd": "${workspaceFolder}",
-            "initCommands": ["command source ${workspaceFolder}/.vscode/.lldbinit"]
+            "args": ["${workspaceFolder}/input.json"],
+            "initCommands": [
+                "command source ${workspaceFolder}/.vscode/.lldbinit"
+            ]
+        },
+        {
+            "name": "runner",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/bin/runner",
+            "cwd": "${workspaceFolder}",
+            "args": ["${workspaceFolder}/input.json"],
+            "MIMode": "lldb",
+            "externalConsole": false,
+            "environment": [],
+            // "initCommands": ["command source ${workspaceFolder}/.vscode/.lldbinit"]
         },
         // {
         //     "name": "incompressible_flow",

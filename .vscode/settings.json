@@ -3,6 +3,8 @@
         "dense": "cpp",
         "eigenvalues": "cpp",
         "tuple": "cpp",
-        "core": "cpp"
+        "core": "cpp",
+        "chrono": "cpp",
+        "valarray": "cpp"
     }
 }

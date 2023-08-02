@@ -30,3 +30,8 @@ const VectorXd& Mesh::getxr() const{
 int Mesh::size() const{
     return n;
 }
+
+
+double Mesh::getdx() const{
+    return dx;
+}

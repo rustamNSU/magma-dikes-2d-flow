@@ -1,1 +1,1 @@
-command script import ./.vscode/LLDB_Eigen_Pretty_Printer.py
+command script import ./.vscode/eigenlldb.py

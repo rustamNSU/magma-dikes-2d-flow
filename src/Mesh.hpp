@@ -19,5 +19,6 @@ class Mesh{
         const Eigen::VectorXd& getxl() const;
         const Eigen::VectorXd& getxr() const;
         int size() const;
+        double getdx() const;
 
 };
