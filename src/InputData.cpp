@@ -30,6 +30,11 @@ double InputData::getg() const{
 }
 
 
+std::tuple<double, double, double> InputData::getElasticityParameters() const{
+    return std::make_tuple(E, nu, KIc);
+}
+
+
 void InputData::calculateLithostaticPressure(){
     int n = mesh->size();
     plith = VectorXd::Zero(n);

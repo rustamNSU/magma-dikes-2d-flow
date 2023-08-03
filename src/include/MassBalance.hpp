@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
+#include <nlohmann/json.hpp>
 #include "Mesh.hpp"
 #include "Elasticity.hpp"
 #include "DikeData.hpp"
@@ -41,6 +42,8 @@ class MassBalance{
             DikeData* new_dike,
             DikeData* old_dike
         );
+
+        void setAlgorithmProperties(const nlohmann::json& properties);
 
         void solve();
 

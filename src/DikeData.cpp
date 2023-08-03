@@ -10,6 +10,7 @@ DikeData::DikeData(Mesh* mesh) : mesh(mesh){
     width = VectorXd::Zero(n);
     density = VectorXd::Zero(n);
     pressure = VectorXd::Zero(n);
+    overpressure = VectorXd::Zero(n);
     viscosity = VectorXd::Zero(n);
     mobility = VectorXd::Zero(n+1);
     time = 0.0;

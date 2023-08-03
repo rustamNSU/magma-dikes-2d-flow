@@ -12,6 +12,7 @@ class DikeData{
         Eigen::VectorXd width;
         Eigen::VectorXd density;
         Eigen::VectorXd pressure;
+        Eigen::VectorXd overpressure;
         Eigen::VectorXd viscosity;
         Eigen::VectorXd mobility;    // Magma mobility (w^3/12mu)
         double time;

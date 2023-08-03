@@ -9,6 +9,7 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
+#include <iostream>
 
 using json = nlohmann::json;
 using Eigen::VectorXd;
@@ -34,9 +35,10 @@ int main(int argc, char ** argv){
         input_json["meshProperties"]["xmin"],
         input_json["meshProperties"]["xmax"]
     );
-    Elasticity elasticity(1.0, 0.2, &mesh);
-    DikeData dike(&mesh);
     InputData input(input_json, &mesh);
+    auto [E, nu, KIc] = input.getElasticityParameters();
+    Elasticity elasticity(E, nu, &mesh);
+    DikeData dike(&mesh);
     Schedule schedule(
         &mesh,
         input_json["scheduleProperties"]["Q"],
@@ -53,6 +55,7 @@ int main(int argc, char ** argv){
         &schedule,
         &magma_state
     );
+    mass_balance.setAlgorithmProperties(input_json["algorithmProperties"]);
 
     double start_time = input_json["simulationProperties"]["startTime"];
     double end_time = input_json["simulationProperties"]["endTime"];
@@ -63,6 +66,7 @@ int main(int argc, char ** argv){
     std::string savepath = (data_dir / "data_").string() + std::to_string(time_iteration) + ".h5";
     writer.saveData(&dike, savepath);
     while (current_time < end_time - 1e-6){
+        std::cout << time_iteration + 1 << ")    " << int(current_time) << " -> " << int(current_time + dt) << std::endl;
         DikeData old_dike = dike;
         dike.setTime(current_time + dt);
         mass_balance.setNewTimestepData(&dike, &old_dike);

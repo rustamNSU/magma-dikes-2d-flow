@@ -2,6 +2,7 @@
 #include <Eigen/Dense>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <tuple>
 #include "Mesh.hpp"
 
 
@@ -22,5 +23,6 @@ class InputData{
         InputData(const nlohmann::json& input, Mesh* mesh);
         const Eigen::VectorXd& getPlith() const;
         double getg() const;
+        std::tuple<double, double, double> getElasticityParameters() const;
         void calculateLithostaticPressure();
 };

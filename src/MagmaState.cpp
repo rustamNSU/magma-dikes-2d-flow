@@ -14,7 +14,10 @@ MagmaState::MagmaState(const json& input, Mesh* mesh) : mesh(mesh) {
         rho = magma_properties["constantDensity"]["rho"];
     }
     if (viscosity_model == "constant_viscosity"){
-        mu = magma_properties["constantViscosity"]["mu"];
+        viscosity_properties = magma_properties["constantViscosity"];
+    }
+    else if (viscosity_model == "linear_viscosity"){
+        viscosity_properties = magma_properties["linearViscosity"];
     }
 }
 
@@ -28,6 +31,11 @@ void MagmaState::updateDensity(DikeData* dike) const{
 
 void MagmaState::updateViscosity(DikeData* dike) const{
     if (viscosity_model == "constant_viscosity"){
-        dike->viscosity.fill(mu);
+        dike->viscosity.fill(viscosity_properties["mu"]);
+    }
+    else if(viscosity_model == "linear_viscosity"){
+        double mu1 = viscosity_properties["much"];
+        double mu2 = viscosity_properties["musurf"];
+        dike->viscosity = VectorXd::LinSpaced(mesh->size(), mu1, mu2);
     }
 }

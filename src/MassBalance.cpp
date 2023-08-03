@@ -4,6 +4,7 @@
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using json = nlohmann::json;
 
 MassBalance::MassBalance(
     InputData* input,
@@ -47,7 +48,8 @@ void MassBalance::solve(){
         new_dike->setWidth(sol);
         magma_state->updateDensity(new_dike);
         magma_state->updateViscosity(new_dike);
-        new_dike->pressure = elasticity->getMatrix() * new_dike->width + input->getPlith();
+        new_dike->overpressure = elasticity->getMatrix() * new_dike->width;
+        new_dike->pressure = new_dike->overpressure + input->getPlith();
         if (err_width < TOLERANCE){
             ++min_stab_iter;
         }
@@ -60,6 +62,9 @@ void MassBalance::solve(){
         }
     }
     int a = 1;
+    if (!is_convergence){
+        a = 2;
+    }
     return;
 }
 
@@ -98,5 +103,13 @@ void MassBalance::generateMatrix(){
         mat(i, i) += new_dike->getDensity()[i] / dt;
         rhs[i] += old_dike->getDensity()[i] * old_dike->getWidth()[i] / dt;
     }
+    return;
+}
+
+
+void MassBalance::setAlgorithmProperties(const json& properties){
+    MAX_ITERATIONS = properties["massBalanceMaxIterations"];
+    MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
+    TOLERANCE = properties["massBalanceTolerance"];
     return;
 }

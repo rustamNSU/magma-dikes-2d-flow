@@ -10,7 +10,7 @@ class MagmaState{
         std::string density_model = "constant_density";
         std::string viscosity_model = "constant_viscosity";
         double rho;
-        double mu;
+        nlohmann::json viscosity_properties;
         Mesh* mesh;
     
     public:

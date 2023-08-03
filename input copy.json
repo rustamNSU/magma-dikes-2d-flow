@@ -1,5 +1,5 @@
 {
-    "simID" : 9,
+    "simID" : 4,
     "algorithmProperties": {
         "isDebug": true,
         "massBalanceTolerance" : 1e-6,
@@ -24,16 +24,12 @@
         "viscosityModel" : "constant_viscosity",
         "constantViscosity" : {
             "mu" : 100
-        },
-        "linearViscosity" : {
-            "much" : 50,
-            "musurf" : 1000
         }
     },
     "scheduleProperties": {
-        "Q": [6.0, 0.0],
-        "t": [0.0, 10000.0],
-        "rho": 2000.0
+        "Q": [1.0, 0.0],
+        "t": [0.0, 2000.0],
+        "rho": 2500.0
     },
     "simulationProperties": {
         "startTime" : 0.0,
@@ -41,8 +37,8 @@
         "dt" : 100.0
     },
     "meshProperties": {
-        "n" : 200,
-        "xmin" : -20000.0,
+        "n" : 50,
+        "xmin" : -5000.0,
         "xmax" : 0.0
     }
 }
