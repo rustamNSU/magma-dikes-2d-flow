@@ -15,6 +15,7 @@ void DikeDataWriter::saveData(DikeData* data, const std::string& filepath){
     dump(file, "width", data->width);
     dump(file, "density", data->density);
     dump(file, "pressure", data->pressure);
+    dump(file, "overpressure", data->overpressure);
     dump(file, "viscosity", data->viscosity);
     dump(file, "time", data->time);
 }

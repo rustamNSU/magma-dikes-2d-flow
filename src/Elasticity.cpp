@@ -20,12 +20,17 @@ void Elasticity::generateMatrix(){
     auto x = mesh->getx();
     auto xl = mesh->getxl();
     auto xr = mesh->getxr();
-    matrix.resize(n, n);
+    matrix = MatrixXd::Zero(n, n);
     for (int r = 0; r < n; ++r){
         for (int c = 0; c < n; ++c){
             matrix(r,c) = -Ep / (4.0 * M_PI) *
-                (1.0 / (x(r) - xr(c)) -
-                 1.0 / (x(r) - xl(c)));
+                    (1.0 / (x(r) - xr(c)) -
+                    1.0 / (x(r) - xl(c)));
+            // if (std::abs(r-c) == 0){
+            //     matrix(r,c) = -Ep / (4.0 * M_PI) *
+            //         (1.0 / (x(r) - xr(c)) -
+            //         1.0 / (x(r) - xl(c)));
+            // }
         }
     }
     return;

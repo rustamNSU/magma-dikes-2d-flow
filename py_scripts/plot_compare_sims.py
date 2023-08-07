@@ -43,22 +43,24 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
-simIDs = [9]
-wlim = (0, 10)
+simIDs = [1]
+wlim = (0, 4)
 plim = (0, 800)
 xlim = (-20000, 0.0)
 
-timesteps = list(range(0, 2001, 1))
+timesteps = list(range(0, 1001, 1))
 xc = []
 dx = []
 width = []
 pressure = []
+overpressure = []
 time = []
 for simID in simIDs:
     xx = []
     dxx = []
     ww = []
     pp = []
+    opp = []
     tt = []
     for t in timesteps:
         filepath = sim_dir + "/simID{}/data/data_{}.h5".format(simID, t)
@@ -67,12 +69,14 @@ for simID in simIDs:
         xx.append(x)
         ww.append(np.array(data["width"]))
         pp.append(1e-6*np.array(data["pressure"]))
+        opp.append(1e-6*np.array(data["overpressure"]))
         dxx.append(np.array(data["mesh"]["xr"]) - np.array(data["mesh"]["xl"]))
         tt.append(float(np.array(data["time"])))
     xc.append(xx)
     dx.append(dxx)
     width.append(ww)
     pressure.append(pp)
+    overpressure.append(opp)
     time.append(tt)
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
@@ -84,18 +88,22 @@ ax2.set_ylabel("pressure [MPa]")
 
 lws = []
 lps = []
-linestyles = ['-', '--', ':']
+lops = []
+linestyles = ['-', '-', '-']
 colors = ['b', 'r', 'g']
 for i in range(len(simIDs)):
     simID = simIDs[i]
     X = createXData(xc[i][timesteps[0]], dx[i][timesteps[0]])
     W = createYData(width[i][timesteps[0]])
     P = createYData(pressure[i][timesteps[0]])
+    OP = createYData(overpressure[i][timesteps[0]])
     
     lw, = ax1.plot(X, W, linewidth=2, label="simID {}".format(simID), linestyle=linestyles[i], color=colors[i])
     lp, = ax2.plot(X, P, linewidth=2, label="simID {}".format(simID), linestyle=linestyles[i], color=colors[i])
+    lop, = ax2.plot(X, OP, linewidth=2, label="overpressure, simID {}".format(simID), linestyle='--', color=colors[i])
     lws.append(lw)
     lps.append(lp)
+    lops.append(lop)
 
 ax1.set_xlim(xlim)
 ax1.set_ylim(wlim)
@@ -133,9 +141,11 @@ def iter_update(val):
         X = xc[i][t_index]
         W = createYData(width[i][t_index])
         P = createYData(pressure[i][t_index])
+        OP = createYData(overpressure[i][t_index])
         
         lws[i].set_ydata(W)
         lps[i].set_ydata(P)
+        lops[i].set_ydata(OP)
     
 # def xlim_update(val):
 #     x_slider = xlim_slider.val

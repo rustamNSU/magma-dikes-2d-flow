@@ -1,13 +1,14 @@
 {
-    "simID" : 9,
+    "simID" : 1,
     "algorithmProperties": {
         "isDebug": true,
         "massBalanceTolerance" : 1e-6,
         "massBalanceMaxIterations" : 70,
-        "massBalanceMinStabIterations" : 2
+        "massBalanceMinStabIterations" : 2,
+        "massBalanceMinMobilityWidth" : 1e-10
     },
     "reservoirProperties": {
-        "E": 14000000000.0,
+        "E": 14e9,
         "nu": 0.22,
         "g": 9.81,
         "KIc": 0.0,
@@ -23,7 +24,7 @@
         },
         "viscosityModel" : "constant_viscosity",
         "constantViscosity" : {
-            "mu" : 100
+            "mu" : 1000.0
         },
         "linearViscosity" : {
             "much" : 50,
@@ -31,13 +32,13 @@
         }
     },
     "scheduleProperties": {
-        "Q": [6.0, 0.0],
+        "Q": [1.0, 0.0],
         "t": [0.0, 10000.0],
         "rho": 2000.0
     },
     "simulationProperties": {
         "startTime" : 0.0,
-        "endTime" : 200000.0,
+        "endTime" : 100000.0,
         "dt" : 100.0
     },
     "meshProperties": {

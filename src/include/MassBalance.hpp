@@ -28,6 +28,7 @@ class MassBalance{
         int MAX_ITERATIONS = 50;
         int MIN_STAB_ITERATIONS = 2;
         double TOLERANCE = 1e-4;
+        double MIN_MOBILITY_WIDTH = 1e-10;
     
     public:
         MassBalance(
@@ -44,8 +45,7 @@ class MassBalance{
         );
 
         void setAlgorithmProperties(const nlohmann::json& properties);
-
         void solve();
-
         void generateMatrix();
+        void calculateMobility();
 };

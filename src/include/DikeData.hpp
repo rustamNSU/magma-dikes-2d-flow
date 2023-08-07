@@ -16,7 +16,6 @@ class DikeData{
         Eigen::VectorXd viscosity;
         Eigen::VectorXd mobility;    // Magma mobility (w^3/12mu)
         double time;
-        double MIN_MOBILITY_WIDTH = 1e-10;
     
     public:
         DikeData(Mesh* mesh);
@@ -31,8 +30,6 @@ class DikeData{
         void setWidth(const Eigen::VectorXd& vec);
         void setViscosity(const Eigen::VectorXd& vec);
         void setPressure(const Eigen::VectorXd& vec);
-
-        void calculateMobility();
 
         friend class MagmaState;
         friend class MassBalance;

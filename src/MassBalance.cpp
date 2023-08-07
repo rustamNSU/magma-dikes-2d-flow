@@ -73,7 +73,7 @@ void MassBalance::generateMatrix(){
     int n = mesh->size();
     double dx = mesh->getdx();
     double Mch = schedule->getMassRate(old_time, new_time);
-    new_dike->calculateMobility();
+    calculateMobility();
     mat.resize(n, n);
     rhs.resize(n);
     mat.fill(0.0);
@@ -84,7 +84,8 @@ void MassBalance::generateMatrix(){
     rhs[0] += Mch / dx;
     for (int i = 1; i < n; i++){
         double lambda = new_dike->getMobility()[i];
-        auto c1 = -lambda / dx / dx;
+        double rho = (new_dike->getDensity()[i] + new_dike->getDensity()[i-1]) / 2.0;
+        auto c1 = -rho * lambda / dx / dx;
         auto qrow = c1 * (C.row(i).array() - C.row(i-1).array());
         mat.row(i-1) += qrow.matrix();
         mat.row(i) -= qrow.matrix();
@@ -93,8 +94,7 @@ void MassBalance::generateMatrix(){
         rhs[i-1] += qlith;
         rhs[i] -= qlith;
 
-        double rho = (new_dike->getDensity()[i] + new_dike->getDensity()[i-1]) / 2.0;
-        double c2 = lambda / dx * rho * input->getg();
+        double c2 = rho * lambda / dx * rho * input->getg();
         rhs[i-1] += c2;
         rhs[i] -= c2;
     }
@@ -111,5 +111,22 @@ void MassBalance::setAlgorithmProperties(const json& properties){
     MAX_ITERATIONS = properties["massBalanceMaxIterations"];
     MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
     TOLERANCE = properties["massBalanceTolerance"];
+    MIN_MOBILITY_WIDTH = properties["massBalanceMinMobilityWidth"];
+    return;
+}
+
+
+void MassBalance::calculateMobility(){
+    int n = mesh->size();
+    auto& mobility = new_dike->mobility;
+    auto& width = new_dike->width;
+    auto& viscosity = new_dike->viscosity;
+
+    mobility.fill(0.0);
+    for (int i = 1; i < n; ++i){
+        double ml = width[i-1] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i-1], 3) / 12.0 / viscosity[i-1];
+        double mr = width[i] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i], 3) / 12.0 / viscosity[i];
+        mobility[i] = (ml + mr) / 2.0;
+    }
     return;
 }

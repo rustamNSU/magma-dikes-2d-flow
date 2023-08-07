@@ -70,15 +70,3 @@ void DikeData::setPressure(const VectorXd& vec){
     pressure = vec;
     return;
 }
-
-
-void DikeData::calculateMobility(){
-    int n = mesh->size();
-    mobility.fill(0.0);
-    for (int i = 1; i < n; ++i){
-        double ml = width[i-1] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i-1], 3) / 12.0 / viscosity[i-1];
-        double mr = width[i] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i], 3) / 12.0 / viscosity[i];
-        mobility[i] = (ml + mr) / 2.0;
-    }
-    return;
-}
