@@ -44,11 +44,11 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
 simIDs = [1]
-wlim = (0, 4)
-plim = (0, 800)
-xlim = (-20000, 0.0)
+wlim = (0, 4e-3)
+plim = (0, 10)
+xlim = (-400, 0.0)
 
-timesteps = list(range(0, 1001, 1))
+timesteps = list(range(0, 801, 10))
 xc = []
 dx = []
 width = []

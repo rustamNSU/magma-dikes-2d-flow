@@ -124,9 +124,14 @@ void MassBalance::calculateMobility(){
 
     mobility.fill(0.0);
     for (int i = 1; i < n; ++i){
+        double xf = mesh->getxl()[i];
+        double xcl = mesh->getx()[i-1];
+        double xcr = mesh->getx()[i];
+        double alphal = (xcr-xf) / (xcr - xcl);
+        double alphar = 1 - alphal;  
         double ml = width[i-1] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i-1], 3) / 12.0 / viscosity[i-1];
         double mr = width[i] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i], 3) / 12.0 / viscosity[i];
-        mobility[i] = (ml + mr) / 2.0;
+        mobility[i] = alphal * ml + alphar * mr;
     }
     return;
 }

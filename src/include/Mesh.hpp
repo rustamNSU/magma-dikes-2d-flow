@@ -5,9 +5,9 @@
 class Mesh{
     private:
         int n;
-        Eigen::VectorXd x;
-        Eigen::VectorXd xl;
-        Eigen::VectorXd xr;
+        Eigen::VectorXd x;  ///< coordinate of centers of i-cell
+        Eigen::VectorXd xl; ///< coordinate of left face of i-cell
+        Eigen::VectorXd xr; ///< coordinate of right face of i-cell
         double dx;
         double xmin;
         double xmax;
