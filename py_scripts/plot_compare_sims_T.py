@@ -44,25 +44,29 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
 # simIDs = [20, 22, 23]
-simIDs = [1]
-wlim = (0, 2)
+simIDs = [2]
+wlim = (0, 0.5)
 plim = (0, 500)
-xlim = (-20000, 0.0)
+Tlim = (400, 700)
+xlim = (-20000, -10000)
 
 timesteps = list(range(0, 3001, 10))
 xc = []
 dx = []
 width = []
 pressure = []
-overpressure = []
 time = []
+Tmiddle = []
+Tboundary = []
+ny = []
 for simID in simIDs:
     xx = []
     dxx = []
     ww = []
     pp = []
-    opp = []
     tt = []
+    TTm = []
+    TTb = []
     for t in timesteps:
         filepath = sim_dir + "/simID{}/data/data_{}.h5".format(simID, t)
         data = h5py.File(filepath, 'r')
@@ -70,41 +74,52 @@ for simID in simIDs:
         xx.append(x)
         ww.append(np.array(data["width"]))
         pp.append(1e-6*np.array(data["pressure"]))
-        opp.append(1e-6*np.array(data["overpressure"]))
         dxx.append(np.array(data["mesh"]["xr"]) - np.array(data["mesh"]["xl"]))
         tt.append(float(np.array(data["time"])))
+        nyy = int(np.array(data["ny"]))
+        TT = np.array(data["temperature"])
+        TTm.append(TT[:, 0])
+        TTb.append(TT[:, nyy-1])
     xc.append(xx)
     dx.append(dxx)
     width.append(ww)
     pressure.append(pp)
-    overpressure.append(opp)
     time.append(tt)
+    Tmiddle.append(TTm)
+    Tboundary.append(TTb)
+    ny.append(nyy)
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6))
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8))
 fig.subplots_adjust(bottom=0.2)
 ax1.set_xlabel("x")
 ax1.set_ylabel("width [m]")
 ax2.set_xlabel("x")
 ax2.set_ylabel("pressure [MPa]")
+ax3.set_xlabel("x")
+ax3.set_ylabel("temperature [C]")
 
 lws = []
 lps = []
-lops = []
-linestyles = ['-', '-', '-']
+lTms = []
+lTbs = []
 colors = ['b', 'r', 'g']
 for i in range(len(simIDs)):
     simID = simIDs[i]
     X = createXData(xc[i][timesteps[0]], dx[i][timesteps[0]])
     W = createYData(width[i][timesteps[0]])
     P = createYData(pressure[i][timesteps[0]])
-    OP = createYData(overpressure[i][timesteps[0]])
+    Tm = createYData(Tmiddle[i][timesteps[0]])
+    Tb = createYData(Tboundary[i][timesteps[0]])
+    Ny = ny[i]
     
-    lw, = ax1.plot(X, W, linewidth=2, label="simID {}".format(simID), linestyle=linestyles[i], color=colors[i])
-    lp, = ax2.plot(X, P, linewidth=2, label="simID {}".format(simID), linestyle=linestyles[i], color=colors[i])
-    lop, = ax2.plot(X, OP, linewidth=2, label="overpressure, simID {}".format(simID), linestyle='--', color=colors[i])
+    lw, = ax1.plot(X, W, linewidth=2, label="simID {}, ny={}".format(simID, Ny), linestyle='-', color=colors[i])
+    lp, = ax2.plot(X, P, linewidth=2, label="simID {}, ny={}".format(simID, Ny), linestyle='-', color=colors[i])
+    lTm, = ax3.plot(X, Tm, linewidth=2, label="simID {}, mid., ny={}".format(simID, Ny), linestyle='-', color=colors[i])
+    lTb, = ax3.plot(X, Tb, linewidth=2, label="simID {}, bound., ny={}".format(simID, Ny), linestyle='--', color=colors[i])
     lws.append(lw)
     lps.append(lp)
-    lops.append(lop)
+    lTms.append(lTm)
+    lTbs.append(lTb)
 
 ax1.set_xlim(xlim)
 ax1.set_ylim(wlim)
@@ -116,8 +131,12 @@ ax2.set_ylim(plim)
 ax2.grid()
 ax2.legend().set_draggable(True)
 
-ax_iter_slider = plt.axes([0.25, 0.1, 0.65, 0.03])
-# ax_xlim_slider = plt.axes([0.25, 0.1, 0.65, 0.03])
+ax3.set_xlim(xlim)
+ax3.set_ylim(Tlim)
+ax3.grid()
+ax3.legend().set_draggable(True)
+
+ax_iter_slider = fig.add_axes([0.25, 0.1, 0.65, 0.03])
 iter_slider = Slider(
     ax=ax_iter_slider, 
     label='timesteps', 
@@ -143,11 +162,13 @@ def iter_update(val):
         X = xc[i][t_index]
         W = createYData(width[i][t_index])
         P = createYData(pressure[i][t_index])
-        OP = createYData(overpressure[i][t_index])
+        Tm = createYData(Tmiddle[i][t_index])
+        Tb = createYData(Tboundary[i][t_index])
         
         lws[i].set_ydata(W)
         lps[i].set_ydata(P)
-        lops[i].set_ydata(OP)
+        lTms[i].set_ydata(Tm)
+        lTbs[i].set_ydata(Tb)
     
 # def xlim_update(val):
 #     x_slider = xlim_slider.val
@@ -158,5 +179,6 @@ def iter_update(val):
 # Call update function when slider value is changed
 iter_slider.on_changed(iter_update)
 # xlim_slider.on_changed(xlim_update)
-
+# fig.tight_layout()
+fig.subplots_adjust(left=0.1, bottom=0.25, right=0.9, top=0.98, wspace=0.25, hspace=0.3)
 plt.show()

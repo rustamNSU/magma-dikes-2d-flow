@@ -9,27 +9,43 @@ class DikeDataWriter;
 class DikeData{
     private:
         Mesh* mesh;
+        int ny = 1; // Number of layers into dike
         Eigen::VectorXd width;
         Eigen::VectorXd density;
         Eigen::VectorXd pressure;
         Eigen::VectorXd overpressure;
-        Eigen::VectorXd viscosity;
-        Eigen::VectorXd mobility;    // Magma mobility (w^3/12mu)
+
+        Eigen::MatrixXd yc; // y-center of layers (half width)
+        Eigen::MatrixXd yb; // y-boundary of layers (half width)
+        Eigen::MatrixXd temperature; // Magma temperature in each layer of mesh element
+        Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
+        Eigen::MatrixXd mobility; // Layer mobility into element
+        Eigen::VectorXd total_mobility; // Total mobility into element
+        Eigen::VectorXd total_face_mobility; // Mobility between elements
+        Eigen::MatrixXd face_flux;
+        Eigen::VectorXd total_face_flux;
         double time;
     
     public:
-        DikeData(Mesh* mesh);
+        DikeData(Mesh* mesh, int ny  = 1);
         double getTime() const;
-        const Eigen::VectorXd& getMobility() const;
+        int getLayersNumber() const;
         const Eigen::VectorXd& getDensity() const;
         const Eigen::VectorXd& getWidth() const;
         const Eigen::VectorXd& getPressure() const;
+        const Eigen::VectorXd& getOverpressure() const;
+        const Eigen::MatrixXd& getYc() const;
+        const Eigen::MatrixXd& getYb() const;
+        const Eigen::MatrixXd& getTemperature() const;
+        const Eigen::MatrixXd& getMobility() const;
+        const Eigen::VectorXd& getTotalMobility() const;
 
         void setTime(double time);
         void setDensity(const Eigen::VectorXd& vec);
         void setWidth(const Eigen::VectorXd& vec);
-        void setViscosity(const Eigen::VectorXd& vec);
         void setPressure(const Eigen::VectorXd& vec);
+        void setTemperature(const Eigen::MatrixXd& mat);
+        void setViscosity(const Eigen::MatrixXd& mat);
 
         friend class MagmaState;
         friend class MassBalance;

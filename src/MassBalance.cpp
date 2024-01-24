@@ -1,20 +1,32 @@
 #include "MassBalance.hpp"
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <algorithm>
+#include <stack>
+#include "Utils.hpp"
+#include <Eigen/Core>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using Eigen::VectorXi;
 using json = nlohmann::json;
 
 MassBalance::MassBalance(
     InputData* input,
+    TimestepController* timestep_controller,
     Elasticity* elasticity,
     Mesh* mesh,
     Schedule* schedule,
     MagmaState* magma_state
-) : input(input), elasticity(elasticity), mesh(mesh), schedule(schedule), magma_state(magma_state)
+) : 
+    input(input),
+    timestep_controller(timestep_controller),
+    elasticity(elasticity),
+    mesh(mesh),
+    schedule(schedule),
+    magma_state(magma_state)
 {
-
 }
 
 
@@ -24,114 +36,303 @@ void MassBalance::setNewTimestepData(
 ){
     this->new_dike = new_dike;
     this->old_dike = old_dike;
-
-    old_time = old_dike->getTime();
-    new_time = new_dike->getTime();
-    dt = new_time - old_time;
     return;
 }
 
 
-void MassBalance::solve(){
-    int iter = 0;
-    int min_stab_iter = 0;
-    double err_width;
-    bool is_convergence = false;
-    std::vector<double> err_list;
-    err_list.reserve(MAX_ITERATIONS);
-    for (; iter < MAX_ITERATIONS; ++iter){
-        auto witer = new_dike->getWidth();
-        generateMatrix();
-        VectorXd sol = mat.fullPivLu().solve(rhs);
-        err_width = (witer - sol).norm() / std::max(1.0, witer.norm());
-        err_list.push_back(err_width);
-        new_dike->setWidth(sol);
-        magma_state->updateDensity(new_dike);
-        magma_state->updateViscosity(new_dike);
-        new_dike->overpressure = elasticity->getMatrix() * new_dike->width;
-        new_dike->pressure = new_dike->overpressure + input->getPlith();
-        if (err_width < TOLERANCE){
-            ++min_stab_iter;
+void MassBalance::explicitSolve(){
+    auto nx = mesh->size();
+    double current_time = timestep_controller->getCurrentTime();
+    double dt = timestep_controller->getCurrentTimestep();
+    updatePressure();
+    magma_state->updateViscosity(new_dike);
+    calculateMobility();
+    auto& xc = mesh->getx();
+    auto dx = mesh->getdx();
+    auto g = input->getGravityAcceleration();
+    VectorXd dpdx = VectorXd::Zero(nx+1);
+    for (int ix = 1; ix < nx; ix++){
+        dpdx[ix] = (new_dike->pressure[ix] - new_dike->pressure[ix-1]) / (xc[ix] - xc[ix-1]) + 
+                   (new_dike->density[ix] + new_dike->density[ix-1]) / 2 * g;
+        if (dpdx[ix] >= 0){
+            dpdx[ix] = 0;
+        }
+    }
+    new_dike->total_face_flux = new_dike->total_face_mobility.cwiseProduct(dpdx);
+    for (int ix = 1; ix < nx; ++ix){
+        double Qi = new_dike->total_face_flux[ix];
+        if (Qi > 10 * MIN_MOBILITY_WIDTH * dx / dt){
+            new_dike->face_flux.row(ix) = Qi * new_dike->mobility.row(ix-1) / new_dike->total_mobility[ix-1];
         }
         else{
-            min_stab_iter = 0;
-        }
-        if (min_stab_iter >= MIN_STAB_ITERATIONS){
-            is_convergence = true;
-            break;
+            new_dike->total_face_flux[ix] = 0.0;
+            new_dike->face_flux.row(ix).fill(0.0);
         }
     }
-    int a = 1;
-    if (!is_convergence){
-        a = 2;
+    VectorXd width = VectorXd::Zero(nx);
+    VectorXd Qin = VectorXd::Zero(nx);
+    Qin[0] = schedule->getMassRate(current_time, current_time+dt) / new_dike->density[0];
+    for (int ix = 0; ix < nx; ix++){
+        width[ix] = old_dike->width[ix] - dt / dx * (
+            new_dike->total_face_flux[ix+1] - new_dike->total_face_flux[ix] - Qin[ix]
+        );
     }
+    new_dike->setWidth(width);
+    updateTemperature();
     return;
 }
 
 
-void MassBalance::generateMatrix(){
-    int n = mesh->size();
-    double dx = mesh->getdx();
-    double Mch = schedule->getMassRate(old_time, new_time);
-    calculateMobility();
-    mat.resize(n, n);
-    rhs.resize(n);
-    mat.fill(0.0);
-    rhs.fill(0.0);
-    auto C = elasticity->getMatrix();
-    auto plith = input->getPlith();
-
-    rhs[0] += Mch / dx;
-    for (int i = 1; i < n; i++){
-        double lambda = new_dike->getMobility()[i];
-        double rho = (new_dike->getDensity()[i] + new_dike->getDensity()[i-1]) / 2.0;
-        auto c1 = -rho * lambda / dx / dx;
-        auto qrow = c1 * (C.row(i).array() - C.row(i-1).array());
-        mat.row(i-1) += qrow.matrix();
-        mat.row(i) -= qrow.matrix();
-
-        double qlith = -c1 * (plith[i] - plith[i-1]);
-        rhs[i-1] += qlith;
-        rhs[i] -= qlith;
-
-        double c2 = rho * lambda / dx * rho * input->getg();
-        rhs[i-1] += c2;
-        rhs[i] -= c2;
-    }
-
-    for (int i = 0; i < n; i++){
-        mat(i, i) += new_dike->getDensity()[i] / dt;
-        rhs[i] += old_dike->getDensity()[i] * old_dike->getWidth()[i] / dt;
-    }
+void MassBalance::updatePressure(){
+    new_dike->overpressure = elasticity->getMatrix() * new_dike->width;
+    new_dike->pressure = new_dike->overpressure + input->getLithostaticPressure();
     return;
 }
+// MassBalance::SolverOutput MassBalance::solve(){
+//     int iter = 0;
+//     int min_stab_iter = 0;
+//     double err_max;
+//     double err_l2;
+//     SolverOutput solver_output;
+//     std::vector<double> err_list;
+//     err_list.reserve(MAX_ITERATIONS);
+//     for (; iter < MAX_ITERATIONS; ++iter){
+//         auto witer = new_dike->getWidth();
+//         generateMatrix();
+//         VectorXd sol = mat.fullPivLu().solve(rhs);
+//         err_l2 = (witer - sol).norm() / std::max(1.0, witer.norm());
+//         err_max = (witer - sol).maxCoeff() / std::max(TOLERANCE, witer.maxCoeff());
+//         err_list.push_back(err_max);
+//         new_dike->setWidth(sol);
+//         magma_state->updateViscosity(new_dike);
+//         new_dike->overpressure = elasticity->getMatrix() * new_dike->width;
+//         new_dike->pressure = new_dike->overpressure + input->getPlith();
+//         if (err_l2 < TOLERANCE){
+//             ++min_stab_iter;
+//         }
+//         else{
+//             min_stab_iter = 0;
+//         }
+//         err_list.push_back(err_l2);
+//         if (min_stab_iter >= MIN_STAB_ITERATIONS){
+//             solver_output.is_converge = true;
+//             break;
+//         }
+//     }
+//     solver_output.error = err_max;
+//     solver_output.iters = iter;
+//     return solver_output;
+// }
+
+
+// void MassBalance::generateMatrix(){
+//     int nx = mesh->size();
+//     int ny = new_dike->getLayersNumber();
+//     double dx = mesh->getdx();
+//     double g = input->getGravityAcceleration();
+//     double Mch = schedule->getMassRate(old_time, new_time);
+//     calculateMobility();
+//     mat.resize(nx, nx);
+//     rhs.resize(nx);
+//     mat.fill(0.0);
+//     rhs.fill(0.0);
+//     auto C = elasticity->getMatrix();
+//     auto plith = input->getLithostaticPressure();
+
+//     rhs[0] += Mch / dx;
+//     for (int ix = 1; ix < nx; ix++){
+//         double lambda = new_dike->getTotalMobility()[ix];
+//         double rho = (new_dike->getDensity()[ix] + new_dike->getDensity()[ix-1]) / 2.0;
+//         auto c1 = -rho * lambda / dx / dx;
+//         auto qrow = c1 * (C.row(ix).array() - C.row(ix-1).array());
+//         mat.row(ix-1) += qrow.matrix();
+//         mat.row(ix) -= qrow.matrix();
+
+//         double qlith = -c1 * (plith[ix] - plith[ix-1]);
+//         rhs[ix-1] += qlith;
+//         rhs[ix] -= qlith;
+
+//         double c2 = rho * lambda / dx * rho * g;
+//         rhs[ix-1] += c2;
+//         rhs[ix] -= c2;
+//     }
+
+//     for (int ix = 0; ix < nx; ix++){
+//         mat(ix, ix) += new_dike->getDensity()[ix] / dt;
+//         rhs[ix] += old_dike->getDensity()[ix] * old_dike->getWidth()[ix] / dt;
+//     }
+//     return;
+// }
 
 
 void MassBalance::setAlgorithmProperties(const json& properties){
-    MAX_ITERATIONS = properties["massBalanceMaxIterations"];
-    MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
-    TOLERANCE = properties["massBalanceTolerance"];
-    MIN_MOBILITY_WIDTH = properties["massBalanceMinMobilityWidth"];
+    TIMESTEP_SCHEME = properties["timestepScheme"];
+    if (TIMESTEP_SCHEME == "explicit"){
+        MIN_MOBILITY_WIDTH = properties["massBalanceMinMobilityWidth"];
+        CUTOFF_VELOCITY = properties["cutoffVelocity"];
+    }
+    // MAX_ITERATIONS = properties["massBalanceMaxIterations"];
+    // MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
+    // TOLERANCE = properties["massBalanceTolerance"];
     return;
 }
 
 
+/* We define velocity Ui in i-th layer as Ui = (Ai*y^2 + Ci) * (dp/dx + rho_m*g) */
 void MassBalance::calculateMobility(){
-    int n = mesh->size();
-    auto& mobility = new_dike->mobility;
+    int nx = mesh->size();
+    int ny = new_dike->getLayersNumber();
     auto& width = new_dike->width;
     auto& viscosity = new_dike->viscosity;
+    auto& mobility = new_dike->mobility;
+    auto& total_mobility = new_dike->total_mobility;
+    
 
     mobility.fill(0.0);
-    for (int i = 1; i < n; ++i){
-        double xf = mesh->getxl()[i];
-        double xcl = mesh->getx()[i-1];
-        double xcr = mesh->getx()[i];
-        double alphal = (xcr-xf) / (xcr - xcl);
-        double alphar = 1 - alphal;  
-        double ml = width[i-1] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i-1], 3) / 12.0 / viscosity[i-1];
-        double mr = width[i] <= MIN_MOBILITY_WIDTH ? 0.0 : std::pow(width[i], 3) / 12.0 / viscosity[i];
-        mobility[i] = alphal * ml + alphar * mr;
+    total_mobility.fill(0.0);
+    for (int ix = 0; ix < nx; ++ix){
+        if (width[ix] < MIN_MOBILITY_WIDTH) continue;
+        double dy = width[ix] / ny;
+        VectorXd yb = new_dike->yb.row(ix);
+        VectorXd yc = new_dike->yc.row(ix);
+        VectorXd mu = viscosity.row(ix);
+        VectorXd A = 0.5 * mu.cwiseInverse();
+        VectorXd C = VectorXd::Zero(ny);
+        C(ny-1) = -A(ny-1) * std::pow(yb(ny), 2);
+        for (int iy = ny-2; iy >= 0; iy--){
+            C(iy) = C(iy+1) + std::pow(yb(iy+1), 2) * (A(iy+1) - A(iy));
+        }
+        VectorXd ybt = yb(Eigen::seq(1, ny));
+        VectorXd ybb = yb(Eigen::seq(0, ny-1));
+        mobility.row(ix) = A.array() * (ybt.array().cube() - ybb.array().cube()) / 3 + C.array() * (ybt.array() - ybb.array());
+        total_mobility(ix) = 2 * mobility.row(ix).sum();
     }
+    new_dike->total_face_mobility.setZero();
+    new_dike->total_face_mobility(Eigen::seq(1, nx-1)) = 0.5 * (total_mobility(Eigen::seq(0, nx-2)) + total_mobility(Eigen::seq(1, nx-1)));
     return;
+}
+
+
+void MassBalance::updateTemperature(){
+    double dt = timestep_controller->getCurrentTimestep();
+    double dx = mesh->getdx();
+    int nx = mesh->size();
+    int ny = new_dike->ny;
+
+    /* @todo: pls, refactor me */
+    new_dike->temperature.row(0).fill(schedule->T);
+    auto Tconv = new_dike->temperature;
+    for (int ix = 1; ix < nx; ix++){
+        VectorXd Tin = old_dike->temperature.row(ix-1);
+        VectorXd Vin = new_dike->face_flux.row(ix) * dt;
+        VectorXd Vout = new_dike->face_flux.row(ix+1) * dt;
+
+        VectorXd Told = old_dike->temperature.row(ix);
+        VectorXd Vold = (old_dike->yb(ix, Eigen::seq(1, ny)) - old_dike->yb(ix, Eigen::seq(0, ny-1))) * dx;
+        VectorXd Tnew = Told;
+        VectorXd Vnew = (new_dike->yb(ix, Eigen::seq(1, ny)) - new_dike->yb(ix, Eigen::seq(0, ny-1))) * dx;
+        if (Vnew.sum() < MIN_MOBILITY_WIDTH) continue;
+
+        VectorXd Vcfl = Vold - Vout;
+        double Vmin = Vcfl.minCoeff();
+        if (Vmin < 0){
+            std::cout << "-- Vcfl < 0\n";
+        }
+        Vold = Vold - Vout;
+
+        VectorXd Vall;
+        VectorXd Tall;
+        // if (Vold.sum() < MIN_MOBILITY_WIDTH){
+        //     Vall = Vin;
+        //     Tall = Tin;
+        // }
+        // else{
+            Vall.resize(2*ny);
+            Tall.resize(2*ny);
+            Vall << Vin, Vold;
+            Tall << Tin, Told;
+        // }
+
+        VectorXi indxs = VectorXi::LinSpaced(Vall.size(), 0, Vall.size()-1);
+        std::stable_sort(indxs.begin(), indxs.end(), [&Tall](
+            int i1, int i2
+        ){
+            return Tall[i1] > Tall[i2];
+        });
+
+        Vall(indxs);
+        Tall(indxs);
+        std::stack<double> Vstack(std::deque<double>(Vall.begin(), Vall.end()));
+        std::stack<double> Tstack(std::deque<double>(Tall.begin(), Tall.end()));
+
+        int iy = ny-1;
+        double V = Vnew[iy];
+        double E = 0;
+        while (!Vstack.empty()){
+            double Vtmp = Vstack.top();
+            double Ttmp = Tstack.top();
+            Vstack.pop();
+            Tstack.pop();
+            if (V > Vtmp || iy == 0){
+                V = V - Vtmp;
+                E += Vtmp * Ttmp;
+            }
+            else{
+                E += V * Ttmp;
+                Tnew[iy] = E / Vnew[iy];
+                Vstack.push(Vtmp - V);
+                Tstack.push(Ttmp);
+                iy -= 1;
+                V = Vnew[iy];
+                E = 0;
+            }
+        }
+        Tnew[0] = E / Vnew[0];
+        Tconv.row(ix) = Tnew;
+        // Tnew = Tnew.array() - 1000.0;
+        // if (std::abs(Tnew.maxCoeff() - Tnew.minCoeff()) > 1e-6){
+        //     int aaa = 0;
+        // }
+    }
+    new_dike->temperature = Tconv;
+
+    double rho = schedule->rho;
+    double C = magma_state->getSpecificHeat();
+    double k = magma_state->getThermalConductivity();
+    const auto& reservoir_temperature = input->getReservoirTemperature();
+    for (int ix = 1; ix < nx; ix++){
+        if (new_dike->width[ix] < MIN_MOBILITY_WIDTH) continue;
+        VectorXd dy = (new_dike->yb(ix, Eigen::seq(1, ny)) - new_dike->yb(ix, Eigen::seq(0, ny-1)));
+        VectorXd Told = Tconv.row(ix);
+        VectorXd Tnew = Told;
+        double Tr = reservoir_temperature[ix];
+        if (ny == 1){
+            double b = dy[0] * dy[0] * rho * C / dt + 2 * k;
+            double rhs = 2*k*Tr + dy[0] * dy[0] * rho * C / dt * Told[0];
+            Tnew[0] = rhs / b;
+        }
+        else{
+            std::vector<double> a(ny), b(ny), c(ny), rhs(ny);
+            double coef = dy[0] * dy[0] * rho * C / dt;
+            a[0] = 0.0;
+            b[0] = coef + k;
+            c[0] = -k;
+            rhs[0] = coef * Told[0];
+            for (int iy = 1; iy < ny-1; iy++){
+                coef = dy[iy] * dy[iy] * rho * C / dt;
+                a[iy] = -k;
+                b[iy] = coef + 2*k;
+                c[iy] = -k;
+                rhs[iy] = coef * Told[iy];
+            }
+            coef = dy[ny-1] * dy[ny-1] * rho * C / dt;
+            a[ny-1] = -k;
+            b[ny-1] = coef + 3*k;
+            c[ny-1] = 0.0;
+            rhs[ny-1] = 2*k*Tr + coef*Told[ny-1];
+            auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
+            Tnew = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
+        }
+        new_dike->temperature.row(ix) = Tnew;
+    }
 }

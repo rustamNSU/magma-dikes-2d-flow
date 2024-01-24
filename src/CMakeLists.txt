@@ -10,6 +10,7 @@ add_executable(
     Utils.cpp
     MagmaState.cpp
     Writers.cpp
+    TimestepController.cpp
 )
 target_link_libraries(
     runner
@@ -17,5 +18,9 @@ target_link_libraries(
     nlohmann_json::nlohmann_json
     HighFive
 )
-target_include_directories(runner PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(
+    runner
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 install(TARGETS runner DESTINATION bin)

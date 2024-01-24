@@ -8,8 +8,9 @@ Schedule::Schedule(
     Mesh* mesh,
     const std::vector<double>& qlist,
     const std::vector<double>& tlist,
-    double rho
-) : mesh(mesh), qlist(qlist), tlist(tlist), rho(rho)
+    double rho,
+    double T
+) : mesh(mesh), qlist(qlist), tlist(tlist), rho(rho), T(T)
 {
 
 }

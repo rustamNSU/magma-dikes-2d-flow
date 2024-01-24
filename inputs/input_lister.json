@@ -1,29 +1,23 @@
 {
-    "simID" : 2,
+    "simID" : 31,
     "algorithmProperties": {
         "timestepScheme" : "explicit",
-        "numberOfLayers" : 10,
+        "numberOfLayers" : 1,
         "isDebug": true,
-        "massBalanceMinMobilityWidth" : 1e-10,
-        "cutoffVelocity" : 1e-4
+        "massBalanceMinMobilityWidth" : 1e-10
     },
     "reservoirProperties": {
-        "E": 20e9,
+        "E": 1e9,
         "nu": 0.25,
         "g": 10.0,
         "KIc": 0.0,
         "densityModel" : "constant_density",
-        "temperatureModel" : "constant_gradient",
+        "temperatureModel" : "none",
         "constantDensity" : {
             "rho" : 2300.0
-        },
-        "constantTemperatureGradient" : {
-            "dT" : 35e-3
         }
     },
     "magmaProperties" : {
-        "thermalConductivity" : 0.5,
-        "specificHeat" : 1200,
         "densityModel" : "constant_density",
         "constantDensity" : {
             "rho" : 2000
@@ -38,14 +32,13 @@
         }
     },
     "scheduleProperties": {
-        "Q": [1, 0.0],
-        "t": [0.0, 1000],
-        "rho": 2000.0,
-        "T" : 700
+        "Q": [0.25, 0.0],
+        "t": [0.0, 1000000],
+        "rho": 2000.0
     },
     "timestepProperties": {
         "startTime" : 0.0,
-        "endTime" : 300000.0,
+        "endTime" : 40000.0,
         "dt" : 1.0,
         "outputSaveRate" : 100
     },

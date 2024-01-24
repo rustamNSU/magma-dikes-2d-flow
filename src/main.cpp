@@ -17,6 +17,7 @@ using Eigen::MatrixXd;
 namespace fs = std::filesystem;
 
 
+
 int main(int argc, char ** argv){
     std::string input_path = argv[1];
 	std::ifstream f(input_path);
@@ -30,6 +31,7 @@ int main(int argc, char ** argv){
     fs::create_directories(data_dir);
     fs::copy(input_path, sim_dir / "input.json", fs::copy_options::overwrite_existing);
 
+    TimestepController timestep_controller(input_json["timestepProperties"]);
     Mesh mesh(
         input_json["meshProperties"]["n"],
         input_json["meshProperties"]["xmin"],
@@ -38,44 +40,116 @@ int main(int argc, char ** argv){
     InputData input(input_json, &mesh);
     auto [E, nu, KIc] = input.getElasticityParameters();
     Elasticity elasticity(E, nu, &mesh);
-    DikeData dike(&mesh);
+
+    /* @todo: pls, refactor me */
+    DikeData dike(&mesh, input_json["algorithmProperties"]["numberOfLayers"]);
     Schedule schedule(
         &mesh,
         input_json["scheduleProperties"]["Q"],
         input_json["scheduleProperties"]["t"],
-        input_json["scheduleProperties"]["rho"]
+        input_json["scheduleProperties"]["rho"],
+        input_json["scheduleProperties"]["T"]
     );
-    MagmaState magma_state(input_json, &mesh);
+    MagmaState magma_state(input_json["magmaProperties"], &mesh);
     magma_state.updateDensity(&dike);
     magma_state.updateViscosity(&dike);
     MassBalance mass_balance(
         &input,
+        &timestep_controller,
         &elasticity,
         &mesh,
         &schedule,
         &magma_state
     );
     mass_balance.setAlgorithmProperties(input_json["algorithmProperties"]);
-
-    double start_time = input_json["simulationProperties"]["startTime"];
-    double end_time = input_json["simulationProperties"]["endTime"];
-    double dt = input_json["simulationProperties"]["dt"];
-    double current_time = start_time;
-    int time_iteration = 0;
     DikeDataWriter writer;
-    std::string savepath = (data_dir / "data_").string() + std::to_string(time_iteration) + ".h5";
+    auto [is_save_timestep, save_timestep] = timestep_controller.saveTimestepIteration();
+    std::string savepath = (data_dir / "data_").string() + std::to_string(save_timestep) + ".h5";
     writer.saveData(&dike, savepath);
-    while (current_time < end_time - 1e-6){
+    DikeData old_dike = dike;
+    while (timestep_controller.isFinish()){
+        double current_time = timestep_controller.getCurrentTime();
+		double dt = timestep_controller.getCurrentTimestep();
+		double time_iteration = timestep_controller.getTimeIteration();
         std::cout << time_iteration + 1 << ")    " << int(current_time) << " -> " << int(current_time + dt) << std::endl;
-        DikeData old_dike = dike;
         dike.setTime(current_time + dt);
         mass_balance.setNewTimestepData(&dike, &old_dike);
-        mass_balance.solve();
-
-        current_time += dt;
-        ++time_iteration;
-        savepath = (data_dir / "data_").string() + std::to_string(time_iteration) + ".h5";
-        writer.saveData(&dike, savepath);
+        mass_balance.explicitSolve();
+        timestep_controller.update();
+        auto level = timestep_controller.getLevel();
+        auto [is_save, save_timestep] = timestep_controller.saveTimestepIteration();
+        if (level == 0 && is_save){
+            savepath = (data_dir / "data_").string() + std::to_string(save_timestep) + ".h5";
+            writer.saveData(&dike, savepath);
+        }
+        old_dike = dike;
     }
     return 0;
 }
+
+// int main(int argc, char ** argv){
+//     std::string input_path = argv[1];
+// 	std::ifstream f(input_path);
+//     json input_json = json::parse(f);
+// 	f.close();
+
+//     int simID = input_json["simID"];
+//     auto work_dir = fs::current_path();
+//     auto sim_dir = work_dir / ("simulations/simID" + std::to_string(simID));
+//     auto data_dir = sim_dir / "data";
+//     fs::create_directories(data_dir);
+//     fs::copy(input_path, sim_dir / "input.json", fs::copy_options::overwrite_existing);
+
+//     Mesh mesh(
+//         input_json["meshProperties"]["n"],
+//         input_json["meshProperties"]["xmin"],
+//         input_json["meshProperties"]["xmax"]
+//     );
+//     InputData input(input_json, &mesh);
+//     auto [E, nu, KIc] = input.getElasticityParameters();
+//     Elasticity elasticity(E, nu, &mesh);
+//     DikeData dike(&mesh);
+//     Schedule schedule(
+//         &mesh,
+//         input_json["scheduleProperties"]["Q"],
+//         input_json["scheduleProperties"]["t"],
+//         input_json["scheduleProperties"]["rho"]
+//     );
+//     MagmaState magma_state(input_json, &mesh);
+//     magma_state.updateDensity(&dike);
+//     magma_state.updateViscosity(&dike);
+//     MassBalance mass_balance(
+//         &input,
+//         &elasticity,
+//         &mesh,
+//         &schedule,
+//         &magma_state
+//     );
+//     mass_balance.setAlgorithmProperties(input_json["algorithmProperties"]);
+
+//     double start_time = input_json["simulationProperties"]["startTime"];
+//     double end_time = input_json["simulationProperties"]["endTime"];
+//     double dt = input_json["simulationProperties"]["dt"];
+//     double current_time = start_time;
+//     int time_iteration = 0;
+//     DikeDataWriter writer;
+//     std::string savepath = (data_dir / "data_").string() + std::to_string(time_iteration) + ".h5";
+//     writer.saveData(&dike, savepath);
+//     while (current_time < end_time - 1e-6){
+//         std::cout << time_iteration + 1 << ")    " << int(current_time) << " -> " << int(current_time + dt) << std::endl;
+//         DikeData old_dike = dike;
+//         dike.setTime(current_time + dt);
+//         mass_balance.setNewTimestepData(&dike, &old_dike);
+//         auto solver_output = mass_balance.solve();
+
+//         std::cout << "  MassBalance:\n"
+//                   << "    has converged: " << solver_output.is_converge << "\n"
+//                   << "    iters: " << solver_output.iters << "\n"
+//                   << "    error: " << solver_output.error << std::endl;
+//         current_time += dt;
+//         ++time_iteration;
+//         savepath = (data_dir / "data_").string() + std::to_string(time_iteration) + ".h5";
+//         writer.saveData(&dike, savepath);
+//     }
+//     return 0;
+// }

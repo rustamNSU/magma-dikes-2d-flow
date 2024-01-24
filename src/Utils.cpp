@@ -60,3 +60,45 @@ double Utils::mean_piecewise(
     double result = s / (b - a);
     return result;
 }
+
+
+/**
+ * @brief Tridiagonal matrix algorithm for NxN system. See https://en.wikipedia.org/wiki/Tridiagonal_matrix_algorithm
+ * 
+ * @param a N-vector, a[0] = 0
+ * @param b N-vector
+ * @param c N-vector, c[N-1] = 0
+ * @param rhs N-vector
+ * @return std::vector<double> 
+ */
+std::vector<double> Utils::tridiagonal_solver(
+    const std::vector<double> a,
+    const std::vector<double> b,
+    const std::vector<double> c,
+    const std::vector<double> rhs
+){
+    int n = a.size();
+    if (n != b.size() ||
+        n != c.size() ||
+        n != rhs.size() ||
+        n < 2
+    ){
+        throw std::invalid_argument("received wrong arguments\n");
+    }
+    auto cp = a;
+    auto dp = a;
+    auto x = a;
+    cp[0] = c[0] / b[0];
+    for (int i = 1; i < n - 1; i++){
+        cp[i] = c[i] / (b[i] - a[i] * cp[i-1]);
+    }
+    dp[0] = rhs[0] / b[0];
+    for (int i = 1; i < n; i++){
+        dp[i] = (rhs[i] - a[i] * dp[i-1]) / (b[i] - a[i] * cp[i-1]);
+    }
+    x[n-1] = dp[n-1];
+    for (int i = n-2; i >= 0; i--){
+        x[i] = dp[i] - cp[i] * x[i+1];
+    }
+    return x;
+}
