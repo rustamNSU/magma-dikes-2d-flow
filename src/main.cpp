@@ -60,13 +60,14 @@ int main(int argc, char ** argv){
         double current_time = timestep_controller.getCurrentTime();
 		double dt = timestep_controller.getCurrentTimestep();
 		double time_iteration = timestep_controller.getTimeIteration();
-        std::cout << time_iteration + 1 << ")    " << int(current_time) << " -> " << int(current_time + dt) << std::endl;
+        auto [is_save, save_timestep] = timestep_controller.saveTimestepIteration();
+        std::cout << time_iteration + 1 << ";  " << save_timestep << ") " << int(current_time / 1000) << "e3 s -> " << int((current_time + dt)/1000) << "e3 s." << std::endl;
         dike.setTime(current_time + dt);
         mass_balance.setNewTimestepData(&dike, &old_dike);
         mass_balance.explicitSolve();
         timestep_controller.update();
         auto level = timestep_controller.getLevel();
-        auto [is_save, save_timestep] = timestep_controller.saveTimestepIteration();
+        std::tie(is_save, save_timestep) = timestep_controller.saveTimestepIteration();
         if (level == 0 && is_save){
             savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
             writer.saveData(&dike, savepath);

@@ -3,10 +3,14 @@
 #include <nlohmann/json.hpp>
 #include <tuple>
 #include <initializer_list>
+#include <vector>
 
 class TimestepController{
     private:
         nlohmann::json timestep_properties;
+        std::vector<double> dt_list;
+        std::vector<double> dt_time;
+        int base_dt_indx = 0;
         double start_time;
         double end_time;
         double current_time;
@@ -35,6 +39,7 @@ class TimestepController{
         int getTimestepAttempts() const;
         int getLevel() const;
         void update();
+        void updateBaseTimestep();
         void divideTimestep();
         bool isFinish() const;
         std::tuple<bool, int> saveTimestepIteration() const;
