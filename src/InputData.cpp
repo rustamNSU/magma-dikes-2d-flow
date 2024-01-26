@@ -1,70 +1,69 @@
 #include "InputData.hpp"
-
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
+#include "fstream"
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 
-InputData::InputData(const json& input, Mesh* mesh) : mesh(mesh){
-    this->input = input;
-    int n = mesh->size();
-    E = input["reservoirProperties"]["E"];
-    nu = input["reservoirProperties"]["nu"];
-    g = input["reservoirProperties"]["g"];
-    KIc = input["reservoirProperties"]["KIc"];
-    density_model = input["reservoirProperties"]["densityModel"];
-    reservoir_temperature_model = input["reservoirProperties"]["temperatureModel"];
-    if (density_model == "constant_density"){
-        auto density_properties = input["reservoirProperties"]["constantDensity"];
-        reservoir_density = VectorXd::Constant(n, density_properties["rho"]);
-    }
-    calculateLithostaticPressure();
-    calculateReservoirTemperature();
+InputData::InputData(const json& input) : input(input)
+{
+    sim_id = input["simID"];
+    work_dir = fs::current_path();
+    sim_dir = work_dir / ("simulations/simID" + std::to_string(sim_id));
+    data_dir = sim_dir / "data";
+    reservoir_dir = sim_dir / "reservoir_data";
+    fs::create_directories(data_dir);
+    fs::create_directories(reservoir_dir);
+    saveInputJson();
 }
 
 
-const VectorXd& InputData::getLithostaticPressure() const{
-    return lithostatic_pressure;
+void InputData::saveInputJson(){
+    std::ofstream fout(sim_dir / "input.json", std::ios::trunc);
+    fout << std::setw(4) << input << std::endl;
+    fout.close();
 }
 
 
-const VectorXd& InputData::getReservoirTemperature() const{
-    return reservoir_temperature;
+json InputData::getTimestepProperties() const{
+    return input["timestepProperties"];
 }
 
 
-double InputData::getGravityAcceleration() const{
-    return g;
+json InputData::getMeshProperties() const{
+    return input["meshProperties"];
 }
 
 
-/* return <E, nu, KIc> */
-std::tuple<double, double, double> InputData::getElasticityParameters() const{
-    return std::make_tuple(E, nu, KIc);
+json InputData::getReservoirProperties() const{
+    return input["reservoirProperties"];
 }
 
 
-void InputData::calculateLithostaticPressure(){
-    int n = mesh->size();
-    lithostatic_pressure = VectorXd::Zero(n);
-    auto x = mesh->getx();
-    auto xl = mesh->getxl();
-    auto xr = mesh->getxr();
-    double upper_weight = 0.0;
-    for (int i = n-1; i >= 0; --i){
-        double dx = xr[i] - xl[i];
-        lithostatic_pressure[i] = reservoir_density[i] * g * dx / 2.0 + upper_weight;
-        upper_weight += reservoir_density[i] * g * dx;
-    }
-    return;
+json InputData::getAlgorithmProperties() const{
+    return input["algorithmProperties"];
 }
 
 
-void InputData::calculateReservoirTemperature(){
-    if (reservoir_temperature_model == "constant_gradient"){
-        auto temperature_properties = input["reservoirProperties"]["constantTemperatureGradient"];
-        double dT = temperature_properties["dT"];
-        auto x = mesh->getx();
-        reservoir_temperature = -dT * x;
-    }
+json InputData::getScheduleProperties() const{
+    return input["scheduleProperties"];
+}
+
+
+json InputData::getMagmaProperties() const{
+    return input["magmaProperties"];
+}
+
+
+const fs::path& InputData::getSimDir() const{
+    return sim_dir;
+}
+
+
+const fs::path& InputData::getDataDir() const{
+    return data_dir;
+}
+
+
+const fs::path& InputData::getReservoirDir() const{
+    return reservoir_dir;
 }

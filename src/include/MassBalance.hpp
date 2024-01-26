@@ -9,10 +9,12 @@
 #include "Schedule.hpp"
 #include "MagmaState.hpp"
 #include "TimestepController.hpp"
+#include "ReservoirData.hpp"
 
 class MassBalance{
     private:
         InputData* input;
+        ReservoirData* reservoir;
         TimestepController* timestep_controller;
         Elasticity* elasticity;
         Mesh* mesh;
@@ -38,7 +40,8 @@ class MassBalance{
             Elasticity* elasticity,
             Mesh* mesh,
             Schedule* schedule,
-            MagmaState* magma_state
+            MagmaState* magma_state,
+            ReservoirData* reservoir
         );
 
         void setNewTimestepData(

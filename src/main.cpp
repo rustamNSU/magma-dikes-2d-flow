@@ -1,15 +1,17 @@
-#include "Mesh.hpp"
-#include "Elasticity.hpp"
-#include "DikeData.hpp"
-#include "InputData.hpp"
-#include "MassBalance.hpp"
-#include "Writers.hpp"
 #include <iostream>
 #include <string>
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <iostream>
+
+#include "InputData.hpp"
+#include "Mesh.hpp"
+#include "ReservoirData.hpp"
+#include "Elasticity.hpp"
+#include "DikeData.hpp"
+#include "MassBalance.hpp"
+#include "Writers.hpp"
 
 using json = nlohmann::json;
 using Eigen::VectorXd;
@@ -24,33 +26,19 @@ int main(int argc, char ** argv){
     json input_json = json::parse(f);
 	f.close();
 
-    int simID = input_json["simID"];
-    auto work_dir = fs::current_path();
-    auto sim_dir = work_dir / ("simulations/simID" + std::to_string(simID));
-    auto data_dir = sim_dir / "data";
-    fs::create_directories(data_dir);
-    fs::copy(input_path, sim_dir / "input.json", fs::copy_options::overwrite_existing);
+    InputData input(input_json);
+    TimestepController timestep_controller(input.getTimestepProperties());
+    Mesh mesh(input.getMeshProperties());
+    ReservoirData reservoir(&mesh, input.getReservoirProperties());
 
-    TimestepController timestep_controller(input_json["timestepProperties"]);
-    Mesh mesh(
-        input_json["meshProperties"]["n"],
-        input_json["meshProperties"]["xmin"],
-        input_json["meshProperties"]["xmax"]
-    );
-    InputData input(input_json, &mesh);
-    auto [E, nu, KIc] = input.getElasticityParameters();
+    auto [E, nu, KIc] = reservoir.getElasticityParameters();
     Elasticity elasticity(E, nu, &mesh);
 
     /* @todo: pls, refactor me */
-    DikeData dike(&mesh, input_json["algorithmProperties"]["numberOfLayers"]);
-    Schedule schedule(
-        &mesh,
-        input_json["scheduleProperties"]["Q"],
-        input_json["scheduleProperties"]["t"],
-        input_json["scheduleProperties"]["rho"],
-        input_json["scheduleProperties"]["T"]
-    );
-    MagmaState magma_state(input_json["magmaProperties"], &mesh);
+    auto algorithm_properties = input.getAlgorithmProperties();
+    DikeData dike(&mesh, algorithm_properties["numberOfLayers"]);
+    Schedule schedule(&mesh, input.getScheduleProperties());
+    MagmaState magma_state(&mesh, input.getMagmaProperties());
     magma_state.updateDensity(&dike);
     magma_state.updateViscosity(&dike);
     MassBalance mass_balance(
@@ -59,12 +47,13 @@ int main(int argc, char ** argv){
         &elasticity,
         &mesh,
         &schedule,
-        &magma_state
+        &magma_state,
+        &reservoir
     );
-    mass_balance.setAlgorithmProperties(input_json["algorithmProperties"]);
+    mass_balance.setAlgorithmProperties(input.getAlgorithmProperties());
     DikeDataWriter writer;
     auto [is_save_timestep, save_timestep] = timestep_controller.saveTimestepIteration();
-    std::string savepath = (data_dir / "data_").string() + std::to_string(save_timestep) + ".h5";
+    std::string savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
     writer.saveData(&dike, savepath);
     DikeData old_dike = dike;
     while (timestep_controller.isFinish()){
@@ -79,7 +68,7 @@ int main(int argc, char ** argv){
         auto level = timestep_controller.getLevel();
         auto [is_save, save_timestep] = timestep_controller.saveTimestepIteration();
         if (level == 0 && is_save){
-            savepath = (data_dir / "data_").string() + std::to_string(save_timestep) + ".h5";
+            savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
             writer.saveData(&dike, savepath);
         }
         old_dike = dike;

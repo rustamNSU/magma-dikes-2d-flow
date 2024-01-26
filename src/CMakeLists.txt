@@ -11,6 +11,7 @@ add_executable(
     MagmaState.cpp
     Writers.cpp
     TimestepController.cpp
+    ReservoirData.cpp
 )
 target_link_libraries(
     runner

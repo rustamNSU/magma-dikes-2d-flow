@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <tuple>
+#include <nlohmann/json.hpp>
 
 class Mesh{
     private:
@@ -13,8 +14,8 @@ class Mesh{
         double xmax;
         
     public:
-        Mesh(int n, double xmin, double xmax);
-
+        Mesh(const nlohmann::json& properties);
+        
         const Eigen::VectorXd& getx() const;
         const Eigen::VectorXd& getxl() const;
         const Eigen::VectorXd& getxr() const;

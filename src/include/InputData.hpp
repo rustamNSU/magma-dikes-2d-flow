@@ -3,33 +3,33 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <tuple>
+#include <filesystem>
 #include "Mesh.hpp"
 
 
 class InputData{
     private:
+        int sim_id;
         nlohmann::json input;
-        /* Surrounding rock properties */
-        double E;
-        double nu;
-        double KIc;
-        double g = 9.81;
-        std::string density_model;
-        std::string reservoir_temperature_model;
-        
-        Mesh* mesh;
-        Eigen::VectorXd reservoir_density;
-        Eigen::VectorXd lithostatic_pressure;
-        Eigen::VectorXd reservoir_temperature;
+        std::filesystem::path work_dir;
+        std::filesystem::path sim_dir;
+        std::filesystem::path data_dir;
+        std::filesystem::path reservoir_dir;
     
     public:
-        InputData(const nlohmann::json& input, Mesh* mesh);
-        const Eigen::VectorXd& getLithostaticPressure() const;
-        const Eigen::VectorXd& getReservoirTemperature() const;
-        double getGravityAcceleration() const;
+        InputData(const nlohmann::json& input);
+    
+    private:
+        void saveInputJson();
 
-        /* return <E, nu, KIc> */
-        std::tuple<double, double, double> getElasticityParameters() const;
-        void calculateLithostaticPressure();
-        void calculateReservoirTemperature();
+    public:
+        nlohmann::json getTimestepProperties() const;
+        nlohmann::json getMeshProperties() const;
+        nlohmann::json getReservoirProperties() const;
+        nlohmann::json getAlgorithmProperties() const;
+        nlohmann::json getScheduleProperties() const;
+        nlohmann::json getMagmaProperties() const;
+        const std::filesystem::path& getSimDir() const;
+        const std::filesystem::path& getDataDir() const;
+        const std::filesystem::path& getReservoirDir() const;
 };

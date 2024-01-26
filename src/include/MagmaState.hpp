@@ -8,7 +8,7 @@
 
 class MagmaState{
     private:
-        nlohmann::json magma_properties;
+        nlohmann::json properties;
         std::string density_model = "constant_density";
         std::string viscosity_model = "constant_viscosity";
         double rho;
@@ -18,7 +18,7 @@ class MagmaState{
         Mesh* mesh;
     
     public:
-        MagmaState(const nlohmann::json& magma_properties, Mesh* mesh);
+        MagmaState(Mesh* mesh, nlohmann::json&& properties);
         void updateDensity(DikeData* dike) const;
         void updateViscosity(DikeData* dike) const;
         double getThermalConductivity() const;

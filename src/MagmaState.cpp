@@ -5,23 +5,26 @@ using Eigen::VectorXd;
 using json = nlohmann::json;
 
 
-MagmaState::MagmaState(const json& magma_properties, Mesh* mesh) : 
-    magma_properties(magma_properties),
-    mesh(mesh)
+MagmaState::MagmaState(Mesh* mesh, json&& properties) : 
+    mesh(mesh),
+    properties(properties)
 {
-    density_model = std::string(magma_properties["densityModel"]);
-    viscosity_model = std::string(magma_properties["viscosityModel"]);
-    thermal_conductivity = magma_properties["thermalConductivity"];
-    specific_heat = magma_properties["specificHeat"];
+    density_model = this->properties["densityModel"].get<std::string>();
+    viscosity_model = this->properties["viscosityModel"].get<std::string>();
+    thermal_conductivity = this->properties["thermalConductivity"];
+    specific_heat = this->properties["specificHeatCapacity"];
 
     if (density_model == "constant_density"){
-        rho = magma_properties["constantDensity"]["rho"];
+        rho = this->properties["constantDensity"]["rho"];
     }
     if (viscosity_model == "constant_viscosity"){
-        viscosity_properties = magma_properties["constantViscosity"];
+        viscosity_properties = this->properties["constantViscosity"];
     }
     else if (viscosity_model == "linear_viscosity"){
-        viscosity_properties = magma_properties["linearViscosity"];
+        viscosity_properties = this->properties["linearViscosity"];
+    }
+    else if (viscosity_model == "VFT_constant_viscosity"){
+        viscosity_properties = this->properties["vftConstantViscosity"];
     }
 }
 
@@ -51,9 +54,10 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         double A = viscosity_properties["A"];
         double B = viscosity_properties["B"];
         double C = viscosity_properties["C"];
-        double mu_max = viscosity_properties["max_viscosity"];
+        double mu_max = viscosity_properties["muMaxLimit"];
+        double K = 273.15;
         auto func = [=](double T){
-            double mu = T > C ? VFT_constant_viscosity(T, A, B, C) : mu_max; 
+            double mu = T + K > C ? VFT_constant_viscosity(T + K, A, B, C) : mu_max; 
             return std::min(mu, mu_max);
         };
         dike->viscosity = dike->temperature.unaryExpr(func);

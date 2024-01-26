@@ -4,9 +4,10 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 
-Mesh::Mesh(int n, double xmin, double xmax) :
-    n(n), xmin(xmin), xmax(xmax)
-{
+Mesh::Mesh(const nlohmann::json& properties){
+    n = properties["n"];
+    xmin = properties["xmin"];
+    xmax = properties["xmax"];
     dx = (xmax - xmin) / n;
     xl = VectorXd::LinSpaced(n, xmin, xmax-dx);
     xr = VectorXd::LinSpaced(n, xmin+dx, xmax);

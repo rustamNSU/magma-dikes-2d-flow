@@ -1,26 +1,22 @@
 #pragma once
 #include <vector>
+#include <nlohmann/json.hpp>
 #include "Mesh.hpp"
-
-class MassBalance;
 
 class Schedule{
     private:
         Mesh* mesh;
+        nlohmann::json properties;
         std::vector<double> qlist;
         std::vector<double> tlist;
         double rho;
         double T;
+        void parseProperties();
 
     public:
-        Schedule(
-            Mesh* mesh,
-            const std::vector<double>& qlist,
-            const std::vector<double>& tlist,
-            double rho,
-            double T = 0
-        );
+        Schedule(Mesh* mesh, nlohmann::json&& properties);
 
         double getMassRate(double t1, double t2) const;
-        friend class MassBalance;
+        double getMagmaChamberTemperature() const;
+        double getMagmaChamberDensity() const;
 };

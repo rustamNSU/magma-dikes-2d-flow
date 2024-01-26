@@ -18,14 +18,16 @@ MassBalance::MassBalance(
     Elasticity* elasticity,
     Mesh* mesh,
     Schedule* schedule,
-    MagmaState* magma_state
+    MagmaState* magma_state,
+    ReservoirData* reservoir
 ) : 
     input(input),
     timestep_controller(timestep_controller),
     elasticity(elasticity),
     mesh(mesh),
     schedule(schedule),
-    magma_state(magma_state)
+    magma_state(magma_state),
+    reservoir(reservoir)
 {
 }
 
@@ -49,7 +51,7 @@ void MassBalance::explicitSolve(){
     calculateMobility();
     auto& xc = mesh->getx();
     auto dx = mesh->getdx();
-    auto g = input->getGravityAcceleration();
+    auto g = reservoir->getGravityAcceleration();
     VectorXd dpdx = VectorXd::Zero(nx+1);
     for (int ix = 1; ix < nx; ix++){
         dpdx[ix] = (new_dike->pressure[ix] - new_dike->pressure[ix-1]) / (xc[ix] - xc[ix-1]) + 
@@ -85,7 +87,7 @@ void MassBalance::explicitSolve(){
 
 void MassBalance::updatePressure(){
     new_dike->overpressure = elasticity->getMatrix() * new_dike->width;
-    new_dike->pressure = new_dike->overpressure + input->getLithostaticPressure();
+    new_dike->pressure = new_dike->overpressure + reservoir->getLithostaticPressure();
     return;
 }
 // MassBalance::SolverOutput MassBalance::solve(){
@@ -219,8 +221,7 @@ void MassBalance::updateTemperature(){
     int nx = mesh->size();
     int ny = new_dike->ny;
 
-    /* @todo: pls, refactor me */
-    new_dike->temperature.row(0).fill(schedule->T);
+    new_dike->temperature.row(0).fill(schedule->getMagmaChamberTemperature());
     auto Tconv = new_dike->temperature;
     for (int ix = 1; ix < nx; ix++){
         VectorXd Tin = old_dike->temperature.row(ix-1);
@@ -296,43 +297,87 @@ void MassBalance::updateTemperature(){
     }
     new_dike->temperature = Tconv;
 
-    double rho = schedule->rho;
-    double C = magma_state->getSpecificHeat();
-    double k = magma_state->getThermalConductivity();
-    const auto& reservoir_temperature = input->getReservoirTemperature();
+    double rhom = schedule->getMagmaChamberDensity();
+    double Cm = magma_state->getSpecificHeat();
+    double km = magma_state->getThermalConductivity();
+    double Cr = reservoir->C;
+    double kr = reservoir->k;
+    auto reservoir_boundary_temperature = reservoir->getInitialTemperature();
+    auto reservoir_temperature = reservoir->temperature;
     for (int ix = 1; ix < nx; ix++){
         if (new_dike->width[ix] < MIN_MOBILITY_WIDTH) continue;
-        VectorXd dy = (new_dike->yb(ix, Eigen::seq(1, ny)) - new_dike->yb(ix, Eigen::seq(0, ny-1)));
+        VectorXd yb = new_dike->yb.row(ix);
+        VectorXd yc = new_dike->yc.row(ix);
+        VectorXd dy = yb(Eigen::seq(1, ny)) - yb(Eigen::seq(0, ny-1));
         VectorXd Told = Tconv.row(ix);
         VectorXd Tnew = Told;
-        double Tr = reservoir_temperature[ix];
+
+        int nr = reservoir->ny;
+        double Tinf = reservoir_boundary_temperature[ix];
+        VectorXd Trold = reservoir_temperature.row(ix);
+        VectorXd Trnew = Trold;
+        const auto& ycr = reservoir->yc;
+        const auto& ybr = reservoir->yb;
+        const auto& dyr = reservoir->dy;
+        double rhor = reservoir->density[ix];
+
+        std::vector<double> a(ny+nr), b(ny+nr), c(ny+nr), rhs(ny+nr);
         if (ny == 1){
-            double b = dy[0] * dy[0] * rho * C / dt + 2 * k;
-            double rhs = 2*k*Tr + dy[0] * dy[0] * rho * C / dt * Told[0];
-            Tnew[0] = rhs / b;
+            double coef = dy[0] * dy[0] * rhom * Cm / dt;
+            double ktop = km*kr*dy[0] / (km*ycr[0] + kr*(yb[1] - yc[0]));
+            a[0] = 0.0;
+            b[0] = coef + ktop;
+            c[0] = -ktop;
+            rhs[0] = coef * Told[0];
         }
         else{
-            std::vector<double> a(ny), b(ny), c(ny), rhs(ny);
-            double coef = dy[0] * dy[0] * rho * C / dt;
+            double coef = dy[0] * dy[0] * rhom * Cm / dt;
             a[0] = 0.0;
-            b[0] = coef + k;
-            c[0] = -k;
+            b[0] = coef + km;
+            c[0] = -km;
             rhs[0] = coef * Told[0];
             for (int iy = 1; iy < ny-1; iy++){
-                coef = dy[iy] * dy[iy] * rho * C / dt;
-                a[iy] = -k;
-                b[iy] = coef + 2*k;
-                c[iy] = -k;
+                coef = dy[iy] * dy[iy] * rhom * Cm / dt;
+                a[iy] = -km;
+                b[iy] = coef + 2*km;
+                c[iy] = -km;
                 rhs[iy] = coef * Told[iy];
             }
-            coef = dy[ny-1] * dy[ny-1] * rho * C / dt;
-            a[ny-1] = -k;
-            b[ny-1] = coef + 3*k;
-            c[ny-1] = 0.0;
-            rhs[ny-1] = 2*k*Tr + coef*Told[ny-1];
-            auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
-            Tnew = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
+            coef = dy[ny-1] * dy[ny-1] * rhom * Cm / dt;
+            double coef2 = km*kr*dy[ny-1] / (km*ycr[0] + kr*(yb[ny] - yc[ny-1]));
+            a[ny-1] = -km;
+            b[ny-1] = coef + km + coef2;
+            c[ny-1] = -coef2;
+            rhs[ny-1] = coef*Told[ny-1];
         }
+
+        double coef = dyr[0] * dyr[0] * rhor * Cr / dt;
+        double kbot = km*kr*dyr[0] / (km*ycr[0] + kr*(yb[ny] - yc[ny-1]));
+        double ktop = kr * dyr[0] / (ycr[1] - ycr[0]);
+        a[ny] = -kbot;
+        b[ny] = coef + ktop + kbot;
+        c[ny] = -ktop;
+        rhs[ny] = coef * Trold[0];
+        for (int ir = 1; ir < nr - 1; ir++){
+            coef = dyr[ir] * dyr[ir] * rhor * Cr / dt;
+            kbot = kr * dyr[ir] / (ycr[ir] - ycr[ir-1]);
+            ktop = kr * dyr[ir] / (ycr[ir+1] - ycr[ir]);
+            a[ny+ir] = -kbot;
+            b[ny+ir] = coef + ktop + kbot;
+            c[ny+ir] = -ktop;
+            rhs[ny+ir] = coef * Trold[ir];
+        }
+        coef = dyr[nr-1] * dyr[nr-1] * rhor * Cr / dt;
+        kbot = kr * dyr[nr-1] / (ycr[nr-1] - ycr[nr-2]);
+        ktop = kr * dyr[nr-1] / (ybr[nr] - ycr[nr-1]);
+        a[ny+nr-1] = -kbot;
+        b[ny+nr-1] = coef + ktop + kbot;
+        c[ny+nr-1] = 0.0;
+        rhs[ny+nr-1] = coef * Trold[nr-1] + ktop * Tinf;
+        auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
+        Tnew = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
+        Trnew = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data() + ny, nr);
         new_dike->temperature.row(ix) = Tnew;
+        reservoir->temperature.row(ix) = Trnew;
     }
 }
