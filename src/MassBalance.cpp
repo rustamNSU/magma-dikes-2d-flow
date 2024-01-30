@@ -68,7 +68,7 @@ MassBalance::explicitSolverOutput MassBalance::explicitSolve(){
         double Min = new_dike->width[ix-1] * dx;
         if (Mf > CFL_FACTOR * Min){
             output.cfl_condition = false;
-            return output;
+            output.ratio = std::max(int(std::ceil(Mf / (CFL_FACTOR * Min))), output.ratio);
         }
         if (Mf > 2 * MIN_MOBILITY_WIDTH * dx){
             new_dike->face_flux.row(ix) = Qf * new_dike->mobility.row(ix-1) / new_dike->total_mobility[ix-1];
@@ -77,6 +77,9 @@ MassBalance::explicitSolverOutput MassBalance::explicitSolve(){
             new_dike->total_face_flux[ix] = 0.0;
             new_dike->face_flux.row(ix).fill(0.0);
         }
+    }
+    if (output.cfl_condition == false){
+        return output;
     }
     VectorXd width = VectorXd::Zero(nx);
     VectorXd Qin = VectorXd::Zero(nx);
@@ -88,7 +91,6 @@ MassBalance::explicitSolverOutput MassBalance::explicitSolve(){
     }
     new_dike->setWidth(width);
     updateTemperature();
-    output.cfl_condition = true;
     return output;
 }
 

@@ -40,7 +40,7 @@ class TimestepController{
         int getLevel() const;
         void update();
         void updateBaseTimestep();
-        void divideTimestep();
+        void divideTimestep(int steps = 2);
         bool isFinish() const;
         std::tuple<bool, int> saveTimestepIteration() const;
         double getRelaxationParameter() const;

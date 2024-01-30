@@ -88,17 +88,18 @@ void TimestepController::update(){
 }
 
 
-void TimestepController::divideTimestep(){
+void TimestepController::divideTimestep(int steps){
     if (!dt_stack.empty()){
         dt_stack.pop();
         level_stack.pop();
     }
-    current_dt /= 2;
+    steps = std::max(2, steps);
+    current_dt /= steps;
     level += 1;
-    dt_stack.push(current_dt);
-    dt_stack.push(current_dt);
-    level_stack.push(level);
-    level_stack.push(level);
+    for (int i = 0; i < steps; i++){
+        dt_stack.push(current_dt);
+        level_stack.push(level);
+    }
     attempts += 1;
     nonlinear_iteration = 0;
     return;

@@ -36,7 +36,8 @@ class MassBalance{
 
     public:
         struct explicitSolverOutput{
-            bool cfl_condition = false;
+            bool cfl_condition = true;
+            int ratio = 1;
         };
         MassBalance(
             InputData* input,

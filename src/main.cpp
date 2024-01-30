@@ -66,7 +66,7 @@ int main(int argc, char ** argv){
         mass_balance.setNewTimestepData(&dike, &old_dike);
         auto output = mass_balance.explicitSolve();
         if (output.cfl_condition == false){
-            timestep_controller.divideTimestep();
+            timestep_controller.divideTimestep(output.ratio);
             continue;
         }
         else{
