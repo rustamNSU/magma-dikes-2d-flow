@@ -1,0 +1,1 @@
+1. Mixed explicit lubrication + implicit energy balance equation scheme (see simIDS = [5, 6, 7])

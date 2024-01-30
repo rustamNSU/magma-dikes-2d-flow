@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 import itertools
 from scipy.interpolate import RectBivariateSpline
-from src.core.fixed_channel import FixedChannel
+from srcpython.core.fixed_channel import FixedChannel
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator

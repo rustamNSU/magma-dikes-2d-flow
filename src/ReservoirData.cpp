@@ -103,8 +103,8 @@ void ReservoirData::calculateReservoirTemperature(){
         double Tmin = temperature_properties["minimum_temperature"];
 
         auto x = mesh->getx();
-        initial_temperature = -dT * x;
-        initial_temperature.unaryExpr([&](double x){
+        Eigen::VectorXd tmpT = -dT * x;
+        initial_temperature = tmpT.unaryExpr([&](double x){
             if (x > Tmax){
                 return Tmax;
             }

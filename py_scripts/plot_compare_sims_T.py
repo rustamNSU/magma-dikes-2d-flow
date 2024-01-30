@@ -3,6 +3,7 @@ import h5py
 import os
 import numpy as np
 import matplotlib
+matplotlib.use('MacOSX')
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from scipy import interpolate
@@ -26,7 +27,7 @@ def createYData(Y):
 
 DEFAULT_SIZE = 10
 LEGEND_SIZE = 10
-SMALL_SIZE = 8
+SMALL_SIZE = 10
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 rc('text', usetex=True)
@@ -43,14 +44,30 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
-# simIDs = [20, 22, 23]
-simIDs = [2]
-wlim = (0, 0.5)
-plim = (0, 500)
-Tlim = (400, 700)
-xlim = (-20000, -10000)
+# simIDs = [22, 19, 15, 16, 17]
+# legends = ["CFL = 0.0001", "CFL = 0.001", "CFL = 0.002", "CFL = 0.005", "CFL = 0.05"]
+# timesteps = list(range(0, 1001, 10))
 
+# simIDs = [19, 20, 21]
+# legends = ["50 m.", "100 m", "200 m."]
+# timesteps = list(range(0, 1001, 10))
+
+# simIDs = [31, 30]
+# legends = ["CFL = 0.0001", "CFL = 0.001"]
+# timesteps = list(range(0, 1001, 10))
+
+# simIDs = [30, 32, 33, 34, 35]
+# legends = ["1 layer", "2 layers", "4 layers", "8 layers", "30 layers"]
+# timesteps = list(range(0, 1001, 10))
+
+simIDs = [40, 41]
+legends = ["1 layer", "8 layers"]
 timesteps = list(range(0, 3001, 10))
+wlim = (0, 2)
+plim = (0, 700)
+Tlim = (600, 860)
+xlim = (-30000, 0)
+
 xc = []
 dx = []
 width = []
@@ -58,6 +75,8 @@ pressure = []
 time = []
 Tmiddle = []
 Tboundary = []
+faceV = []
+faceFlux = []
 ny = []
 for simID in simIDs:
     xx = []
@@ -67,6 +86,8 @@ for simID in simIDs:
     tt = []
     TTm = []
     TTb = []
+    faceVi = []
+    faceFluxi = []
     for t in timesteps:
         filepath = sim_dir + "/simID{}/data/data_{}.h5".format(simID, t)
         data = h5py.File(filepath, 'r')
@@ -80,6 +101,7 @@ for simID in simIDs:
         TT = np.array(data["temperature"])
         TTm.append(TT[:, 0])
         TTb.append(TT[:, nyy-1])
+        # faceVi.append()
     xc.append(xx)
     dx.append(dxx)
     width.append(ww)
@@ -89,7 +111,7 @@ for simID in simIDs:
     Tboundary.append(TTb)
     ny.append(nyy)
 
-fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 8))
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 6))
 fig.subplots_adjust(bottom=0.2)
 ax1.set_xlabel("x")
 ax1.set_ylabel("width [m]")
@@ -102,20 +124,20 @@ lws = []
 lps = []
 lTms = []
 lTbs = []
-colors = ['b', 'r', 'g']
+colors = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628']
 for i in range(len(simIDs)):
     simID = simIDs[i]
-    X = createXData(xc[i][timesteps[0]], dx[i][timesteps[0]])
-    W = createYData(width[i][timesteps[0]])
-    P = createYData(pressure[i][timesteps[0]])
-    Tm = createYData(Tmiddle[i][timesteps[0]])
-    Tb = createYData(Tboundary[i][timesteps[0]])
+    X = createXData(xc[i][0], dx[i][0])
+    W = createYData(width[i][0])
+    P = createYData(pressure[i][0])
+    Tm = createYData(Tmiddle[i][0])
+    Tb = createYData(Tboundary[i][0])
     Ny = ny[i]
     
-    lw, = ax1.plot(X, W, linewidth=2, label="simID {}, ny={}".format(simID, Ny), linestyle='-', color=colors[i])
-    lp, = ax2.plot(X, P, linewidth=2, label="simID {}, ny={}".format(simID, Ny), linestyle='-', color=colors[i])
-    lTm, = ax3.plot(X, Tm, linewidth=2, label="simID {}, mid., ny={}".format(simID, Ny), linestyle='-', color=colors[i])
-    lTb, = ax3.plot(X, Tb, linewidth=2, label="simID {}, bound., ny={}".format(simID, Ny), linestyle='--', color=colors[i])
+    lw, = ax1.plot(X, W, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
+    lp, = ax2.plot(X, P, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
+    lTm, = ax3.plot(X, Tm, linewidth=2, label=legends[i] + ", mid.", linestyle='-', color=colors[i])
+    lTb, = ax3.plot(X, Tb, linewidth=2, label=legends[i] + ", bound.", linestyle='--', color=colors[i])
     lws.append(lw)
     lps.append(lp)
     lTms.append(lTm)
@@ -136,7 +158,7 @@ ax3.set_ylim(Tlim)
 ax3.grid()
 ax3.legend().set_draggable(True)
 
-ax_iter_slider = fig.add_axes([0.25, 0.1, 0.65, 0.03])
+ax_iter_slider = fig.add_axes([0.25, 0.05, 0.65, 0.03])
 iter_slider = Slider(
     ax=ax_iter_slider, 
     label='timesteps', 
@@ -180,5 +202,5 @@ def iter_update(val):
 iter_slider.on_changed(iter_update)
 # xlim_slider.on_changed(xlim_update)
 # fig.tight_layout()
-fig.subplots_adjust(left=0.1, bottom=0.25, right=0.9, top=0.98, wspace=0.25, hspace=0.3)
+# fig.subplots_adjust(left=0.1, bottom=0.25, right=0.9, top=0.98, wspace=0.25, hspace=0.3)
 plt.show()
