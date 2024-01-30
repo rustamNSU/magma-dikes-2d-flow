@@ -32,8 +32,12 @@ class MassBalance{
         double TOLERANCE = 1e-4;
         double MIN_MOBILITY_WIDTH = 1e-10;
         double CUTOFF_VELOCITY = 1e-4;
+        double CFL_FACTOR = 0.1;
 
     public:
+        struct explicitSolverOutput{
+            bool cfl_condition = false;
+        };
         MassBalance(
             InputData* input,
             TimestepController* timestep_controller,
@@ -50,7 +54,7 @@ class MassBalance{
         );
 
         void setAlgorithmProperties(const nlohmann::json& properties);
-        void explicitSolve();
+        explicitSolverOutput explicitSolve();
         void updatePressure();
         void updateTemperature();
         // SolverOutput solve();

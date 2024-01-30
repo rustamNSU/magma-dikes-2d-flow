@@ -64,15 +64,21 @@ int main(int argc, char ** argv){
         std::cout << time_iteration + 1 << ";  " << save_timestep << ") " << int(current_time / 1000) << "e3 s -> " << int((current_time + dt)/1000) << "e3 s." << std::endl;
         dike.setTime(current_time + dt);
         mass_balance.setNewTimestepData(&dike, &old_dike);
-        mass_balance.explicitSolve();
-        timestep_controller.update();
-        auto level = timestep_controller.getLevel();
-        std::tie(is_save, save_timestep) = timestep_controller.saveTimestepIteration();
-        if (level == 0 && is_save){
-            savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
-            writer.saveData(&dike, savepath);
+        auto output = mass_balance.explicitSolve();
+        if (output.cfl_condition == false){
+            timestep_controller.divideTimestep();
+            continue;
         }
-        old_dike = dike;
+        else{
+            timestep_controller.update();
+            auto level = timestep_controller.getLevel();
+            std::tie(is_save, save_timestep) = timestep_controller.saveTimestepIteration();
+            if (level == 0 && is_save){
+                savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
+                writer.saveData(&dike, savepath);
+            }
+            old_dike = dike;
+        }
     }
     return 0;
 }

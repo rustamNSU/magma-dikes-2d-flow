@@ -138,7 +138,7 @@ void TimestepController::updateBaseTimestep(){
         return;
     }
     else{
-        if (std::abs(dt_time[base_dt_indx+1] - current_time) < 1e-6){
+        if (std::abs(dt_time[base_dt_indx+1] - current_time) < 0.1 * base_dt){
             base_dt_indx++;
             base_dt = dt_list[base_dt_indx];
             current_dt = base_dt;

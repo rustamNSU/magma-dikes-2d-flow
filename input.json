@@ -1,14 +1,15 @@
 {
-    "simID" : 4,
+    "simID" : 22,
     "algorithmProperties": {
         "timestepScheme" : "explicit",
-        "numberOfLayers" : 10,
+        "numberOfLayers" : 1,
         "isDebug": true,
         "massBalanceMinMobilityWidth" : 1e-10,
-        "cutoffVelocity" : 1e-4
+        "cutoffVelocity" : 1e-5,
+        "lubricationCflFactor" : 0.01
     },
     "reservoirProperties": {
-        "E": 20e9,
+        "E": 50e9,
         "nu": 0.25,
         "g": 10.0,
         "KIc": 0.0,
@@ -38,8 +39,8 @@
         "viscosityModel" : "VFT_constant_viscosity",
         "vftConstantViscosity" : {
             "A" : -4.55,
-            "B" : 11495,
-            "C" : 342,
+            "B" : 11196,
+            "C" : 93.4,
             "muMaxLimit" : 1e10
         },
         "constantViscosity" : {
@@ -51,16 +52,17 @@
         }
     },
     "scheduleProperties": {
-        "Q": [1, 0.0],
-        "t": [0.0, 10000],
+        "Q": [1],
+        "t": [0.0],
         "rho": 2000.0,
         "T" : 1000
     },
     "timestepProperties": {
         "startTime" : 0.0,
-        "endTime" : 200000.0,
-        "dt" : 0.2,
-        "outputSaveRate" : 500
+        "endTime" : 1000.0,
+        "dtList" : [1.0],
+        "dtTime" : [0.0],
+        "outputSaveRate" : 1
     },
     "meshProperties": {
         "n" : 200,

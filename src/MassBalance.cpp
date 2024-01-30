@@ -42,7 +42,8 @@ void MassBalance::setNewTimestepData(
 }
 
 
-void MassBalance::explicitSolve(){
+MassBalance::explicitSolverOutput MassBalance::explicitSolve(){
+    explicitSolverOutput output;
     auto nx = mesh->size();
     double current_time = timestep_controller->getCurrentTime();
     double dt = timestep_controller->getCurrentTimestep();
@@ -62,9 +63,15 @@ void MassBalance::explicitSolve(){
     }
     new_dike->total_face_flux = new_dike->total_face_mobility.cwiseProduct(dpdx);
     for (int ix = 1; ix < nx; ++ix){
-        double Qi = new_dike->total_face_flux[ix];
-        if (Qi > 10 * MIN_MOBILITY_WIDTH * dx / dt){
-            new_dike->face_flux.row(ix) = Qi * new_dike->mobility.row(ix-1) / new_dike->total_mobility[ix-1];
+        double Qf = new_dike->total_face_flux[ix];
+        double Mf = Qf * dt;
+        double Min = new_dike->width[ix-1] * dx;
+        if (Mf > CFL_FACTOR * Min){
+            output.cfl_condition = false;
+            return output;
+        }
+        if (Mf > 2 * MIN_MOBILITY_WIDTH * dx){
+            new_dike->face_flux.row(ix) = Qf * new_dike->mobility.row(ix-1) / new_dike->total_mobility[ix-1];
         }
         else{
             new_dike->total_face_flux[ix] = 0.0;
@@ -81,7 +88,8 @@ void MassBalance::explicitSolve(){
     }
     new_dike->setWidth(width);
     updateTemperature();
-    return;
+    output.cfl_condition = true;
+    return output;
 }
 
 
@@ -172,6 +180,7 @@ void MassBalance::setAlgorithmProperties(const json& properties){
     if (TIMESTEP_SCHEME == "explicit"){
         MIN_MOBILITY_WIDTH = properties["massBalanceMinMobilityWidth"];
         CUTOFF_VELOCITY = properties["cutoffVelocity"];
+        CFL_FACTOR = properties["lubricationCflFactor"];
     }
     // MAX_ITERATIONS = properties["massBalanceMaxIterations"];
     // MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
