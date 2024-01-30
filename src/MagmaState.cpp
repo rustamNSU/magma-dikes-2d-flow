@@ -23,7 +23,7 @@ MagmaState::MagmaState(Mesh* mesh, json&& properties) :
     else if (viscosity_model == "linear_viscosity"){
         viscosity_properties = this->properties["linearViscosity"];
     }
-    else if (viscosity_model == "VFT_constant_viscosity"){
+    else if (viscosity_model == "VFT_constant_viscosity" || "average_VFT_constant_viscosity"){
         viscosity_properties = this->properties["vftConstantViscosity"];
     }
 }
@@ -61,6 +61,24 @@ void MagmaState::updateViscosity(DikeData* dike) const{
             return std::min(mu, mu_max);
         };
         dike->viscosity = dike->temperature.unaryExpr(func);
+    }
+    else if (viscosity_model == "average_VFT_constant_viscosity"){
+        int nx = mesh->size();
+        int ny = dike->getLayersNumber();
+        double A = viscosity_properties["A"];
+        double B = viscosity_properties["B"];
+        double C = viscosity_properties["C"];
+        double mu_max = viscosity_properties["muMaxLimit"];
+        double K = 273.15;
+        auto func = [=](double T){
+            double mu = T + K > C ? VFT_constant_viscosity(T + K, A, B, C) : mu_max; 
+            return std::min(mu, mu_max);
+        };
+        MatrixXd Tavg = dike->temperature;
+        for (int ix = 0; ix < nx; ix++){
+            Tavg.row(ix).fill(dike->temperature.row(ix).mean());
+        }
+        dike->viscosity = Tavg.unaryExpr(func);
     }
 }
 
