@@ -25,9 +25,9 @@ def createYData(Y):
     return np.array(yy)
 
 
-DEFAULT_SIZE = 10
-LEGEND_SIZE = 10
-SMALL_SIZE = 10
+DEFAULT_SIZE = 8
+LEGEND_SIZE = 8
+SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 rc('text', usetex=True)
@@ -44,51 +44,16 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
-# simIDs = [22, 19, 17, 16, 15]
-# legends = ["CFL = 0.0001", "CFL = 0.001", "CFL = 0.002", "CFL = 0.005", "CFL = 0.01"]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 500)
-# Tlim = (400, 1000)
-# xlim = (-20000, 0)
+# simIDs = [1, 2, 3]
+# simIDs = [7, 5, 4, 6]
+# simIDs = [10, 11, 12]
+simIDs = [20]
+wlim = (0, 3)
+plim = (0, 500)
+Tlim = (600, 1100)
+xlim = (-20000, 0)
 
-# simIDs = [19, 20, 21]
-# legends = ["50 m.", "100 m", "200 m."]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 500)
-# Tlim = (400, 1000)
-# xlim = (-20000, 0)
-
-# simIDs = [31, 30]
-# legends = ["CFL = 0.0001", "CFL = 0.001"]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 700)
-# Tlim = (400, 1000)
-# xlim = (-30000, 0)
-
-# simIDs = [30, 32, 33, 34, 35]
-# legends = ["1 layer", "2 layers", "4 layers", "8 layers", "30 layers"]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 700)
-# Tlim = (400, 1000)
-# xlim = (-30000, 0)
-
-# simIDs = [40, 41]
-# legends = ["1 layer", "8 layers"]
-# timesteps = list(range(0, 3001, 10))
-
-simIDs = [35, 36]
-legends = ["30 layers", "30 layers, average"]
-timesteps = list(range(0, 1001, 10))
-wlim = (0, 2)
-plim = (0, 700)
-Tlim = (600, 860)
-xlim = (-30000, 0)
-
-
+timesteps = list(range(3500, 3701, 1))
 xc = []
 dx = []
 width = []
@@ -96,8 +61,6 @@ pressure = []
 time = []
 Tmiddle = []
 Tboundary = []
-faceV = []
-faceFlux = []
 ny = []
 for simID in simIDs:
     xx = []
@@ -107,8 +70,6 @@ for simID in simIDs:
     tt = []
     TTm = []
     TTb = []
-    faceVi = []
-    faceFluxi = []
     for t in timesteps:
         filepath = sim_dir + "/simID{}/data/data_{}.h5".format(simID, t)
         data = h5py.File(filepath, 'r')
@@ -122,7 +83,6 @@ for simID in simIDs:
         TT = np.array(data["temperature"])
         TTm.append(TT[:, 0])
         TTb.append(TT[:, nyy-1])
-        # faceVi.append()
     xc.append(xx)
     dx.append(dxx)
     width.append(ww)
@@ -145,7 +105,7 @@ lws = []
 lps = []
 lTms = []
 lTbs = []
-colors = ['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00','#ffff33','#a65628']
+colors = ['k', 'b', 'r', 'g']
 for i in range(len(simIDs)):
     simID = simIDs[i]
     X = createXData(xc[i][0], dx[i][0])
@@ -155,10 +115,10 @@ for i in range(len(simIDs)):
     Tb = createYData(Tboundary[i][0])
     Ny = ny[i]
     
-    lw, = ax1.plot(X, W, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
-    lp, = ax2.plot(X, P, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
-    lTm, = ax3.plot(X, Tm, linewidth=2, label=legends[i] + ", mid.", linestyle='-', color=colors[i])
-    lTb, = ax3.plot(X, Tb, linewidth=2, label=legends[i] + ", bound.", linestyle='--', color=colors[i])
+    lw, = ax1.plot(X, W, linewidth=2, label="simID {}, ny={}".format(simID, Ny), linestyle='-', color=colors[i])
+    lp, = ax2.plot(X, P, linewidth=2, label="simID {}, ny={}".format(simID, Ny), linestyle='-', color=colors[i])
+    lTm, = ax3.plot(X, Tm, linewidth=2, label="simID {}, mid., ny={}".format(simID, Ny), linestyle='-', color=colors[i])
+    lTb, = ax3.plot(X, Tb, linewidth=2, label="simID {}, bound., ny={}".format(simID, Ny), linestyle='--', color=colors[i])
     lws.append(lw)
     lps.append(lp)
     lTms.append(lTm)
@@ -179,7 +139,7 @@ ax3.set_ylim(Tlim)
 ax3.grid()
 ax3.legend().set_draggable(True)
 
-ax_iter_slider = fig.add_axes([0.25, 0.05, 0.65, 0.03])
+ax_iter_slider = fig.add_axes([0.25, 0.1, 0.65, 0.03])
 iter_slider = Slider(
     ax=ax_iter_slider, 
     label='timesteps', 
