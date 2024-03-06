@@ -1,5 +1,6 @@
 #include "Utils.hpp"
 #include <cmath>
+#include <stdexcept>
 
 
 /**

@@ -125,6 +125,7 @@ double TimestepController::getRelaxationParameter() const{
         }
         i++;
     }
+    return 1.0;
 }
 
 
