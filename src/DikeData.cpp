@@ -3,9 +3,17 @@
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using nlohmann::json;
 
 
-DikeData::DikeData(Mesh* mesh, int ny) : mesh(mesh), ny(ny){
+DikeData::DikeData(Mesh* mesh, const json& alg_properties):
+    mesh(mesh),
+    algorithm_properties(alg_properties)
+{
+    ny = algorithm_properties["numberOfLayers"];
+    if (algorithm_properties["model"] == "channel"){
+        model = FlowModel::channel;
+    }
     int n = mesh->size();
     width = VectorXd::Zero(n);
     density = VectorXd::Zero(n);
@@ -22,6 +30,10 @@ DikeData::DikeData(Mesh* mesh, int ny) : mesh(mesh), ny(ny){
     face_flux = MatrixXd::Zero(n+1, ny);
     total_face_flux = VectorXd::Zero(n+1);
     time = 0.0;
+    // if (model == FlowModel::channel){
+    //     width.fill(algorithm_properties["channelWidth"]);
+    //     setWidth(width);
+    // }
 }
 
 

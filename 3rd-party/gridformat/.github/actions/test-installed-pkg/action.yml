@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2022 Dennis Gläser <dennis.glaeser@iws.uni-stuttgart.de>
+# SPDX-License-Identifier: MIT
+
+name: test-installed-package
+inputs:
+  c_compiler:
+    required: true
+  cxx_compiler:
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: remove-build-directory
+      run: rm -rf build
+      shell: bash
+
+    - name: install-gridformat
+      run: |
+        cmake -DCMAKE_C_COMPILER=${{inputs.c_compiler}} \
+              -DCMAKE_CXX_COMPILER=${{inputs.cxx_compiler}} \
+              -DGRIDFORMAT_BUILD_TESTS=ON \
+              -DGRIDFORMAT_BUILD_BINARIES=ON \
+              -DCMAKE_INSTALL_PREFIX=$(pwd)/install \
+              -DCMAKE_PREFIX_PATH=/gfmt-dependencies \
+              -B build
+        cmake --build build
+        cmake --install build
+      shell: bash
+
+    - name: set-git-variables
+      uses: ./.github/actions/set-git-variables
+
+    - name: set-test-commands
+      uses: ./.github/actions/set-test-commands
+      with:
+        build_directory: build
+        source_tree: ${{ env.GFMT_SOURCE_TREE }}
+        target_tree: main
+
+    - name: test-readme-cli-snippets
+      run: |
+        export PATH=$PATH:$(pwd)/install/bin
+        python3 test/test_readme_cli_snippets.py \
+          -c "-DCMAKE_C_COMPILER=${{inputs.c_compiler}} -DCMAKE_CXX_COMPILER=${{inputs.cxx_compiler}}"
+      shell: bash
+
+    - name: test-installed-pkg
+      run: |
+        mkdir installation-test && cp -r test installation-test
+        pushd installation-test
+          echo "cmake_minimum_required(VERSION 3.18)" > CMakeLists.txt
+          echo "project(gridformat_test_suite VERSION 1.0.0)" >> CMakeLists.txt
+          echo "enable_testing()" >> CMakeLists.txt
+          echo "find_package(gridformat REQUIRED)" >> CMakeLists.txt
+          echo "add_subdirectory(test)" >> CMakeLists.txt
+          cmake -Dgridformat_ROOT=$(pwd)/../install \
+                -DCMAKE_C_COMPILER=${{inputs.c_compiler}} \
+                -DCMAKE_CXX_COMPILER=${{inputs.cxx_compiler}} \
+                -DCMAKE_PREFIX_PATH=/gfmt-dependencies \
+                -DCMAKE_BUILD_TYPE=Release \
+                -B build
+          pushd build
+            echo "Invoking build command"
+            $(echo "$GFMT_BUILD_CMD")
+            echo "Invoking test command"
+            $(echo "$GFMT_TEST_CMD")
+          popd
+      shell: bash
+
+    - name: test-examples
+      run: |
+        pushd examples
+          cmake -DCMAKE_C_COMPILER=${{inputs.c_compiler}} \
+                -DCMAKE_CXX_COMPILER=${{inputs.cxx_compiler}} \
+                -DCMAKE_PREFIX_PATH=/gfmt-dependencies \
+                -Dgridformat_ROOT=$(pwd)/../install \
+                -B build
+        pushd build && make && ctest --output-on-failure
+      shell: bash
+
+    - name: test-examples-with-fetch-content
+      run: |
+        rm -rf examples/build && pushd examples
+          cmake -DCMAKE_C_COMPILER=${{inputs.c_compiler}} \
+                -DCMAKE_CXX_COMPILER=${{inputs.cxx_compiler}} \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_PREFIX_PATH=/gfmt-dependencies \
+                -DGRIDFORMAT_FETCH_TREE="$GFMT_TREE" \
+                -DGRIDFORMAT_ORIGIN="$GFMT_ORIGIN" \
+                -B build
+        pushd build && make && ctest --output-on-failure
+      shell: bash

@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2022-2023 Dennis Gläser <dennis.glaeser@iws.uni-stuttgart.de>
+# SPDX-License-Identifier: MIT
+
+# always consider files containing source code regardless of their name
+!*.cc
+!*.hh
+!*.c
+!*.h
+!*.sh
+!*.py
+
+# build system clutter
+build/
+install/
+Testing
+!bin/testing
+
+# consider github config
+!.github/*
+
+# hidden files
+.cproject
+.project
+.vscode
+
+# auto-saved files
+*~
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app

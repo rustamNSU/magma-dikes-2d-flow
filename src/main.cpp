@@ -36,7 +36,9 @@ int main(int argc, char ** argv){
 
     /* @todo: pls, refactor me */
     auto algorithm_properties = input.getAlgorithmProperties();
-    DikeData dike(&mesh, algorithm_properties["numberOfLayers"]);
+    std::cout << std::setw(4) << algorithm_properties << std::endl;
+    DikeData dike(&mesh, algorithm_properties);
+    DikeData old_dike = dike;
     Schedule schedule(&mesh, input.getScheduleProperties());
     MagmaState magma_state(&mesh, input.getMagmaProperties());
     magma_state.updateDensity(&dike);
@@ -51,11 +53,14 @@ int main(int argc, char ** argv){
         &reservoir
     );
     mass_balance.setAlgorithmProperties(input.getAlgorithmProperties());
+    mass_balance.setNewTimestepData(&dike, &old_dike);
+    mass_balance.setInitialData();
+    old_dike = dike;
+
     DikeDataWriter writer;
     auto [is_save_timestep, save_timestep] = timestep_controller.saveTimestepIteration();
     std::string savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
     writer.saveData(&dike, savepath);
-    DikeData old_dike = dike;
     while (timestep_controller.isFinish()){
         double current_time = timestep_controller.getCurrentTime();
 		double dt = timestep_controller.getCurrentTimestep();

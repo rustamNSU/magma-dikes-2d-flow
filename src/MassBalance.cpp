@@ -29,6 +29,7 @@ MassBalance::MassBalance(
     magma_state(magma_state),
     reservoir(reservoir)
 {
+    algorithm_properties = input->getAlgorithmProperties();
 }
 
 
@@ -390,5 +391,15 @@ void MassBalance::updateTemperature(){
         Trnew = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data() + ny, nr);
         new_dike->temperature.row(ix) = Tnew;
         reservoir->temperature.row(ix) = Trnew;
+    }
+}
+
+
+void MassBalance::setInitialData(){
+    if (new_dike->model == FlowModel::channel){
+        double Tch = schedule->getMagmaChamberTemperature();
+        new_dike->temperature.fill(Tch);
+        new_dike->pressure = reservoir->getLithostaticPressure();
+        magma_state->updateViscosity(new_dike);
     }
 }

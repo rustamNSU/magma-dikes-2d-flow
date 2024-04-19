@@ -25,6 +25,7 @@ class MassBalance{
 
         Eigen::MatrixXd mat;
         Eigen::VectorXd rhs;
+        nlohmann::json algorithm_properties;
 
         std::string TIMESTEP_SCHEME;
         int MAX_ITERATIONS = 50;
@@ -61,4 +62,5 @@ class MassBalance{
         // SolverOutput solve();
         void generateMatrix();
         void calculateMobility();
+        void setInitialData();
 };

@@ -1,13 +1,24 @@
 #pragma once
 #include <Eigen/Dense>
 #include "Mesh.hpp"
+#include <nlohmann/json.hpp>
 
 
 class MagmaState;
 class MassBalance;
 class DikeDataWriter;
+enum class FlowModel{
+    dike,
+    channel
+};
+
+
 class DikeData{
+    public:
+        using json = nlohmann::json;
+
     private:
+        FlowModel model = FlowModel::dike;
         Mesh* mesh;
         int ny = 1; // Number of layers into dike
         Eigen::VectorXd width;
@@ -25,9 +36,10 @@ class DikeData{
         Eigen::MatrixXd face_flux;
         Eigen::VectorXd total_face_flux;
         double time;
+        json algorithm_properties;
     
     public:
-        DikeData(Mesh* mesh, int ny  = 1);
+        DikeData(Mesh* mesh, const json& alg_properties);
         double getTime() const;
         int getLayersNumber() const;
         const Eigen::VectorXd& getDensity() const;
