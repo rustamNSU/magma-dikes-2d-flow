@@ -2,11 +2,12 @@ import numpy as np
 from typing import Sequence
 from copy import deepcopy
 import pickle
+from pathlib import Path
 
 
-from src.utils.base_magma_state import mu_melt, beta_T, theta
-from src.core.fixed_channel import FixedChannel
-from src.utils.adaptive_timestep import AdaptiveTimestep
+from srcpython.utils.base_magma_state import mu_melt, beta_T, theta
+from srcpython.core.fixed_channel import FixedChannel
+from srcpython.utils.adaptive_timestep import AdaptiveTimestep
 
 simID = 21050
 TL = 1250 + 273.15 # [K]
@@ -28,16 +29,17 @@ Q = 2.0
 P2 = 0.0
 
 t_start = 0.0
-t_end = 10000.0
+t_end = 1000.0
 t_cur = 0.0
-basic_dt = 25.0
-Nx = 50
+basic_dt = 5.0
+Nx = 200
 Ny = 10
 
 tolerance = 1e-6
 max_iter = 20
 
-Tr = lambda x: T0 if (x < 3000.0 and x > 6000) else T2
+# Tr = lambda x: T0 if (x < 3000.0 and x > 6000) else T2
+Tr = lambda x: T0 if (x < 3000.0 and x > 4000) else T2
 mu_magma = lambda T: mu_melt(T) * theta(beta_T(T, TL, TS))
 beta_T1 = lambda T: beta_T(T, TL, TS)
 
@@ -104,8 +106,9 @@ while t_cur + dt < t_end:
     dt = timestep_controller.get_timestep()
     
 
-filename = "simulations" + "/simID{}.pkl".format(simID)
-with open(filename, 'wb') as outp:
+filename = Path("simulations" + "/simID{}.pkl".format(simID))
+filename.parent.mkdir(parents=True, exist_ok=True)
+with filename.open('wb') as outp:
     pickle.dump(fc_new, outp, pickle.HIGHEST_PROTOCOL)
 
 

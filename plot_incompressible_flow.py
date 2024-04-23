@@ -2,14 +2,14 @@ import pickle
 import numpy as np
 import itertools
 from scipy.interpolate import RectBivariateSpline
-from src.core.fixed_channel import FixedChannel
+from srcpython.core.fixed_channel import FixedChannel
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 
 sim_dir = "simulations"
-simIDs = [10530, 11030, 12030, 12050, 120100, 140100]
-simIDs = [12050]
+# simIDs = [10530, 11030, 12030, 12050, 120100, 140100]
+simIDs = [21050]
 data = []
 for simID in simIDs:
     with open(sim_dir + "/simID{}.pkl".format(simID), 'rb') as inp:
