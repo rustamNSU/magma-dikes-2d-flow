@@ -18,7 +18,7 @@ inputDict["algorithmProperties"] = {
     "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
     # "lubricationCflFactor" : 0.001,
-    "lubricationCflFactor" : 0.01,
+    "lubricationCflFactor" : 0.001,
     "massBalanceMinMobilityWidth" : 1e-10,
     "channelWidth" : 1.0,
 }

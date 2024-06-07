@@ -12,6 +12,7 @@ add_executable(
     Writers.cpp
     TimestepController.cpp
     ReservoirData.cpp
+    ChannelFlow.cpp
 )
 target_link_libraries(
     runner

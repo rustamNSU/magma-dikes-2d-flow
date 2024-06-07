@@ -30,10 +30,10 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties):
     face_flux = MatrixXd::Zero(n+1, ny);
     total_face_flux = VectorXd::Zero(n+1);
     time = 0.0;
-    // if (model == FlowModel::channel){
-    //     width.fill(algorithm_properties["channelWidth"]);
-    //     setWidth(width);
-    // }
+    if (model == FlowModel::channel){
+        auto channel_width = VectorXd::Constant(n, algorithm_properties["channelWidth"].get<double>());
+        setWidth(channel_width);
+    }
 }
 
 

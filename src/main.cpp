@@ -11,6 +11,7 @@
 #include "Elasticity.hpp"
 #include "DikeData.hpp"
 #include "MassBalance.hpp"
+#include "ChannelFlow.hpp"
 #include "Writers.hpp"
 
 using json = nlohmann::json;
@@ -22,69 +23,70 @@ namespace fs = std::filesystem;
 
 int main(int argc, char ** argv){
     std::string input_path = argv[1];
-	std::ifstream f(input_path);
-    json input_json = json::parse(f);
-	f.close();
+    ChannelFlow model(input_path);
+	// std::ifstream f(input_path);
+    // json input_json = json::parse(f);
+	// f.close();
 
-    InputData input(input_json);
-    TimestepController timestep_controller(input.getTimestepProperties());
-    Mesh mesh(input.getMeshProperties());
-    ReservoirData reservoir(&mesh, input.getReservoirProperties());
+    // InputData input(input_json);
+    // TimestepController timestep_controller(input.getTimestepProperties());
+    // Mesh mesh(input.getMeshProperties());
+    // ReservoirData reservoir(&mesh, input.getReservoirProperties());
 
-    auto [E, nu, KIc] = reservoir.getElasticityParameters();
-    Elasticity elasticity(E, nu, &mesh);
+    // auto [E, nu, KIc] = reservoir.getElasticityParameters();
+    // Elasticity elasticity(E, nu, &mesh);
 
-    /* @todo: pls, refactor me */
-    auto algorithm_properties = input.getAlgorithmProperties();
-    std::cout << std::setw(4) << algorithm_properties << std::endl;
-    DikeData dike(&mesh, algorithm_properties);
-    DikeData old_dike = dike;
-    Schedule schedule(&mesh, input.getScheduleProperties());
-    MagmaState magma_state(&mesh, input.getMagmaProperties());
-    magma_state.updateDensity(&dike);
-    magma_state.updateViscosity(&dike);
-    MassBalance mass_balance(
-        &input,
-        &timestep_controller,
-        &elasticity,
-        &mesh,
-        &schedule,
-        &magma_state,
-        &reservoir
-    );
-    mass_balance.setAlgorithmProperties(input.getAlgorithmProperties());
-    mass_balance.setNewTimestepData(&dike, &old_dike);
-    mass_balance.setInitialData();
-    old_dike = dike;
+    // /* @todo: pls, refactor me */
+    // auto algorithm_properties = input.getAlgorithmProperties();
+    // std::cout << std::setw(4) << algorithm_properties << std::endl;
+    // DikeData dike(&mesh, algorithm_properties);
+    // DikeData old_dike = dike;
+    // Schedule schedule(&mesh, input.getScheduleProperties());
+    // MagmaState magma_state(&mesh, input.getMagmaProperties());
+    // magma_state.updateDensity(&dike);
+    // magma_state.updateViscosity(&dike);
+    // MassBalance mass_balance(
+    //     &input,
+    //     &timestep_controller,
+    //     &elasticity,
+    //     &mesh,
+    //     &schedule,
+    //     &magma_state,
+    //     &reservoir
+    // );
+    // mass_balance.setAlgorithmProperties(input.getAlgorithmProperties());
+    // mass_balance.setNewTimestepData(&dike, &old_dike);
+    // mass_balance.setInitialData();
+    // old_dike = dike;
 
-    DikeDataWriter writer;
-    auto [is_save_timestep, save_timestep] = timestep_controller.saveTimestepIteration();
-    std::string savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
-    writer.saveData(&dike, savepath);
-    while (timestep_controller.isFinish()){
-        double current_time = timestep_controller.getCurrentTime();
-		double dt = timestep_controller.getCurrentTimestep();
-		double time_iteration = timestep_controller.getTimeIteration();
-        auto [is_save, save_timestep] = timestep_controller.saveTimestepIteration();
-        std::cout << time_iteration + 1 << ";  " << save_timestep << ") " << int(current_time / 1000) << "e3 s -> " << int((current_time + dt)/1000) << "e3 s." << std::endl;
-        dike.setTime(current_time + dt);
-        mass_balance.setNewTimestepData(&dike, &old_dike);
-        auto output = mass_balance.explicitSolve();
-        if (output.cfl_condition == false){
-            timestep_controller.divideTimestep(output.ratio);
-            continue;
-        }
-        else{
-            timestep_controller.update();
-            auto level = timestep_controller.getLevel();
-            std::tie(is_save, save_timestep) = timestep_controller.saveTimestepIteration();
-            if (level == 0 && is_save){
-                savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
-                writer.saveData(&dike, savepath);
-            }
-            old_dike = dike;
-        }
-    }
+    // DikeDataWriter writer;
+    // auto [is_save_timestep, save_timestep] = timestep_controller.saveTimestepIteration();
+    // std::string savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
+    // writer.saveData(&dike, savepath);
+    // while (timestep_controller.isFinish()){
+    //     double current_time = timestep_controller.getCurrentTime();
+	// 	double dt = timestep_controller.getCurrentTimestep();
+	// 	double time_iteration = timestep_controller.getTimeIteration();
+    //     auto [is_save, save_timestep] = timestep_controller.saveTimestepIteration();
+    //     std::cout << time_iteration + 1 << ";  " << save_timestep << ") " << int(current_time / 1000) << "e3 s -> " << int((current_time + dt)/1000) << "e3 s." << std::endl;
+    //     dike.setTime(current_time + dt);
+    //     mass_balance.setNewTimestepData(&dike, &old_dike);
+    //     auto output = mass_balance.explicitSolve();
+    //     if (output.cfl_condition == false){
+    //         timestep_controller.divideTimestep(output.ratio);
+    //         continue;
+    //     }
+    //     else{
+    //         timestep_controller.update();
+    //         auto level = timestep_controller.getLevel();
+    //         std::tie(is_save, save_timestep) = timestep_controller.saveTimestepIteration();
+    //         if (level == 0 && is_save){
+    //             savepath = (input.getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
+    //             writer.saveData(&dike, savepath);
+    //         }
+    //         old_dike = dike;
+    //     }
+    // }
     return 0;
 }
 
