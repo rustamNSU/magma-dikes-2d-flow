@@ -1,5 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
+#include "InputData.hpp"
 #include "Mesh.hpp"
 #include <nlohmann/json.hpp>
 
@@ -7,34 +8,30 @@
 class MagmaState;
 class MassBalance;
 class DikeDataWriter;
-enum class FlowModel{
-    dike,
-    channel
-};
 
 
 class DikeData{
-    public:
-        using json = nlohmann::json;
-
     private:
-        FlowModel model = FlowModel::dike;
-        Mesh* mesh;
+        InputData* input;
+        Mesh* meshX;
         int ny = 1; // Number of layers into dike
-        Eigen::VectorXd width;
-        Eigen::VectorXd density;
+        double rho; // currently const
+        Eigen::VectorXd yc; // y/h(t, x)
+        Eigen::VectorXd yb; // yb/h(t, x)
+
+        Eigen::VectorXd hw; // halfwidth
+        Eigen::VectorXd width; // width
         Eigen::VectorXd pressure;
         Eigen::VectorXd overpressure;
 
-        Eigen::MatrixXd yc; // y-center of layers (half width)
-        Eigen::MatrixXd yb; // y-boundary of layers (half width)
         Eigen::MatrixXd temperature; // Magma temperature in each layer of mesh element
         Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
+        Eigen::MatrixXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
+        Eigen::MatrixXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
+        Eigen::MatrixXd A; // A^j on x_{i+1/2}
+        Eigen::MatrixXd C; // C^j on x_{i+1/2}
         Eigen::MatrixXd mobility; // Layer mobility into element
-        Eigen::VectorXd total_mobility; // Total mobility into element
-        Eigen::VectorXd total_face_mobility; // Mobility between elements
-        Eigen::MatrixXd face_flux;
-        Eigen::VectorXd total_face_flux;
+        Eigen::VectorXd Qx; // Total flux between elements
         double time;
         json algorithm_properties;
     
