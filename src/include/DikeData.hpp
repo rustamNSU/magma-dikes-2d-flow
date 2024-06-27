@@ -15,7 +15,6 @@ class DikeData{
         InputData* input;
         Mesh* meshX;
         int ny = 1; // Number of layers into dike
-        double rho; // currently const
         Eigen::VectorXd yc; // y/h(t, x)
         Eigen::VectorXd yb; // yb/h(t, x)
 
@@ -24,6 +23,7 @@ class DikeData{
         Eigen::VectorXd pressure;
         Eigen::VectorXd overpressure;
 
+        Eigen::MatrixXd density; // Magma density in each layer of mesh element
         Eigen::MatrixXd temperature; // Magma temperature in each layer of mesh element
         Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
         Eigen::MatrixXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
@@ -33,28 +33,35 @@ class DikeData{
         Eigen::MatrixXd mobility; // Layer mobility into element
         Eigen::VectorXd Qx; // Total flux between elements
         double time;
-        json algorithm_properties;
+        nlohmann::json algorithm_properties;
     
     public:
-        DikeData(Mesh* mesh, const json& alg_properties);
-        double getTime() const;
-        int getLayersNumber() const;
-        const Eigen::VectorXd& getDensity() const;
-        const Eigen::VectorXd& getWidth() const;
-        const Eigen::VectorXd& getPressure() const;
-        const Eigen::VectorXd& getOverpressure() const;
-        const Eigen::MatrixXd& getYc() const;
-        const Eigen::MatrixXd& getYb() const;
-        const Eigen::MatrixXd& getTemperature() const;
-        const Eigen::MatrixXd& getMobility() const;
-        const Eigen::VectorXd& getTotalMobility() const;
+        DikeData(Mesh* mesh, const nlohmann::json& alg_properties);
+        
+        inline double getTime() const{
+            return time;
+        }
 
-        void setTime(double time);
-        void setDensity(const Eigen::VectorXd& vec);
-        void setWidth(const Eigen::VectorXd& vec);
-        void setPressure(const Eigen::VectorXd& vec);
-        void setTemperature(const Eigen::MatrixXd& mat);
-        void setViscosity(const Eigen::MatrixXd& mat);
+        inline int getLayersNumber() const{
+            return ny;
+        }
+
+        // const Eigen::VectorXd& getDensity() const;
+        // const Eigen::VectorXd& getWidth() const;
+        // const Eigen::VectorXd& getPressure() const;
+        // const Eigen::VectorXd& getOverpressure() const;
+        // const Eigen::MatrixXd& getYc() const;
+        // const Eigen::MatrixXd& getYb() const;
+        // const Eigen::MatrixXd& getTemperature() const;
+        // const Eigen::MatrixXd& getMobility() const;
+        // const Eigen::VectorXd& getTotalMobility() const;
+
+        // void setTime(double time);
+        // void setDensity(const Eigen::VectorXd& vec);
+        // void setWidth(const Eigen::VectorXd& vec);
+        // void setPressure(const Eigen::VectorXd& vec);
+        // void setTemperature(const Eigen::MatrixXd& mat);
+        // void setViscosity(const Eigen::MatrixXd& mat);
 
         friend class MagmaState;
         friend class MassBalance;

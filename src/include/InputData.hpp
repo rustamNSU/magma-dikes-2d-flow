@@ -32,4 +32,15 @@ class InputData{
         const std::filesystem::path& getSimDir() const;
         const std::filesystem::path& getDataDir() const;
         const std::filesystem::path& getReservoirDir() const;
+
+        template<typename T>
+        T get(const std::string& key) const{
+            return input[key].get<T>();
+        }
+
+//         /* Access via json pointer: "/k1/k2/k3"_json_pointer */
+//         template<typename T, typename Key>
+//         T get(Key&& key) const{
+//             return input[key].get<T>();
+//         }
 };

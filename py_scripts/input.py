@@ -13,14 +13,12 @@ inputDict["simID"] = simID
 inputDict["simDir"] = sim_dir
 inputDict["algorithmProperties"] = {
     "isDebug": True,
-    "flowModel" : "channel", # "channel", "dike"
+    "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
     "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
-    # "lubricationCflFactor" : 0.001,
     "lubricationCflFactor" : 0.001,
     "massBalanceMinMobilityWidth" : 1e-10,
-    "channelWidth" : 1.0,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -66,17 +64,11 @@ inputDict["magmaProperties"] = {
     },
 }
 inputDict["scheduleProperties"] = {
-    "Qin": [0.5],
-    "t": [0.0],
+    "Q": [0.5, 0.0],
+    "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 850
 }
-# inputDict["scheduleProperties"] = {
-#     "Q": [0.5, 0.0],
-#     "t": [0.0, 10000],
-#     "rho": 2000.0,
-#     "T" : 850
-# }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
     "endTime" : 100000.0,

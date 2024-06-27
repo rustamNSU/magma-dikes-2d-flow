@@ -6,13 +6,11 @@ add_executable(
     DikeData.cpp
     InputData.cpp
     Schedule.cpp
-    MassBalance.cpp
+    DikeModel2d.cpp
     Utils.cpp
     MagmaState.cpp
-    Writers.cpp
     TimestepController.cpp
     ReservoirData.cpp
-    ChannelFlow.cpp
 )
 target_link_libraries(
     runner

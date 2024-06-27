@@ -10,8 +10,7 @@
 #include "ReservoirData.hpp"
 #include "Elasticity.hpp"
 #include "DikeData.hpp"
-#include "MassBalance.hpp"
-#include "ChannelFlow.hpp"
+#include "DikeModel2d.hpp"
 #include "Writers.hpp"
 
 using json = nlohmann::json;
@@ -23,7 +22,7 @@ namespace fs = std::filesystem;
 
 int main(int argc, char ** argv){
     std::string input_path = argv[1];
-    ChannelFlow model(input_path);
+    DikeModel2d model(input_path);
 	// std::ifstream f(input_path);
     // json input_json = json::parse(f);
 	// f.close();
