@@ -37,8 +37,8 @@ inputDict["reservoirProperties"] = {
     },
     "constantTemperatureGradient" : {
         "dT" : 40e-3,
-        "maximum_temperature" : 850,
-        "minimum_temperature" : 500
+        "maximum_temperature" : 900,
+        "minimum_temperature" : 0
     },
 }
 inputDict["magmaProperties"] = {
@@ -67,7 +67,7 @@ inputDict["scheduleProperties"] = {
     "Q": [0.5, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
-    "T" : 850
+    "T" : 900
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
@@ -77,9 +77,9 @@ inputDict["timestepProperties"] = {
     "outputSaveRate" : 100
 }
 inputDict["meshProperties"] = {
-    "n" : 300,
-    "xmin" : -10000.0,
-    "xmax" : 0.0
+    "n" : 200,
+    "xmin" : -30000.0,
+    "xmax" : -10000.0
 }
 
 input_file = repository_dir + "/input.json"

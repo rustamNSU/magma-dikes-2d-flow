@@ -8,6 +8,7 @@
 class MagmaState;
 class MassBalance;
 class DikeDataWriter;
+class DikeModel2d;
 
 
 class DikeData{
@@ -28,11 +29,11 @@ class DikeData{
         Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
         Eigen::MatrixXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
         Eigen::MatrixXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
-        Eigen::MatrixXd A; // A^j on x_{i+1/2}
-        Eigen::MatrixXd C; // C^j on x_{i+1/2}
+        Eigen::MatrixXd A; // A^j on x_{i+1/2}, without (dp/dx + rho*g)
+        Eigen::MatrixXd C; // C^j on x_{i+1/2}, without (dp/dx + rho*g)
         Eigen::MatrixXd mobility; // Layer mobility into element
         Eigen::VectorXd Qx; // Total flux between elements
-        double time;
+        double time = 0.0;
         nlohmann::json algorithm_properties;
     
     public:
@@ -44,6 +45,22 @@ class DikeData{
 
         inline int getLayersNumber() const{
             return ny;
+        }
+
+        inline Eigen::ArrayXd getElementsVolume() const{
+            return hw.array() * meshX->getdx();
+        }
+
+        inline void setInitialPressure(const Eigen::VectorXd& plith){
+            assert(plith.size() == pressure.size());
+            pressure = plith;
+        }
+
+        inline void setInitialTemperature(const Eigen::VectorXd& T0){
+            assert(T0.size() == temperature.rows());
+            for (int icol = 0; icol < ny; icol++){
+                temperature.col(icol) = T0;
+            }
         }
 
         // const Eigen::VectorXd& getDensity() const;
@@ -66,4 +83,5 @@ class DikeData{
         friend class MagmaState;
         friend class MassBalance;
         friend class DikeDataWriter;
+        friend class DikeModel2d;
 };

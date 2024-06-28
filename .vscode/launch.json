@@ -8,7 +8,7 @@
             "name": "runner",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build/bin/runner",
+            "program": "${workspaceFolder}/debug/bin/runner",
             "cwd": "${workspaceFolder}",
             "args": ["${workspaceFolder}/input.json"],
             "stopAtEntry": false,

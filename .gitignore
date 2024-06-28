@@ -5,3 +5,5 @@ simulations/
 build/
 **/.DS_Store
 release/
+
+debug/

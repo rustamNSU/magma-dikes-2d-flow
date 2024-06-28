@@ -85,7 +85,7 @@ void ReservoirData::calculateLithostaticPressure(){
     auto x = mesh->getx();
     auto xl = mesh->getxl();
     auto xr = mesh->getxr();
-    double upper_weight = 0.0;
+    double upper_weight = -xr(Eigen::last) * g * density(Eigen::last);
     for (int i = nx-1; i >= 0; --i){
         double dx = xr[i] - xl[i];
         lithostatic_pressure[i] = density[i] * g * dx / 2.0 + upper_weight;

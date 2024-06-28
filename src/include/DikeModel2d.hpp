@@ -35,4 +35,10 @@ class DikeModel2d{
 
     public:
         DikeModel2d(const std::string& input_path);
+        void setInitialData();
+        void run();
+        void explicitSolver();
+        void updatePressure();
+        void calculateVerticalFlow();
+        void solveMassBalance();
 };

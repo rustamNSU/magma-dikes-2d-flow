@@ -10,6 +10,7 @@
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using Eigen::ArrayXd;
 using Eigen::VectorXi;
 using json = nlohmann::json;
 
@@ -27,17 +28,127 @@ DikeModel2d::DikeModel2d(const std::string& input_path) :
     magma_state = std::make_shared<MagmaState>(mesh.get(), input->getMagmaProperties());
     algorithm_properties = input->getAlgorithmProperties();
     dike = std::make_shared<DikeData>(mesh.get(), algorithm_properties);
+
+    auto [E, nu, KIc] = reservoir->getElasticityParameters();
+    elasticity = std::make_shared<Elasticity>(E, nu, mesh.get());
+    setInitialData();
 }
 
 
-// void MassBalance::setNewTimestepData(
-//     DikeData* new_dike,
-//     DikeData* old_dike
-// ){
-//     this->new_dike = new_dike;
-//     this->old_dike = old_dike;
-//     return;
-// }
+void DikeModel2d::setInitialData(){
+    auto plith = reservoir->getLithostaticPressure();
+    auto tlith = reservoir->getInitialTemperature();
+    dike->setInitialPressure(plith);
+    dike->setInitialTemperature(tlith);
+    magma_state->updateDensity(dike.get());
+    magma_state->updateViscosity(dike.get());
+    old_dike = std::make_shared<DikeData>(*dike);
+}
+
+
+void DikeModel2d::run(){
+    while (!timestep_controller->isFinish()){
+        explicitSolver();
+    }
+}
+
+
+void DikeModel2d::explicitSolver(){
+    auto nx = mesh->size();
+    auto ny = dike->getLayersNumber();
+    auto dt = timestep_controller->getCurrentTimestep();
+
+    magma_state->updateViscosity(dike.get());
+    updatePressure();
+    calculateVerticalFlow();
+    solveMassBalance();
+}
+
+
+void DikeModel2d::updatePressure(){
+    dike->overpressure = 2 * (elasticity->getMatrix() * old_dike->hw);
+    dike->pressure = old_dike->overpressure + reservoir->getLithostaticPressure();
+}
+
+
+void DikeModel2d::calculateVerticalFlow(){
+    int nx = mesh->size();
+    int ny = dike->getLayersNumber();
+    const auto& x = mesh->getx();
+    auto& hw = old_dike->hw;
+    auto& viscosity = dike->viscosity;
+    auto& qx = dike->qx;
+    auto& Qx = dike->Qx;
+    const auto& yb = dike->yb;
+    const auto& yc = dike->yc;
+    double dy = yb[1] - yb[0];
+    double g = reservoir->getGravityAcceleration();
+
+    /* qx[ix] - flow beetween (ix-1) and ix elements */
+    for (int ix = 1; ix < nx; ++ix){
+        if (std::max(hw[ix-1], hw[ix]) < MIN_MOBILITY_WIDTH) continue;
+        double h = 0.5 * (hw[ix-1] + hw[ix]);
+        double xl = x[ix-1];
+        double xr = x[ix];
+        double dpdx = (dike->pressure[ix] - dike->pressure[ix-1]) / (xr - xl);
+        
+        // @todo: add average density
+        double rho = dike->density(ix, 0);
+        double G = dpdx + rho * g;
+        ArrayXd mul = viscosity.row(ix-1);
+        ArrayXd mur = viscosity.row(ix);
+        ArrayXd mu = 0.5 * (mul + mur) / (mul * mur);
+        ArrayXd A = 0.5*h*h * mu.cwiseInverse();
+        ArrayXd C = ArrayXd::Zero(ny);
+        C(ny-1) = -A(ny-1);
+        for (int iy = ny-2; iy >= 0; iy--){
+            C(iy) = C(iy+1) + yb(iy+1) * yb(iy+1) * (A(iy+1) - A(iy));
+        }
+        ArrayXd ybt = yb(Eigen::seq(1, ny));
+        ArrayXd ybb = yb(Eigen::seq(0, ny-1));
+        qx.row(ix) = (A * (ybt.cube() - ybb.cube()) / 3 + C * (ybt - ybb)) * h * G;
+        Qx(ix) = qx.row(ix).sum();
+        dike->A = A * G;
+        dike->C = C * G;
+    }
+    return;
+}
+
+
+
+void DikeModel2d::solveMassBalance(){
+    int nx = mesh->size();
+    int ny = dike->getLayersNumber();
+    auto& h = dike->hw;
+    const auto& hold = old_dike->hw;
+    double dx = mesh->getdx();
+    double dt = timestep_controller->getCurrentTimestep();
+    double t1 = timestep_controller->getCurrentTime();
+
+    const auto& Qx = dike->Qx;
+    double Q0 = schedule->getMassRate(t1, t1 + dt) / schedule->getMagmaChamberDensity();
+    VectorXd Qin = VectorXd::Zero(nx);
+    Qin[0] = Q0;
+    h = hold + dt/dx*(Qin - Qx(Eigen::seq(0, nx-1)) + Qx(Eigen::seq(1, nx)));
+    ArrayXd cfl_array = CFL_FACTOR * dike->getElementsVolume() - dt * Qx(Eigen::seq(1, nx)).array();
+    if (cfl_array.minCoeff() < 0){
+        
+    }
+
+    auto &qy = dike->qy;
+    const auto &qx = dike->qx;
+    const auto& yb = dike->yb;
+    const auto& yc = dike->yc;
+    double dy = yb[1] - yb[0];
+    for (int ix = 0; ix < nx; ix++){
+        for (int iy = 1; iy < ny; iy++){
+            qy(ix, iy) = qy(ix, iy-1) - qx(ix+1, iy-1) + qx(ix, iy-1) - dy*dx/dt*(h[ix] - hold[ix]) + Qin[ix]*dy;
+        }
+        /* check convergence: must be zero */
+        double err = dy*dx/dt*(h[ix] - hold[ix]) - Qin[ix]*dy + qx(ix+1, ny-1) - qx(ix, ny-1) - qy(ix, ny-1);
+        double a = 0;
+    }
+}
 
 
 // MassBalance::explicitSolverOutput MassBalance::explicitSolve(){
