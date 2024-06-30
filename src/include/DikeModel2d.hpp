@@ -59,4 +59,5 @@ class DikeModel2d{
         void solveEnergyBalance();
         void reloadData();
         void updateData();
+        void saveData(const std::string &savepath);
 };

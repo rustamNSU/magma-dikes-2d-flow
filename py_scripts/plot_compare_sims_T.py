@@ -44,9 +44,8 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
-simIDs = [1]
-legends = [str(simID) for simID in simIDs]
-timesteps = list(range(0, 2001, 10))
+simID = 1
+timesteps = list(range(0, 1001, 10))
 wlim = (0, 3)
 plim = (0, 700)
 Tlim = (400, 920)
@@ -116,7 +115,7 @@ for i in range(len(simIDs)):
     lw, = ax1.plot(X, W, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
     lp, = ax2.plot(X, P, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
     lTm, = ax3.plot(X, Tm, linewidth=2, label=legends[i] + ", mid.", linestyle='-', color=colors[i])
-    lTb, = ax3.plot(X, Tb, linewidth=2, label=legends[i] + ", bound.", linestyle='--', color=colors[i])
+    lTb, = ax3.plot(X, Tb, linewidth=2, label=legends[i] + ", wall", linestyle='--', color=colors[i])
     lws.append(lw)
     lps.append(lp)
     lTms.append(lTm)

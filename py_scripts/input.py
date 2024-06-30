@@ -17,7 +17,7 @@ inputDict["algorithmProperties"] = {
     "timestepScheme" : "explicit",
     "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
-    "lubricationCflFactor" : 0.001,
+    "lubricationCflFactor" : 0.01,
     "massBalanceMinMobilityWidth" : 1e-10,
 }
 inputDict["reservoirProperties"] = {
@@ -48,7 +48,7 @@ inputDict["magmaProperties"] = {
     "constantDensity" : {
         "rho" : 2000
     },
-    "viscosityModel" : "constantViscosity",
+    "viscosityModel" : "vftConstantViscosity",
     "vftConstantViscosity" : {
         "A" : -4.55,
         "B" : 11196,
@@ -74,7 +74,7 @@ inputDict["timestepProperties"] = {
     "endTime" : 100000.0,
     "dtList" : [1.0],
     "dtTime" : [0.0],
-    "outputSaveRate" : 10
+    "outputSaveRate" : 100
 }
 inputDict["meshProperties"] = {
     "n" : 200,

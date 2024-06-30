@@ -1,0 +1,82 @@
+import json
+import h5py
+import numpy as np
+import fnmatch, os
+import re
+
+
+def hdf5_read_single(h5file, key):
+    if key in h5file.keys():
+        data_h5 = h5file[key]
+        if (data_h5.size == 1):
+            return float(np.array(data_h5))
+    return None
+
+
+def hdf5_read_array(h5file, key):
+    if key in h5file.keys():
+        data_h5 = h5file[key]
+        return np.array(data_h5)
+    return None
+
+
+def define_index(str):
+    a = re.split(r'_|\.', str)
+    return int(a[1])
+
+
+class DikeData:
+    def __init__(self, sim_path: str, step_rate=1) -> None:
+        self.sim_path = sim_path
+        self.input_path = sim_path + "/input.json"
+        self.input = json.load(open(self.input_path))
+        self.data_dir = sim_path + "/data"
+        self.filepaths = fnmatch.filter(os.listdir(self.data_dir), 'data_*.h5')
+        self.filepaths.sort(key=define_index)
+        self.ntimesteps = len(self.filepaths)
+        self.step_rate = step_rate
+        self._preload_data()
+        
+    
+    def _preload_data(self):
+        self.timesteps = range(0, self.ntimesteps, self.step_rate)
+        self.data = []
+        self.time = []
+        min_width = self.input["algorithmProperties"]["massBalanceMinMobilityWidth"]
+        for itime in self.timesteps:
+            file = self.data_dir + "/" + self.filepaths[itime]
+            data = h5py.File(file, 'r')
+            self.keys = list(data.keys())
+            xc = hdf5_read_array(data, "/mesh/xc")
+            xl = hdf5_read_array(data, "/mesh/xl")
+            xr = hdf5_read_array(data, "/mesh/xr")
+            xb = np.append(xl, xr[-1])
+            yc = hdf5_read_array(data, "/yc")
+            yb = hdf5_read_array(data, "/yb")
+            halfwidth = hdf5_read_array(data, "/halfwidth")
+            width = hdf5_read_array(data, "/width")
+            pressure = hdf5_read_array(data, "/pressure")
+            overpressure = hdf5_read_array(data, "/overpressure")
+            density = hdf5_read_array(data, "/density")
+            viscosity = hdf5_read_array(data, "/viscosity")
+            temperature = hdf5_read_array(data, "/temperature")
+            Tmask = np.array(temperature)
+            Tmask[halfwidth <= min_width, :] = np.nan
+            Twall = hdf5_read_array(data, "/Twall")
+            time = hdf5_read_single(data, "/time")
+            self.time.append(time)
+            result = dict(
+                xc=xc,
+                xb=xb,
+                yc=yc,
+                yb=yb,
+                halfwidth=halfwidth,
+                width=width,
+                pressure=pressure,
+                temperature=temperature,
+                Tmask=Tmask,
+                viscosity=viscosity,
+                Twall=Twall,
+                time=time,
+            )
+            self.data.append(result)

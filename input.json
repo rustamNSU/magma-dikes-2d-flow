@@ -7,7 +7,7 @@
         "timestepScheme": "explicit",
         "numberOfLayers": 30,
         "cutoffVelocity": 1e-05,
-        "lubricationCflFactor": 0.001,
+        "lubricationCflFactor": 0.01,
         "massBalanceMinMobilityWidth": 1e-10
     },
     "reservoirProperties": {
@@ -17,8 +17,8 @@
         "KIc": 0.0,
         "specificHeatCapacity": 1200,
         "thermalConductivity": 2,
-        "densityModel": "constant_density",
-        "temperatureModel": "constant_gradient",
+        "densityModel": "constantDensity",
+        "temperatureModel": "constantTemperatureGradient",
         "numberOfLayers": 30,
         "reservoirWidth": 5.0,
         "meshRefinementAlgorithm": "cosine",
@@ -26,7 +26,7 @@
             "rho": 2300.0
         },
         "constantTemperatureGradient": {
-            "dT": 0.04,
+            "dT": 0.03,
             "maximum_temperature": 900,
             "minimum_temperature": 0
         }
@@ -34,11 +34,11 @@
     "magmaProperties": {
         "thermalConductivity": 2,
         "specificHeatCapacity": 1200,
-        "densityModel": "constant_density",
+        "densityModel": "constantDensity",
         "constantDensity": {
             "rho": 2000
         },
-        "viscosityModel": "VFT_constant_viscosity",
+        "viscosityModel": "vftConstantViscosity",
         "vftConstantViscosity": {
             "A": -4.55,
             "B": 11196,
@@ -46,7 +46,7 @@
             "muMaxLimit": 10000000000.0
         },
         "constantViscosity": {
-            "mu": 1000
+            "mu": 10000
         },
         "linearViscosity": {
             "much": 50,
@@ -55,7 +55,7 @@
     },
     "scheduleProperties": {
         "Q": [
-            0.5,
+            2.0,
             0.0
         ],
         "t": [
