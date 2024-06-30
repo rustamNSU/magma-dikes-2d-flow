@@ -13,6 +13,19 @@
 
 class DikeModel2d{
     private:
+        struct ExplicitSolverLog{
+            bool successful = true;
+            bool cfl_condition = true;
+            int cfl_ratio = 2;
+
+            inline void setDefault(){
+                successful = true;
+                cfl_condition = true;
+                cfl_ratio = 2;
+            }
+        };
+
+    private:
         std::string input_path;
         std::shared_ptr<InputData> input;
         std::shared_ptr<ReservoirData> reservoir;
@@ -25,20 +38,25 @@ class DikeModel2d{
         std::shared_ptr<DikeData> old_dike;
         nlohmann::json algorithm_properties;
 
+        ExplicitSolverLog solver_log;
         std::string TIMESTEP_SCHEME;
         int MAX_ITERATIONS = 50;
         int MIN_STAB_ITERATIONS = 2;
         double TOLERANCE = 1e-4;
         double MIN_MOBILITY_WIDTH = 1e-10;
         double CUTOFF_VELOCITY = 1e-4;
-        double CFL_FACTOR = 0.1;
+        double CFL_FACTOR = 0.01;
 
     public:
         DikeModel2d(const std::string& input_path);
         void setInitialData();
+        void setAlgorithmProperties();
         void run();
         void explicitSolver();
         void updatePressure();
         void calculateVerticalFlow();
         void solveMassBalance();
+        void solveEnergyBalance();
+        void reloadData();
+        void updateData();
 };

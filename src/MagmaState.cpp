@@ -14,33 +14,33 @@ MagmaState::MagmaState(Mesh* mesh, json&& properties) :
     thermal_conductivity = this->properties["thermalConductivity"];
     specific_heat = this->properties["specificHeatCapacity"];
 
-    if (density_model == "constant_density"){
+    if (density_model == "constantDensity"){
         rho = this->properties["constantDensity"]["rho"];
     }
-    if (viscosity_model == "constant_viscosity"){
+    if (viscosity_model == "constantViscosity"){
         viscosity_properties = this->properties["constantViscosity"];
     }
-    else if (viscosity_model == "linear_viscosity"){
+    else if (viscosity_model == "linearViscosity"){
         viscosity_properties = this->properties["linearViscosity"];
     }
-    else if (viscosity_model == "VFT_constant_viscosity" || "average_VFT_constant_viscosity"){
+    else if (viscosity_model == "vftConstantViscosity" || "averageVftConstantViscosity"){
         viscosity_properties = this->properties["vftConstantViscosity"];
     }
 }
 
 
 void MagmaState::updateDensity(DikeData* dike) const{
-    if (density_model == "constant_density"){
+    if (density_model == "constantDensity"){
         dike->density.fill(rho);
     }
 }
 
 
 void MagmaState::updateViscosity(DikeData* dike) const{
-    if (viscosity_model == "constant_viscosity"){
+    if (viscosity_model == "constantViscosity"){
         dike->viscosity.fill(viscosity_properties["mu"]);
     }
-    else if (viscosity_model == "linear_viscosity"){
+    else if (viscosity_model == "linearViscosity"){
         double mu1 = viscosity_properties["much"];
         double mu2 = viscosity_properties["musurf"];
         auto mu_col = VectorXd::LinSpaced(mesh->size(), mu1, mu2);
@@ -48,7 +48,7 @@ void MagmaState::updateViscosity(DikeData* dike) const{
             dike->viscosity.col(icol) = mu_col;
         }
     }
-    else if (viscosity_model == "VFT_constant_viscosity"){
+    else if (viscosity_model == "vftConstantViscosity"){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
         double A = viscosity_properties["A"];
@@ -62,7 +62,7 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         };
         dike->viscosity = dike->temperature.unaryExpr(func);
     }
-    else if (viscosity_model == "average_VFT_constant_viscosity"){
+    else if (viscosity_model == "averageVftConstantViscosity"){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
         double A = viscosity_properties["A"];

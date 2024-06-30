@@ -12,24 +12,20 @@ using Eigen::VectorXd;
 using Eigen::VectorXi;
 using json = nlohmann::json;
 
-MassBalance::MassBalance(
-    InputData* input,
-    TimestepController* timestep_controller,
-    Elasticity* elasticity,
-    Mesh* mesh,
-    Schedule* schedule,
-    MagmaState* magma_state,
-    ReservoirData* reservoir
-) : 
-    input(input),
-    timestep_controller(timestep_controller),
-    elasticity(elasticity),
-    mesh(mesh),
-    schedule(schedule),
-    magma_state(magma_state),
-    reservoir(reservoir)
+MassBalance::MassBalance(const std::string& input_path) :
+    input_path(input_path)
 {
+    std::ifstream f(input_path);
+    json input_json = json::parse(f);
+	f.close();
+    input = std::make_shared<InputData>(input_json);
+    timestep_controller = std::make_shared<TimestepController>(input->getTimestepProperties());
+    mesh = std::make_shared<Mesh>(input->getMeshProperties());
+    reservoir = std::make_shared<ReservoirData>(mesh.get(), input->getReservoirProperties());
+    schedule = std::make_shared<Schedule>(input->getScheduleProperties());
+    magma_state = std::make_shared<MagmaState>(mesh.get(), input->getMagmaProperties());
     algorithm_properties = input->getAlgorithmProperties();
+    dike = std::make_shared<DikeData>(mesh.get(), algorithm_properties);
 }
 
 

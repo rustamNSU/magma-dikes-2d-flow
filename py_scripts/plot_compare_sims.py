@@ -45,11 +45,11 @@ matplotlib.rcParams['font.family'] = 'serif'
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
 # simIDs = [20, 22, 23]
 simIDs = [1]
-wlim = (0, 2)
-plim = (0, 500)
-xlim = (-20000, 0.0)
+wlim = (0, 5)
+plim = (0, 700)
+xlim = (-30000, -10000.0)
 
-timesteps = list(range(0, 3001, 10))
+timesteps = list(range(0, 2000, 10))
 xc = []
 dx = []
 width = []
@@ -66,7 +66,7 @@ for simID in simIDs:
     for t in timesteps:
         filepath = sim_dir + "/simID{}/data/data_{}.h5".format(simID, t)
         data = h5py.File(filepath, 'r')
-        x = np.array(data["mesh"]["x"])
+        x = np.array(data["mesh"]["xc"])
         xx.append(x)
         ww.append(np.array(data["width"]))
         pp.append(1e-6*np.array(data["pressure"]))

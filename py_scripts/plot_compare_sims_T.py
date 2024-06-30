@@ -3,7 +3,7 @@ import h5py
 import os
 import numpy as np
 import matplotlib
-matplotlib.use('MacOSX')
+# matplotlib.use('MacOSX')
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from scipy import interpolate
@@ -44,49 +44,13 @@ matplotlib.rcParams['font.family'] = 'serif'
 
 
 sim_dir = os.path.abspath(os.path.dirname(os.path.realpath(__file__)) + "/../simulations")
-# simIDs = [22, 19, 17, 16, 15]
-# legends = ["CFL = 0.0001", "CFL = 0.001", "CFL = 0.002", "CFL = 0.005", "CFL = 0.01"]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 500)
-# Tlim = (400, 1000)
-# xlim = (-20000, 0)
-
-# simIDs = [19, 20, 21]
-# legends = ["50 m.", "100 m", "200 m."]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 500)
-# Tlim = (400, 1000)
-# xlim = (-20000, 0)
-
-# simIDs = [31, 30]
-# legends = ["CFL = 0.0001", "CFL = 0.001"]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 700)
-# Tlim = (400, 1000)
-# xlim = (-30000, 0)
-
-# simIDs = [30, 32, 33, 34, 35]
-# legends = ["1 layer", "2 layers", "4 layers", "8 layers", "30 layers"]
-# timesteps = list(range(0, 1001, 10))
-# wlim = (0, 1)
-# plim = (0, 700)
-# Tlim = (400, 1000)
-# xlim = (-30000, 0)
-
-# simIDs = [40, 41]
-# legends = ["1 layer", "8 layers"]
-# timesteps = list(range(0, 3001, 10))
-
-simIDs = [35, 36]
-legends = ["30 layers", "30 layers, average"]
-timesteps = list(range(0, 1001, 10))
-wlim = (0, 2)
+simIDs = [1]
+legends = [str(simID) for simID in simIDs]
+timesteps = list(range(0, 2001, 10))
+wlim = (0, 3)
 plim = (0, 700)
-Tlim = (600, 860)
-xlim = (-30000, 0)
+Tlim = (400, 920)
+xlim = (-30000, -10000.0)
 
 
 xc = []
@@ -95,9 +59,7 @@ width = []
 pressure = []
 time = []
 Tmiddle = []
-Tboundary = []
-faceV = []
-faceFlux = []
+Twall = []
 ny = []
 for simID in simIDs:
     xx = []
@@ -107,29 +69,25 @@ for simID in simIDs:
     tt = []
     TTm = []
     TTb = []
-    faceVi = []
-    faceFluxi = []
     for t in timesteps:
         filepath = sim_dir + "/simID{}/data/data_{}.h5".format(simID, t)
         data = h5py.File(filepath, 'r')
-        x = np.array(data["mesh"]["x"])
-        xx.append(x)
+        xx.append(np.array(data["mesh"]["xc"]))
+        dxx.append(np.array(data["mesh"]["xr"]) - np.array(data["mesh"]["xl"]))
         ww.append(np.array(data["width"]))
         pp.append(1e-6*np.array(data["pressure"]))
-        dxx.append(np.array(data["mesh"]["xr"]) - np.array(data["mesh"]["xl"]))
         tt.append(float(np.array(data["time"])))
         nyy = int(np.array(data["ny"]))
         TT = np.array(data["temperature"])
         TTm.append(TT[:, 0])
-        TTb.append(TT[:, nyy-1])
-        # faceVi.append()
+        TTb.append(np.array(data["Twall"]))
     xc.append(xx)
     dx.append(dxx)
     width.append(ww)
     pressure.append(pp)
     time.append(tt)
     Tmiddle.append(TTm)
-    Tboundary.append(TTb)
+    Twall.append(TTb)
     ny.append(nyy)
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(8, 6))
@@ -152,7 +110,7 @@ for i in range(len(simIDs)):
     W = createYData(width[i][0])
     P = createYData(pressure[i][0])
     Tm = createYData(Tmiddle[i][0])
-    Tb = createYData(Tboundary[i][0])
+    Tb = createYData(Twall[i][0])
     Ny = ny[i]
     
     lw, = ax1.plot(X, W, linewidth=2, label=legends[i], linestyle='-', color=colors[i])
@@ -206,7 +164,7 @@ def iter_update(val):
         W = createYData(width[i][t_index])
         P = createYData(pressure[i][t_index])
         Tm = createYData(Tmiddle[i][t_index])
-        Tb = createYData(Tboundary[i][t_index])
+        Tb = createYData(Twall[i][t_index])
         
         lws[i].set_ydata(W)
         lps[i].set_ydata(P)

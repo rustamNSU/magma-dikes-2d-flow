@@ -11,20 +11,18 @@
 #include "TimestepController.hpp"
 #include "ReservoirData.hpp"
 
-class MassBalance{
+class DikeModel2d{
     private:
-        InputData* input;
-        ReservoirData* reservoir;
-        TimestepController* timestep_controller;
-        Elasticity* elasticity;
-        Mesh* mesh;
-        Schedule* schedule;
-        MagmaState* magma_state;
-        DikeData* new_dike;
-        DikeData* old_dike;
-
-        Eigen::MatrixXd mat;
-        Eigen::VectorXd rhs;
+        std::string input_path;
+        std::shared_ptr<InputData> input;
+        std::shared_ptr<ReservoirData> reservoir;
+        std::shared_ptr<Elasticity> elasticity;
+        std::shared_ptr<TimestepController> timestep_controller;
+        std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<Schedule> schedule;
+        std::shared_ptr<MagmaState> magma_state;
+        std::shared_ptr<DikeData> dike;
+        std::shared_ptr<DikeData> old_dike;
         nlohmann::json algorithm_properties;
 
         std::string TIMESTEP_SCHEME;
@@ -36,31 +34,5 @@ class MassBalance{
         double CFL_FACTOR = 0.1;
 
     public:
-        struct explicitSolverOutput{
-            bool cfl_condition = true;
-            int ratio = 1;
-        };
-        MassBalance(
-            InputData* input,
-            TimestepController* timestep_controller,
-            Elasticity* elasticity,
-            Mesh* mesh,
-            Schedule* schedule,
-            MagmaState* magma_state,
-            ReservoirData* reservoir
-        );
-
-        void setNewTimestepData(
-            DikeData* new_dike,
-            DikeData* old_dike
-        );
-
-        void setAlgorithmProperties(const nlohmann::json& properties);
-        explicitSolverOutput explicitSolve();
-        void updatePressure();
-        void updateTemperature();
-        // SolverOutput solve();
-        void generateMatrix();
-        void calculateMobility();
-        void setInitialData();
+        DikeModel2d(const std::string& input_path);
 };

@@ -11,7 +11,6 @@
 #include "Elasticity.hpp"
 #include "DikeData.hpp"
 #include "DikeModel2d.hpp"
-#include "Writers.hpp"
 
 using json = nlohmann::json;
 using Eigen::VectorXd;
@@ -23,6 +22,7 @@ namespace fs = std::filesystem;
 int main(int argc, char ** argv){
     std::string input_path = argv[1];
     DikeModel2d model(input_path);
+    model.run();
 	// std::ifstream f(input_path);
     // json input_json = json::parse(f);
 	// f.close();

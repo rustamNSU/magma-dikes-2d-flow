@@ -17,6 +17,7 @@ target_link_libraries(
     Eigen3::Eigen
     nlohmann_json::nlohmann_json
     HighFive
+    spdlog::spdlog
 )
 target_include_directories(
     runner

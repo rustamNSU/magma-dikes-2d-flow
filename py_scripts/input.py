@@ -27,8 +27,8 @@ inputDict["reservoirProperties"] = {
     "KIc": 0.0,
     "specificHeatCapacity" : 1200,
     "thermalConductivity" : 2,
-    "densityModel" : "constant_density",
-    "temperatureModel" : "constant_gradient",
+    "densityModel" : "constantDensity",
+    "temperatureModel" : "constantTemperatureGradient",
     "numberOfLayers" : 30,
     "reservoirWidth" : 5.0,
     "meshRefinementAlgorithm" : "cosine",
@@ -36,7 +36,7 @@ inputDict["reservoirProperties"] = {
         "rho" : 2300.0
     },
     "constantTemperatureGradient" : {
-        "dT" : 40e-3,
+        "dT" : 30e-3,
         "maximum_temperature" : 900,
         "minimum_temperature" : 0
     },
@@ -44,11 +44,11 @@ inputDict["reservoirProperties"] = {
 inputDict["magmaProperties"] = {
     "thermalConductivity" : 2,
     "specificHeatCapacity" : 1200,
-    "densityModel" : "constant_density",
+    "densityModel" : "constantDensity",
     "constantDensity" : {
         "rho" : 2000
     },
-    "viscosityModel" : "VFT_constant_viscosity",
+    "viscosityModel" : "constantViscosity",
     "vftConstantViscosity" : {
         "A" : -4.55,
         "B" : 11196,
@@ -56,7 +56,7 @@ inputDict["magmaProperties"] = {
         "muMaxLimit" : 1e10
     },
     "constantViscosity" : {
-        "mu" : 1000
+        "mu" : 10000
     },
     "linearViscosity" : {
         "much" : 50,
@@ -64,17 +64,17 @@ inputDict["magmaProperties"] = {
     },
 }
 inputDict["scheduleProperties"] = {
-    "Q": [0.5, 0.0],
+    "Q": [2.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
-    "T" : 900
+    "T" : 900,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
     "endTime" : 100000.0,
     "dtList" : [1.0],
     "dtTime" : [0.0],
-    "outputSaveRate" : 100
+    "outputSaveRate" : 10
 }
 inputDict["meshProperties"] = {
     "n" : 200,

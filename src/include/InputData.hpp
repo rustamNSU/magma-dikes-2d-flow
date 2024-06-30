@@ -4,6 +4,8 @@
 #include <string>
 #include <tuple>
 #include <filesystem>
+#include <spdlog/spdlog.h>
+#include <memory>
 #include "Mesh.hpp"
 
 
@@ -21,6 +23,7 @@ class InputData{
     
     private:
         void saveInputJson();
+        void setMultiSinkLogger();
 
     public:
         nlohmann::json getTimestepProperties() const;

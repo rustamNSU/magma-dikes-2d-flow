@@ -20,7 +20,6 @@ class DikeData{
         Eigen::VectorXd yb; // yb/h(t, x)
 
         Eigen::VectorXd hw; // halfwidth
-        Eigen::VectorXd width; // width
         Eigen::VectorXd pressure;
         Eigen::VectorXd overpressure;
 
@@ -33,6 +32,7 @@ class DikeData{
         Eigen::MatrixXd C; // C^j on x_{i+1/2}, without (dp/dx + rho*g)
         Eigen::MatrixXd mobility; // Layer mobility into element
         Eigen::VectorXd Qx; // Total flux between elements
+        Eigen::ArrayXd Twall;
         double time = 0.0;
         nlohmann::json algorithm_properties;
     
@@ -61,6 +61,11 @@ class DikeData{
             for (int icol = 0; icol < ny; icol++){
                 temperature.col(icol) = T0;
             }
+            Twall = T0;
+        }
+
+        inline Eigen::ArrayXd getWidth() const{
+            return 2.0 * hw;
         }
 
         // const Eigen::VectorXd& getDensity() const;
@@ -79,7 +84,7 @@ class DikeData{
         // void setPressure(const Eigen::VectorXd& vec);
         // void setTemperature(const Eigen::MatrixXd& mat);
         // void setViscosity(const Eigen::MatrixXd& mat);
-
+        void save(const std::string path) const;
         friend class MagmaState;
         friend class MassBalance;
         friend class DikeDataWriter;

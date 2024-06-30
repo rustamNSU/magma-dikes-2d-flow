@@ -7,12 +7,14 @@
 class MagmaState;
 class MassBalance;
 class DikeDataWriter;
+class DikeModel2d;
 
 class ReservoirData{
     public:
         friend class MagmaState;
         friend class MassBalance;
         friend class DikeDataWriter;
+        friend class DikeModel2d;
 
     private:
         Mesh* mesh;
@@ -29,15 +31,16 @@ class ReservoirData{
 
         int ny; // Number of layers
         double L; // Reservoir width
-        Eigen::VectorXd yc; // Center of layers
-        Eigen::VectorXd yb; // Coordinates of boundaries between layers
-        Eigen::VectorXd dy; // Width of layers
-        Eigen::VectorXd initial_temperature; // Initial reservoir temperature
-        Eigen::VectorXd density;
-        Eigen::VectorXd lithostatic_pressure;
+        Eigen::ArrayXd yc; // Center of layers
+        Eigen::ArrayXd yb; // Coordinates of boundaries between layers
+        Eigen::ArrayXd dy; // Width of layers
+        Eigen::ArrayXd initial_temperature; // Initial reservoir temperature
+        Eigen::ArrayXd density;
+        Eigen::ArrayXd lithostatic_pressure;
         
         double time = 0;
-        Eigen::MatrixXd temperature; // Current reservoir temperature field
+        Eigen::ArrayXXd temperature; // Current reservoir temperature field
+        Eigen::ArrayXXd temperature_old; // Current reservoir temperature field
     
     private:
         void generateCosineRefinementMesh();
@@ -47,10 +50,10 @@ class ReservoirData{
 
     public:
         ReservoirData(Mesh* mesh, nlohmann::json properties);
-        const Eigen::VectorXd& getInitialTemperature() const;
-        const Eigen::MatrixXd& getTemperature() const;
-        void setTemperature(Eigen::MatrixXd&& T);
+        const Eigen::ArrayXd& getInitialTemperature() const;
+        const Eigen::ArrayXXd& getTemperature() const;
+        void setTemperature(Eigen::ArrayXXd&& T);
         std::tuple<double, double, double> getElasticityParameters() const;
         double getGravityAcceleration() const;
-        const Eigen::VectorXd& getLithostaticPressure() const;
+        const Eigen::ArrayXd& getLithostaticPressure() const;
 };

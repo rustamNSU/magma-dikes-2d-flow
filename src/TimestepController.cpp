@@ -48,7 +48,7 @@ int TimestepController::getTimeIteration() const{
 
 
 std::tuple<bool, int> TimestepController::saveTimestepIteration() const{
-    bool is_save = (base_timesteps % output_save_rate) == 0;
+    bool is_save = ((base_timesteps % output_save_rate) == 0) && (level == 0);
     int save_iteration = base_timesteps / output_save_rate;
     return std::make_tuple(is_save, save_iteration);
 }
@@ -113,7 +113,7 @@ void TimestepController::updateNonlinearIteration(){
 
 
 bool TimestepController::isFinish() const{
-    return current_time < end_time - 1e-10;
+    return !(current_time < end_time - 1e-10);
 }
 
 
