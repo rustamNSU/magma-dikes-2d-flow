@@ -6,7 +6,7 @@ import numpy as np
 import json
 import h5py
 
-simID = 3
+simID = 11
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -19,6 +19,7 @@ inputDict["algorithmProperties"] = {
     "cutoffVelocity" : 1e-5,
     "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,
+    "viscosityApproximation" : "min", # "min", "harmonic", "mean"
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -65,13 +66,13 @@ inputDict["magmaProperties"] = {
 }
 inputDict["scheduleProperties"] = {
     "Q": [1.0, 0.0],
-    "t": [0.0, 5000],
+    "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 200000.0,
+    "endTime" : 400000.0,
     "dtList" : [1.0, 10],
     "dtTime" : [0.0, 10000],
     "outputSaveRate" : 50
@@ -79,7 +80,7 @@ inputDict["timestepProperties"] = {
 inputDict["meshProperties"] = {
     "n" : 200,
     "xmin" : -30000.0,
-    "xmax" : -10000.0
+    "xmax" : 0.0
 }
 
 input_file = repository_dir + "/input.json"

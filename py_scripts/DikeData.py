@@ -64,6 +64,7 @@ class DikeData:
             Tmask[halfwidth <= min_width, :] = np.nan
             Twall = hdf5_read_array(data, "/Twall")
             qx = hdf5_read_array(data, "/qx")
+            qy = hdf5_read_array(data, "/qy")
             ux = qx / (yb[1] - yb[0])
             time = hdf5_read_single(data, "/time")
             A = hdf5_read_array(data, "/A")
@@ -82,6 +83,7 @@ class DikeData:
                 viscosity=viscosity,
                 Twall=Twall,
                 qx=qx,
+                qy=qy,
                 ux=ux,
                 A=A,
                 C=C,

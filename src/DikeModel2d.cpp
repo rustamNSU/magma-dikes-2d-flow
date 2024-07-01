@@ -44,6 +44,7 @@ void DikeModel2d::setAlgorithmProperties(){
     MIN_MOBILITY_WIDTH = algorithm_properties["massBalanceMinMobilityWidth"];
     CUTOFF_VELOCITY = algorithm_properties["cutoffVelocity"];
     CFL_FACTOR = algorithm_properties["lubricationCflFactor"];
+    VISCOSITY_APPROXIMATION = algorithm_properties["viscosityApproximation"].get<std::string>();
     // MAX_ITERATIONS = properties["massBalanceMaxIterations"];
     // MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
     // TOLERANCE = properties["massBalanceTolerance"];
@@ -148,7 +149,13 @@ void DikeModel2d::calculateVerticalFlow(){
         dike->G[ix] = G;
         ArrayXd mul = viscosity.row(ix-1);
         ArrayXd mur = viscosity.row(ix);
-        ArrayXd mu = 2 * (mul * mur) / (mul + mur);
+        ArrayXd mu = mul;
+        if (VISCOSITY_APPROXIMATION == "harmonic"){
+            mu = 2 * (mul * mur) / (mul + mur);
+        }
+        if (VISCOSITY_APPROXIMATION == "mean"){
+            mu = 0.5 * (mul + mur);
+        }
         ArrayXd A = 0.5*h*h * mu.cwiseInverse();
         ArrayXd C = ArrayXd::Zero(ny);
         C(ny-1) = -A(ny-1);

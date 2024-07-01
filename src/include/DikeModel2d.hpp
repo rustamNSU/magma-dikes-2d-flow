@@ -40,6 +40,7 @@ class DikeModel2d{
 
         ExplicitSolverLog solver_log;
         std::string TIMESTEP_SCHEME;
+        std::string VISCOSITY_APPROXIMATION = "harmonic";
         int MAX_ITERATIONS = 50;
         int MIN_STAB_ITERATIONS = 2;
         double TOLERANCE = 1e-4;

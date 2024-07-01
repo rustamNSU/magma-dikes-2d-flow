@@ -11,14 +11,22 @@ from py_scripts.utils import set_matplotlib_settings
 from py_scripts.DikeData import DikeData
 set_matplotlib_settings()
 
-
-simIDs = [2, 1, 3, 4]
+simIDs = [11]
 simLegends = [str(simID) for simID in simIDs]
-simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 wlim = (0, 3)
 plim = (0, 700)
 Tlim = (600, 920)
-xlim = (-30000, -10000.0)
+xlim = (-30000, 0)
+# simIDs = [1, 3, 2]
+# simLegends = [r"$\Delta x = 50$m", r"$\Delta x = 100$m", r"$\Delta x = 200$m"]
+# simIDs = [5, 6]
+# simLegends = [r"$\mu_{i+1/2} = \frac{2}{1/\mu_i + 1/\mu_{i+1}}$", r"$\mu_{i+1/2} = \mu_i$"]
+# wlim = (0, 3)
+# plim = (0, 700)
+# Tlim = (600, 920)
+# xlim = (-30000, -10000.0)
+
+simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 
 
 dikes = [DikeData(sim_path, step_rate=1) for sim_path in simPaths]
