@@ -63,6 +63,8 @@ class DikeData:
             Tmask = np.array(temperature)
             Tmask[halfwidth <= min_width, :] = np.nan
             Twall = hdf5_read_array(data, "/Twall")
+            qx = hdf5_read_array(data, "/qx")
+            ux = qx / (yb[1] - yb[0])
             time = hdf5_read_single(data, "/time")
             self.time.append(time)
             result = dict(
@@ -77,6 +79,8 @@ class DikeData:
                 Tmask=Tmask,
                 viscosity=viscosity,
                 Twall=Twall,
+                qx=qx,
+                ux=ux,
                 time=time,
             )
             self.data.append(result)

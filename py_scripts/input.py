@@ -6,7 +6,7 @@ import numpy as np
 import json
 import h5py
 
-simID = 1
+simID = 4
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -15,9 +15,9 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 30,
+    "numberOfLayers" : 3,
     "cutoffVelocity" : 1e-5,
-    "lubricationCflFactor" : 0.01,
+    "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,
 }
 inputDict["reservoirProperties"] = {
@@ -64,17 +64,17 @@ inputDict["magmaProperties"] = {
     },
 }
 inputDict["scheduleProperties"] = {
-    "Q": [2.0, 0.0],
-    "t": [0.0, 10000],
+    "Q": [1.0, 0.0],
+    "t": [0.0, 5000],
     "rho": 2000.0,
     "T" : 900,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 100000.0,
-    "dtList" : [1.0],
-    "dtTime" : [0.0],
-    "outputSaveRate" : 100
+    "endTime" : 200000.0,
+    "dtList" : [1.0, 10],
+    "dtTime" : [0.0, 10000],
+    "outputSaveRate" : 50
 }
 inputDict["meshProperties"] = {
     "n" : 200,

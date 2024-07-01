@@ -1,13 +1,13 @@
 {
-    "simID": 1,
-    "simDir": "/home/rustam/repositories/magma-dikes-2d-flow/simulations/simID1",
+    "simID": 4,
+    "simDir": "/home/rustam/repositories/magma-dikes-2d-flow/simulations/simID4",
     "algorithmProperties": {
         "isDebug": true,
         "flowModel": "dike",
         "timestepScheme": "explicit",
-        "numberOfLayers": 30,
+        "numberOfLayers": 3,
         "cutoffVelocity": 1e-05,
-        "lubricationCflFactor": 0.01,
+        "lubricationCflFactor": 0.0001,
         "massBalanceMinMobilityWidth": 1e-10
     },
     "reservoirProperties": {
@@ -55,26 +55,28 @@
     },
     "scheduleProperties": {
         "Q": [
-            2.0,
+            1.0,
             0.0
         ],
         "t": [
             0.0,
-            10000
+            5000
         ],
         "rho": 2000.0,
         "T": 900
     },
     "timestepProperties": {
         "startTime": 0.0,
-        "endTime": 100000.0,
+        "endTime": 200000.0,
         "dtList": [
-            1.0
+            1.0,
+            10
         ],
         "dtTime": [
-            0.0
+            0.0,
+            10000
         ],
-        "outputSaveRate": 100
+        "outputSaveRate": 50
     },
     "meshProperties": {
         "n": 200,

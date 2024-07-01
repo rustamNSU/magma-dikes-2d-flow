@@ -12,7 +12,7 @@ from py_scripts.DikeData import DikeData
 set_matplotlib_settings()
 
 
-simIDs = [1]
+simIDs = [2, 1, 3, 4]
 simLegends = [str(simID) for simID in simIDs]
 simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 wlim = (0, 3)
