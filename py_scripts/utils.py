@@ -33,3 +33,14 @@ def createYData(Y):
         yy.append(y)
         yy.append(y)
     return np.array(yy)
+
+
+def create_layers_mask(yb, Y):
+    Ny = len(Y)
+    yid = np.zeros(Ny, dtype=int)
+    ind = 0
+    for iy in range(Ny):
+        if Y[iy] > yb[ind+1] and Y[iy] < 1:
+            ind = ind + 1
+        yid[iy] = ind
+    return yid

@@ -145,6 +145,7 @@ void DikeModel2d::calculateVerticalFlow(){
         if (G > 0){
             G = 0;
         }
+        dike->G[ix] = G;
         ArrayXd mul = viscosity.row(ix-1);
         ArrayXd mur = viscosity.row(ix);
         ArrayXd mu = 2 * (mul * mur) / (mul + mur);
@@ -158,8 +159,8 @@ void DikeModel2d::calculateVerticalFlow(){
         ArrayXd ybb = yb(Eigen::seq(0, ny-1));
         qx.row(ix) = (A * (ybt.cube() - ybb.cube()) / 3 + C * (ybt - ybb)) * h * G;
         Qx(ix) = qx.row(ix).sum();
-        dike->A = A * G;
-        dike->C = C * G;
+        dike->A.row(ix) = A * G;
+        dike->C.row(ix) = C * G;
     }
     return;
 }
@@ -328,6 +329,7 @@ void DikeModel2d::solveEnergyBalance(){
 
 void DikeModel2d::saveData(const std::string &savepath){
     File file(savepath, File::Overwrite);
+    dump(file, "time", dike->time);
     dump(file, "mesh/xc", dike->meshX->getx());
     dump(file, "mesh/xl", dike->meshX->getxl());
     dump(file, "mesh/xr", dike->meshX->getxr());
@@ -345,7 +347,9 @@ void DikeModel2d::saveData(const std::string &savepath){
     dump(file, "Twall", dike->Twall);
     dump(file, "qx", dike->qx);
     dump(file, "qy", dike->qy);
-    dump(file, "time", dike->time);
+    dump(file, "A", dike->A);
+    dump(file, "C", dike->C);
+    dump(file, "G", dike->G);
 
     dump(file, "reservoir/yc", reservoir->yc);
     dump(file, "reservoir/yb", reservoir->yb);

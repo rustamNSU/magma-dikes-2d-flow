@@ -6,7 +6,7 @@ import numpy as np
 import json
 import h5py
 
-simID = 4
+simID = 3
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -15,7 +15,7 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 3,
+    "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
     "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,

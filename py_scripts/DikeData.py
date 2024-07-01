@@ -66,6 +66,8 @@ class DikeData:
             qx = hdf5_read_array(data, "/qx")
             ux = qx / (yb[1] - yb[0])
             time = hdf5_read_single(data, "/time")
+            A = hdf5_read_array(data, "/A")
+            C = hdf5_read_array(data, "/C")
             self.time.append(time)
             result = dict(
                 xc=xc,
@@ -81,6 +83,8 @@ class DikeData:
                 Twall=Twall,
                 qx=qx,
                 ux=ux,
+                A=A,
+                C=C,
                 time=time,
             )
             self.data.append(result)

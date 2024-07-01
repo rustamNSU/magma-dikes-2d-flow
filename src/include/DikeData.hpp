@@ -33,6 +33,7 @@ class DikeData{
         Eigen::MatrixXd mobility; // Layer mobility into element
         Eigen::VectorXd Qx; // Total flux between elements
         Eigen::ArrayXd Twall;
+        Eigen::ArrayXd G; // Total pressure gradient with buoyancy between elements
         double time = 0.0;
         nlohmann::json algorithm_properties;
     

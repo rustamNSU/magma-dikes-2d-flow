@@ -34,6 +34,7 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     qy = MatrixXd::Zero(nx, ny+1);
     mobility = MatrixXd::Zero(nx, ny);
     Qx = VectorXd::Zero(nx+1);
+    G = VectorXd::Zero(nx+1);
 }
 
 

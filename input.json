@@ -1,11 +1,11 @@
 {
-    "simID": 4,
-    "simDir": "/home/rustam/repositories/magma-dikes-2d-flow/simulations/simID4",
+    "simID": 3,
+    "simDir": "/home/rustam/repositories/magma-dikes-2d-flow/simulations/simID3",
     "algorithmProperties": {
         "isDebug": true,
         "flowModel": "dike",
         "timestepScheme": "explicit",
-        "numberOfLayers": 3,
+        "numberOfLayers": 30,
         "cutoffVelocity": 1e-05,
         "lubricationCflFactor": 0.0001,
         "massBalanceMinMobilityWidth": 1e-10
