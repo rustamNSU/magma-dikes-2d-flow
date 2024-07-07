@@ -11,12 +11,22 @@ class Schedule{
         std::vector<double> tlist;
         double rho;
         double T;
+        double beta = 0.0;
         void parseProperties();
 
     public:
         Schedule(Mesh* mesh, nlohmann::json&& properties);
 
         double getMassRate(double t1, double t2) const;
-        double getMagmaChamberTemperature() const;
-        double getMagmaChamberDensity() const;
+        inline double getMagmaChamberTemperature() const{
+            return T;
+        }
+        
+        inline double getMagmaChamberDensity() const{
+            return rho;
+        }
+
+        inline double getMagmaChamberCrystallization() const{
+            return beta;
+        }
 };

@@ -6,7 +6,7 @@ import numpy as np
 import json
 import h5py
 
-simID = 11
+simID = 14
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -15,7 +15,7 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 30,
+    "numberOfLayers" : 20,
     "cutoffVelocity" : 1e-5,
     "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,
@@ -30,8 +30,8 @@ inputDict["reservoirProperties"] = {
     "thermalConductivity" : 2,
     "densityModel" : "constantDensity",
     "temperatureModel" : "constantTemperatureGradient",
-    "numberOfLayers" : 30,
-    "reservoirWidth" : 5.0,
+    "numberOfLayers" : 10,
+    "reservoirWidth" : 3.0,
     "meshRefinementAlgorithm" : "cosine",
     "constantDensity" : {
         "rho" : 2300.0
@@ -45,11 +45,16 @@ inputDict["reservoirProperties"] = {
 inputDict["magmaProperties"] = {
     "thermalConductivity" : 2,
     "specificHeatCapacity" : 1200,
+    "latentHeat" : 350000,
     "densityModel" : "constantDensity",
+    "viscosityModel" : "vftConstantViscosity",
+    "crystallizationModel" : "constantRelaxationCrystallization",
+    # "betaEq": {
+        
+    # },
     "constantDensity" : {
         "rho" : 2000
     },
-    "viscosityModel" : "vftConstantViscosity",
     "vftConstantViscosity" : {
         "A" : -4.55,
         "B" : 11196,
@@ -61,14 +66,18 @@ inputDict["magmaProperties"] = {
     },
     "linearViscosity" : {
         "much" : 50,
-        "musurf" : 1000
+        "musurf" : 1000,
     },
+    "constantRelaxationCrystallization" : {
+        "tau" : 24 * 3600 * 7,
+    }
 }
 inputDict["scheduleProperties"] = {
     "Q": [1.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
+    "beta" : 0.0,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,

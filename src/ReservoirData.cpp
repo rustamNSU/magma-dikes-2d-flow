@@ -1,10 +1,13 @@
 #include "ReservoirData.hpp"
 #include <cmath>
+#include <highfive/H5Easy.hpp>
 
 using Eigen::ArrayXXd;
 using Eigen::ArrayXd;
 using Eigen::ArrayXi;
 using nlohmann::json;
+using H5Easy::File;
+using H5Easy::dump;
 
 
 ReservoirData::ReservoirData(Mesh* mesh, json properties) :
@@ -126,4 +129,17 @@ double ReservoirData::getGravityAcceleration() const{
 
 const Eigen::ArrayXd& ReservoirData::getLithostaticPressure() const{
     return lithostatic_pressure;
+}
+
+
+void ReservoirData::saveData(const std::string& savepath) const{
+    File file(savepath, File::Overwrite);
+    dump(file, "ny", ny);
+    dump(file, "L", L);
+    dump(file, "yc", yc);
+    dump(file, "yb", yb);
+    dump(file, "dy", dy);
+    dump(file, "initial_temperature", initial_temperature);
+    dump(file, "temperature", temperature);
+    dump(file, "time", time);
 }

@@ -56,4 +56,5 @@ class ReservoirData{
         std::tuple<double, double, double> getElasticityParameters() const;
         double getGravityAcceleration() const;
         const Eigen::ArrayXd& getLithostaticPressure() const;
+        void saveData(const std::string& savepath) const;
 };

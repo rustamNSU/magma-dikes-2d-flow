@@ -58,6 +58,7 @@ class DikeModel2d{
         void calculateVerticalFlow();
         void solveMassBalance();
         void solveEnergyBalance();
+        void updateCrystallization();
         void reloadData();
         void updateData();
         void saveData(const std::string &savepath);

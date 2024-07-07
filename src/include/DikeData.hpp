@@ -26,10 +26,15 @@ class DikeData{
         Eigen::MatrixXd density; // Magma density in each layer of mesh element
         Eigen::MatrixXd temperature; // Magma temperature in each layer of mesh element
         Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
+        Eigen::MatrixXd Tliquidus; // Liquidus temperature
+        Eigen::MatrixXd Tsolidus; // Solidus temperature
+        Eigen::MatrixXd betaeq; // Equlibrium crystallization
+        Eigen::MatrixXd beta; // Crystallization
         Eigen::MatrixXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
         Eigen::MatrixXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
         Eigen::MatrixXd A; // A^j on x_{i+1/2}, without (dp/dx + rho*g)
         Eigen::MatrixXd C; // C^j on x_{i+1/2}, without (dp/dx + rho*g)
+        Eigen::MatrixXd shear_heat;
         Eigen::MatrixXd mobility; // Layer mobility into element
         Eigen::VectorXd Qx; // Total flux between elements
         Eigen::ArrayXd Twall;

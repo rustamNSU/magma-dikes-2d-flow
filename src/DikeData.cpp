@@ -28,9 +28,14 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     density = MatrixXd::Zero(nx, ny);
     temperature = MatrixXd::Zero(nx, ny);
     viscosity = MatrixXd::Zero(nx, ny);
+    betaeq = MatrixXd::Zero(nx, ny);
+    beta = MatrixXd::Zero(nx, ny);
+    Tliquidus = MatrixXd::Zero(nx, ny);
+    Tsolidus = MatrixXd::Zero(nx, ny);
     qx = MatrixXd::Zero(nx+1, ny);
     A = MatrixXd::Zero(nx+1, ny);
     C = MatrixXd::Zero(nx+1, ny);
+    shear_heat = MatrixXd::Zero(nx, ny);
     qy = MatrixXd::Zero(nx, ny+1);
     mobility = MatrixXd::Zero(nx, ny);
     Qx = VectorXd::Zero(nx+1);
@@ -54,6 +59,8 @@ void DikeData::save(const std::string path) const{
     dump(file, "density", density);
     dump(file, "viscosity", viscosity);
     dump(file, "temperature", temperature);
+    dump(file, "betaeq", betaeq);
+    dump(file, "beta", beta);
     dump(file, "Twall", Twall);
     dump(file, "qx", qx);
     dump(file, "qy", qy);

@@ -13,8 +13,12 @@ InputData::InputData(const json& input) : input(input)
     sim_dir = work_dir / ("simulations/simID" + std::to_string(sim_id));
     data_dir = sim_dir / "data";
     reservoir_dir = sim_dir / "reservoir_data";
-    fs::create_directories(data_dir);
-    fs::create_directories(reservoir_dir);
+    for (auto dir_path : {data_dir, reservoir_dir}){
+        std::filesystem::remove_all(dir_path);
+        if (std::filesystem::exists(dir_path) == false){
+            std::filesystem::create_directories(dir_path);
+        }
+    }
     saveInputJson();
     setMultiSinkLogger();
 }

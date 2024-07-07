@@ -65,6 +65,10 @@ class DikeData:
             Twall = hdf5_read_array(data, "/Twall")
             qx = hdf5_read_array(data, "/qx")
             qy = hdf5_read_array(data, "/qy")
+            beta = hdf5_read_array(data, "/beta")
+            betaeq = hdf5_read_array(data, "/betaeq")
+            Tliquidus = hdf5_read_array(data, "/Tliquidus")
+            Tsolidus = hdf5_read_array(data, "/Tsolidus")
             ux = qx / (yb[1] - yb[0])
             time = hdf5_read_single(data, "/time")
             A = hdf5_read_array(data, "/A")
@@ -84,6 +88,10 @@ class DikeData:
                 Twall=Twall,
                 qx=qx,
                 qy=qy,
+                beta=beta,
+                betaeq=betaeq,
+                Tliquidus=Tliquidus,
+                Tsolidus=Tsolidus,
                 ux=ux,
                 A=A,
                 C=C,

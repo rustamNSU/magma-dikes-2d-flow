@@ -13,6 +13,7 @@ MagmaState::MagmaState(Mesh* mesh, json&& properties) :
     viscosity_model = this->properties["viscosityModel"].get<std::string>();
     thermal_conductivity = this->properties["thermalConductivity"];
     specific_heat = this->properties["specificHeatCapacity"];
+    latent_heat = this->properties["latentHeat"];
 
     if (density_model == "constantDensity"){
         rho = this->properties["constantDensity"]["rho"];
@@ -80,6 +81,20 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         }
         dike->viscosity = Tavg.unaryExpr(func);
     }
+}
+
+
+void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
+    int nx = dike->meshX->size();
+    int ny = dike->ny;
+    for (int ix = 0; ix < nx; ix++){
+        for (int iy = 0; iy < ny; iy++){
+            dike->betaeq(ix, iy) = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy));
+            dike->Tliquidus(ix, iy) = liquidus_temperature(dike->pressure(ix));
+            dike->Tsolidus(ix, iy) = solidus_temperature(dike->pressure(ix));
+        }
+    }
+    return;
 }
 
 
