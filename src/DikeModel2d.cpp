@@ -176,16 +176,16 @@ void DikeModel2d::calculateVerticalFlow(){
         dike->C.row(ix) = C * G;
     }
 
-    // double dx = mesh->getdx();
-    // for (int ix = 0; ix < nx; ++ix){
-    //     if (hw[ix] < MIN_MOBILITY_WIDTH) continue;
-    //     double G = dike->G[ix];
-    //     double h = hw[ix];
-    //     ArrayXd ybt = yb(Eigen::seq(1, ny));
-    //     ArrayXd ybb = yb(Eigen::seq(0, ny-1));
-    //     dike->shear_heat.row(ix) = dx*(h*h*h*G*G/3) * (ybt.cube() - ybb.cube());
-    // }
-    // return;
+    double dx = mesh->getdx();
+    for (int ix = 1; ix < nx; ++ix){
+        if (hw[ix] < MIN_MOBILITY_WIDTH) continue;
+        double G = 0.5 * (dike->G[ix] + dike->G[ix+1]);
+        double h = hw[ix];
+        ArrayXd ybt = yb(Eigen::seq(1, ny));
+        ArrayXd ybb = yb(Eigen::seq(0, ny-1));
+        dike->shear_heat.row(ix) = dx*(h*h*h*G*G/3) * (ybt.cube() - ybb.cube()) / dike->viscosity.row(ix).array();
+    }
+    return;
 }
 
 

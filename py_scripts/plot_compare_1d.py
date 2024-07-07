@@ -12,8 +12,8 @@ from py_scripts.DikeData import DikeData
 set_matplotlib_settings()
 
 # simLegends = [str(simID) for simID in simIDs]
-simIDs = [13, 12]
-simLegends = [r"$L^* = 350000$", r"$L^* = 0$"]
+simIDs = [14, 13, 12]
+simLegends = [r"$L^* = 350000$ + shear heating", r"$L^* = 350000$", r"$L^* = 0$"]
 wlim = (0, 3)
 plim = (0, 700)
 Tlim = (600, 920)
