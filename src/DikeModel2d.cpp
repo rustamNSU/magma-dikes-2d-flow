@@ -70,35 +70,27 @@ void DikeModel2d::setInitialData(){
 
 
 void DikeModel2d::run(){
+    JUST_TIMER_START("0) Total run time");
     while (!timestep_controller->isFinish()){
         auto time = timestep_controller->getCurrentTime();
         auto dt = timestep_controller->getCurrentTimestep();
         solver_log.setDefault();
+        JUST_TIMER_START("1) Explicit solver time");
         explicitSolver();
-        if (solver_log.successful){
-            timestep_controller->update();
-            dike->time = time + dt;
-            reservoir->time = time + dt;
-            *old_dike = *dike;
-            auto [is_save, save_timestep] = timestep_controller->saveTimestepIteration();
-            if (is_save){
-                spdlog::info("{:^7} | {:<5} h | dt = {:<5}",
-                    save_timestep,
-                    time / 3600.0,
-                    dt
-                );
-                std::string savepath = (input->getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
-                saveData(savepath);
+        JUST_TIMER_STOP("1) Explicit solver time");
 
-                std::string reservoir_path = (input->getReservoirDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
-                reservoir->saveData(reservoir_path);
-            }
+        JUST_TIMER_START("1) Update data time");
+        if (solver_log.successful){
+            updateData();
         }
         else{
-            *dike = *old_dike;
-            timestep_controller->divideTimestep(solver_log.cfl_ratio);
+            reloadData();
         }
+        JUST_TIMER_STOP("1) Update data time");
     }
+    JUST_TIMER_STOP("0) Total run time");
+    JUST_TIMER_PRINT_RATIO(std::cout, "0) Total run time");
+    JUST_TIMER_CLEAR;
 }
 
 
@@ -106,8 +98,9 @@ void DikeModel2d::explicitSolver(){
     auto nx = mesh->size();
     auto ny = dike->getLayersNumber();
     auto dt = timestep_controller->getCurrentTimestep();
-
+    JUST_TIMER_START("2) Update viscosity time");
     magma_state->updateViscosity(dike.get());
+    JUST_TIMER_STOP("2) Update viscosity time");
     updatePressure();
     calculateVerticalFlow();
     solveMassBalance();
@@ -120,12 +113,15 @@ void DikeModel2d::explicitSolver(){
 
 
 void DikeModel2d::updatePressure(){
+    JUST_TIMER_START("2) Elasticity time");
     dike->overpressure = 2 * (elasticity->getMatrix() * old_dike->hw);
     dike->pressure = old_dike->overpressure + reservoir->getLithostaticPressure().matrix();
+    JUST_TIMER_STOP("2) Elasticity time");
 }
 
 
 void DikeModel2d::calculateVerticalFlow(){
+    JUST_TIMER_START("2) Vertical flow calculation time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& x = mesh->getx();
@@ -185,11 +181,13 @@ void DikeModel2d::calculateVerticalFlow(){
         ArrayXd ybb = yb(Eigen::seq(0, ny-1));
         dike->shear_heat.row(ix) = dx*(h*h*h*G*G/3) * (ybt.cube() - ybb.cube()) / dike->viscosity.row(ix).array();
     }
+    JUST_TIMER_STOP("2) Vertical flow calculation time");
     return;
 }
 
 
 void DikeModel2d::solveMassBalance(){
+    JUST_TIMER_START("2) Mass balance time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     auto& h = dike->hw;
@@ -218,6 +216,7 @@ void DikeModel2d::solveMassBalance(){
         }
     }
     if (!solver_log.successful){
+        JUST_TIMER_STOP("2) Mass balance time");
         return;
     }
 
@@ -235,10 +234,12 @@ void DikeModel2d::solveMassBalance(){
         double err = dy*dx/dt*(h[ix] - hold[ix]) - Qin[ix]*dy + qx(ix+1, ny-1) - qx(ix, ny-1) - qy(ix, ny-1);
         double a = 0;
     }
+    JUST_TIMER_STOP("2) Mass balance time");
 }
 
 
 void DikeModel2d::solveEnergyBalance(){
+    JUST_TIMER_START("2) Energy balance time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
@@ -356,11 +357,15 @@ void DikeModel2d::solveEnergyBalance(){
         dike->Twall[ix] = sol[ny];
         reservoir->temperature.row(ix) =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data() + ny+1, nr);
     }
+    JUST_TIMER_STOP("2) Energy balance time");
 }
 
 
 void DikeModel2d::updateCrystallization(){
+    JUST_TIMER_START("2) Update crystallization time");
+    JUST_TIMER_START("3) Update equilibrium cryst time");
     magma_state->updateEquilibriumCrystallization(dike.get());
+    JUST_TIMER_STOP("3) Update equilibrium cryst time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
@@ -420,6 +425,7 @@ void DikeModel2d::updateCrystallization(){
         auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
         dike->beta.row(ix) = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
     }
+    JUST_TIMER_STOP("2) Update crystallization time");
 }
 
 
@@ -455,4 +461,35 @@ void DikeModel2d::saveData(const std::string &savepath){
     dump(file, "reservoir/yb", reservoir->yb);
     dump(file, "reservoir/temperature", reservoir->temperature);
     dump(file, "reservoir/ny", reservoir->ny);
+}
+
+
+void DikeModel2d::updateData(){
+    double dt = timestep_controller->getCurrentTimestep();
+    timestep_controller->update();
+    dike->time = timestep_controller->getCurrentTime();
+    reservoir->time = timestep_controller->getCurrentTime();
+    *old_dike = *dike;
+    auto [is_save, save_timestep] = timestep_controller->saveTimestepIteration();
+    if (is_save){
+        JUST_TIMER_START("2) Data saving time");
+        spdlog::info("{:>7} | {:>8.4} h | dt = {:>8.4} | tot. iter. = {:>8} |",
+            save_timestep,
+            timestep_controller->getCurrentTime() / 3600.0,
+            dt,
+            timestep_controller->getAllIterations()
+        );
+        std::string savepath = (input->getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
+        saveData(savepath);
+
+        std::string reservoir_path = (input->getReservoirDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
+        reservoir->saveData(reservoir_path);
+        JUST_TIMER_STOP("2) Data saving time");
+    }
+}
+
+
+void DikeModel2d::reloadData(){
+    *dike = *old_dike;
+    timestep_controller->divideTimestep(solver_log.cfl_ratio);
 }

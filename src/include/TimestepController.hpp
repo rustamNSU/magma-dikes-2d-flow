@@ -46,4 +46,7 @@ class TimestepController{
         double getRelaxationParameter() const;
         void updateNonlinearIteration();
         int getNonlinearIteration() const;
+        inline int getAllIterations() const{
+            return all_timesteps;
+        }
 };

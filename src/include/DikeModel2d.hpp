@@ -10,6 +10,7 @@
 #include "MagmaState.hpp"
 #include "TimestepController.hpp"
 #include "ReservoirData.hpp"
+#include "JustTimer.hpp"
 
 class DikeModel2d{
     private:
@@ -62,4 +63,5 @@ class DikeModel2d{
         void reloadData();
         void updateData();
         void saveData(const std::string &savepath);
+        void printTimer() const;
 };
