@@ -39,6 +39,24 @@ inline double beta_equilibrium(double p, double T){
 }
 
 
+/* Correction for beta change in magma assembling (beta - betach)*/
+inline double phi_chamber(double beta, double betach = 0.45){
+    double dbeta = beta - betach;
+    return std::exp(4.33*dbeta + 10.48*dbeta*dbeta);
+}
+
+
+inline double theta_coef(double beta, double betach = 0.45){
+    double phi = beta < 0.25 ? 0.63 : phi_chamber(beta, betach);
+    constexpr double eps = 0.999916;
+    constexpr double bstar = 0.673;
+    constexpr double gamma = 3.98937;
+    constexpr double delta = 16.9386;
+    double alpha = 0.5*std::sqrt(M_PI)/eps/bstar;
+    double fbx = std::erf(alpha * beta * (1.0 + std::pow(beta / bstar, gamma)));
+    double theta = phi * (1 + std::pow(beta / bstar, delta)) * std::pow(1.0 - eps*fbx, -2.5*bstar);
+    return std::max(1.0, theta);
+}
 // function theta=Theta2(bx)
 //     be0=0.45;
 //     teta1=exp(4.33.*(bx-be0)+10.48.*(bx-be0).*(bx-be0));

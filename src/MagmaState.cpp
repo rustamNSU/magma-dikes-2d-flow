@@ -24,7 +24,7 @@ MagmaState::MagmaState(Mesh* mesh, json&& properties) :
     else if (viscosity_model == "linearViscosity"){
         viscosity_properties = this->properties["linearViscosity"];
     }
-    else if (viscosity_model == "vftConstantViscosity" || "averageVftConstantViscosity"){
+    else if (viscosity_model == "vftConstantViscosity" || "averageVftConstantViscosity" || "vftConstantViscosityCrystallization"){
         viscosity_properties = this->properties["vftConstantViscosity"];
     }
 }
@@ -38,7 +38,26 @@ void MagmaState::updateDensity(DikeData* dike) const{
 
 
 void MagmaState::updateViscosity(DikeData* dike) const{
-    if (viscosity_model == "constantViscosity"){
+    if (viscosity_model == "vftConstantViscosityCrystallization"){
+        int nx = mesh->size();
+        int ny = dike->getLayersNumber();
+        double A = viscosity_properties["A"].get<double>();
+        double B = viscosity_properties["B"].get<double>();
+        double C = viscosity_properties["C"].get<double>();
+        double mu_max = viscosity_properties["muMaxLimit"].get<double>();
+        double K = 273.15;
+        const auto& T = dike->temperature;
+        const auto& beta = dike->beta;
+        auto& viscosity = dike->viscosity;
+        for (int ix = 0; ix < nx; ix++){
+            for (int iy = 0; iy < ny; iy++){
+                double theta = theta_coef(beta(ix, iy));
+                double mu_melt = T(ix, iy) + K > C ? VFT_constant_viscosity(T(ix, iy) + K, A, B, C) : mu_max;
+                viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
+            }
+        }
+    }
+    else if (viscosity_model == "constantViscosity"){
         dike->viscosity.fill(viscosity_properties["mu"]);
     }
     else if (viscosity_model == "linearViscosity"){
@@ -50,8 +69,8 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         }
     }
     else if (viscosity_model == "vftConstantViscosity"){
-        int nx = mesh->size();
-        int ny = dike->getLayersNumber();
+        int nx = dike->meshX->size();
+        int ny = dike->ny;
         double A = viscosity_properties["A"];
         double B = viscosity_properties["B"];
         double C = viscosity_properties["C"];

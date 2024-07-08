@@ -6,7 +6,7 @@ import numpy as np
 import json
 import h5py
 
-simID = 14
+simID = 20
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -30,7 +30,7 @@ inputDict["reservoirProperties"] = {
     "thermalConductivity" : 2,
     "densityModel" : "constantDensity",
     "temperatureModel" : "constantTemperatureGradient",
-    "numberOfLayers" : 10,
+    "numberOfLayers" : 20,
     "reservoirWidth" : 3.0,
     "meshRefinementAlgorithm" : "cosine",
     "constantDensity" : {
@@ -47,7 +47,7 @@ inputDict["magmaProperties"] = {
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
     "densityModel" : "constantDensity",
-    "viscosityModel" : "vftConstantViscosity",
+    "viscosityModel" : "vftConstantViscosityCrystallization",
     "crystallizationModel" : "constantRelaxationCrystallization",
     # "betaEq": {
         
@@ -59,7 +59,7 @@ inputDict["magmaProperties"] = {
         "A" : -4.55,
         "B" : 11196,
         "C" : 93.4,
-        "muMaxLimit" : 1e10
+        "muMaxLimit" : 1e14
     },
     "constantViscosity" : {
         "mu" : 10000
@@ -69,7 +69,7 @@ inputDict["magmaProperties"] = {
         "musurf" : 1000,
     },
     "constantRelaxationCrystallization" : {
-        "tau" : 24 * 3600 * 7,
+        "tau" : 24 * 3600 * 4,
     }
 }
 inputDict["scheduleProperties"] = {
