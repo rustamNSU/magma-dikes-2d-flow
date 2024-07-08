@@ -52,7 +52,8 @@ inline double theta_coef(double beta, double betach = 0.45){
     constexpr double bstar = 0.673;
     constexpr double gamma = 3.98937;
     constexpr double delta = 16.9386;
-    double alpha = 0.5*std::sqrt(M_PI)/eps/bstar;
+    // double alpha = 0.5*std::sqrt(M_PI)/eps/bstar;
+    constexpr double alpha = 0.88622692545/eps/bstar;
     double fbx = std::erf(alpha * beta * (1.0 + std::pow(beta / bstar, gamma)));
     double theta = phi * (1 + std::pow(beta / bstar, delta)) * std::pow(1.0 - eps*fbx, -2.5*bstar);
     return std::max(1.0, theta);

@@ -1,4 +1,5 @@
 #include "MagmaState.hpp"
+#include <omp.h>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -41,19 +42,29 @@ void MagmaState::updateViscosity(DikeData* dike) const{
     if (viscosity_model == "vftConstantViscosityCrystallization"){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
-        double A = viscosity_properties["A"].get<double>();
-        double B = viscosity_properties["B"].get<double>();
-        double C = viscosity_properties["C"].get<double>();
+        const double A = viscosity_properties["A"].get<double>();
+        const double B = viscosity_properties["B"].get<double>();
+        const double C = viscosity_properties["C"].get<double>();
         double mu_max = viscosity_properties["muMaxLimit"].get<double>();
         double K = 273.15;
         const auto& T = dike->temperature;
         const auto& beta = dike->beta;
         auto& viscosity = dike->viscosity;
+        // #pragma omp parallel for
+        const auto& hw = dike->hw;
         for (int ix = 0; ix < nx; ix++){
-            for (int iy = 0; iy < ny; iy++){
-                double theta = theta_coef(beta(ix, iy));
-                double mu_melt = T(ix, iy) + K > C ? VFT_constant_viscosity(T(ix, iy) + K, A, B, C) : mu_max;
-                viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
+            int il = std::max(0, ix-1);
+            int ir = std::min(nx-1, ix+1);
+            if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
+                viscosity.row(ix).fill(mu_max);
+            }
+            else{
+                for (int iy = 0; iy < ny; iy++){
+                    double theta = theta_coef(beta(ix, iy));
+                    // double mu_melt = T(ix, iy) + K > C ? VFT_constant_viscosity(T(ix, iy) + K, A, B, C) : mu_max;
+                    double mu_melt = VFT_constant_viscosity(T(ix, iy) + K, A, B, C);
+                    viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
+                }
             }
         }
     }
@@ -106,7 +117,12 @@ void MagmaState::updateViscosity(DikeData* dike) const{
 void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
     int nx = dike->meshX->size();
     int ny = dike->ny;
+    // #pragma omp parallel for
+    const auto& hw = dike->hw;
     for (int ix = 0; ix < nx; ix++){
+        int il = std::max(0, ix-1);
+        int ir = std::min(nx-1, ix+1);
+        if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
             dike->betaeq(ix, iy) = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy));
             dike->Tliquidus(ix, iy) = liquidus_temperature(dike->pressure(ix));

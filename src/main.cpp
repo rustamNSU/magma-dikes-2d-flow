@@ -4,6 +4,9 @@
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <iostream>
+#ifdef USE_OMP
+#include <Eigen/Core>
+#endif
 
 #include "InputData.hpp"
 #include "Mesh.hpp"
@@ -20,6 +23,9 @@ namespace fs = std::filesystem;
 
 
 int main(int argc, char ** argv){
+    #ifdef USE_OMP
+    Eigen::initParallel();
+    #endif
     std::string input_path = argv[1];
     DikeModel2d model(input_path);
     model.run();

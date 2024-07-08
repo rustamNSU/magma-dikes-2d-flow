@@ -89,7 +89,13 @@ void DikeModel2d::run(){
         JUST_TIMER_STOP("1) Update data time");
     }
     JUST_TIMER_STOP("0) Total run time");
-    JUST_TIMER_PRINT_RATIO(std::cout, "0) Total run time");
+    // JUST_TIMER_PRINT_RATIO(std::cout, "0) Total run time");
+    std::stringstream ss;
+    std::string token;
+    JUST_TIMER_PRINT_RATIO(ss, "0) Total run time");
+    while (std::getline(ss, token, '\n')){
+        spdlog::info(token);
+    }
     JUST_TIMER_CLEAR;
 }
 
@@ -121,7 +127,7 @@ void DikeModel2d::updatePressure(){
 
 
 void DikeModel2d::calculateVerticalFlow(){
-    JUST_TIMER_START("2) Vertical flow calculation time");
+    JUST_TIMER_START("2) Vert. flow calc. time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& x = mesh->getx();
@@ -181,7 +187,7 @@ void DikeModel2d::calculateVerticalFlow(){
         ArrayXd ybb = yb(Eigen::seq(0, ny-1));
         dike->shear_heat.row(ix) = dx*(h*h*h*G*G/3) * (ybt.cube() - ybb.cube()) / dike->viscosity.row(ix).array();
     }
-    JUST_TIMER_STOP("2) Vertical flow calculation time");
+    JUST_TIMER_STOP("2) Vert. flow calc. time");
     return;
 }
 
@@ -362,10 +368,10 @@ void DikeModel2d::solveEnergyBalance(){
 
 
 void DikeModel2d::updateCrystallization(){
-    JUST_TIMER_START("2) Update crystallization time");
-    JUST_TIMER_START("3) Update equilibrium cryst time");
+    JUST_TIMER_START("2) Update crystal time");
+    JUST_TIMER_START("3) Update eq. cryst time");
     magma_state->updateEquilibriumCrystallization(dike.get());
-    JUST_TIMER_STOP("3) Update equilibrium cryst time");
+    JUST_TIMER_STOP("3) Update eq. cryst time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
@@ -425,7 +431,7 @@ void DikeModel2d::updateCrystallization(){
         auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
         dike->beta.row(ix) = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
     }
-    JUST_TIMER_STOP("2) Update crystallization time");
+    JUST_TIMER_STOP("2) Update crystal time");
 }
 
 

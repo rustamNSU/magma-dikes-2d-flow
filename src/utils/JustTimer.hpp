@@ -138,8 +138,8 @@ namespace JustTimer {
         
         /** @brief Print pretty summary table to the given stream (default is std::cout) with ratio related with TotalTimerName */
         void print(std::ostream& stream, const std::string& total_timer_name) {
-            int width_name = 45;
-            int width_number = 16;
+            int width_name = 35;
+            int width_number = 12;
 
             std::stringstream ss;
             std::string time_header = "Total Time " + std::string(suffix_time);
