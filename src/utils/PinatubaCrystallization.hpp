@@ -37,3 +37,18 @@ inline double beta_equilibrium(double p, double T){
     double x = (T-Ts) / (Tl - Ts);
     return 1.0 / (1.0 + std::exp(aF + bF*x + cF*x*x + dF*x*x*x));
 }
+
+
+// function theta=Theta2(bx)
+//     be0=0.45;
+//     teta1=exp(4.33.*(bx-be0)+10.48.*(bx-be0).*(bx-be0));
+//     teta1(bx<0.25)=0.63;
+//     % teta1(:) = 1.0;
+//     eps= 0.999916;
+//     bp = 0.673;
+//     gamma = 3.98937;
+//     delta = 16.9386;
+//     Fbx=erf((sqrt(pi)/2/eps/bp).*bx.*(1+(bx./bp).^gamma));
+//     teta2 = (1+(bx./bp).^delta).*(1-eps.*Fbx).^(-2.5*bp);
+//     theta=max(1.,teta1.*teta2);
+// end
