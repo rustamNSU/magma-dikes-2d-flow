@@ -6,7 +6,7 @@ import numpy as np
 import json
 import h5py
 
-simID = 20
+simID = 32
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -15,7 +15,7 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 20,
+    "numberOfLayers" : 10,
     "cutoffVelocity" : 1e-5,
     "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,
@@ -30,7 +30,7 @@ inputDict["reservoirProperties"] = {
     "thermalConductivity" : 2,
     "densityModel" : "constantDensity",
     "temperatureModel" : "constantTemperatureGradient",
-    "numberOfLayers" : 20,
+    "numberOfLayers" : 10,
     "reservoirWidth" : 3.0,
     "meshRefinementAlgorithm" : "cosine",
     "constantDensity" : {
@@ -57,8 +57,8 @@ inputDict["magmaProperties"] = {
     },
     "vftConstantViscosity" : {
         "A" : -4.55,
-        "B" : 11196,
-        "C" : 93.4,
+        "B" : 7455,
+        "C" : 180,
         "muMaxLimit" : 1e14
     },
     "constantViscosity" : {
@@ -69,21 +69,21 @@ inputDict["magmaProperties"] = {
         "musurf" : 1000,
     },
     "constantRelaxationCrystallization" : {
-        "tau" : 24 * 3600 * 4,
+        "tau" : 24 * 3600 * 1,
     }
 }
 inputDict["scheduleProperties"] = {
-    "Q": [1.0, 0.0],
-    "t": [0.0, 10000],
+    "Q": [1.0, 0.0, 0.5, 0.0],
+    "t": [0.0, 10000, 300000, 310000],
     "rho": 2000.0,
     "T" : 900,
     "beta" : 0.0,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 400000.0,
-    "dtList" : [1.0, 10],
-    "dtTime" : [0.0, 10000],
+    "endTime" : 500000.0,
+    "dtList" : [1.0, 10, 1.0, 10],
+    "dtTime" : [0.0, 10000, 300000, 310000],
     "outputSaveRate" : 50
 }
 inputDict["meshProperties"] = {

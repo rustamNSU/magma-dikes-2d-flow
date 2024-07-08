@@ -13,5 +13,6 @@
  * @return double 
  */
 inline double VFT_constant_viscosity(double T, double A, double B, double C){
-    return std::exp(A + B / (T - C));
+    constexpr double ln10 = 2.302585092994045684;
+    return std::exp(ln10 * (A + B / (T - C)));
 }
