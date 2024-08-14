@@ -3,7 +3,6 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <filesystem>
-#include <iostream>
 #ifdef USE_OMP
 #include <Eigen/Core>
 #endif

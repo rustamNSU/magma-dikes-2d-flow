@@ -1,0 +1,4 @@
+add_executable(check_water_saturation check_water_saturation.cpp)
+target_link_libraries(check_water_saturation PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog utils)
+target_include_directories(check_water_saturation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+install(TARGETS check_water_saturation DESTINATION bin)

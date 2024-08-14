@@ -1,5 +1,5 @@
-add_executable(
-    runner 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
+add_executable(runner 
     main.cpp 
     Mesh.cpp
     Elasticity.cpp
@@ -12,16 +12,12 @@ add_executable(
     TimestepController.cpp
     ReservoirData.cpp
 )
-target_link_libraries(
-    runner
+target_link_libraries(runner
     Eigen3::Eigen
     nlohmann_json::nlohmann_json
     HighFive
     spdlog::spdlog
+    utils
 )
-target_include_directories(
-    runner
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+target_include_directories(runner PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 install(TARGETS runner DESTINATION bin)

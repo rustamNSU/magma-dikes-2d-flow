@@ -1,5 +1,7 @@
 #include "MagmaState.hpp"
+#ifdef USE_OMP
 #include <omp.h>
+#endif
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -67,6 +69,7 @@ void MagmaState::updateViscosity(DikeData* dike) const{
                 }
             }
         }
+        // viscosity = T.binaryExpr()
     }
     else if (viscosity_model == "constantViscosity"){
         dike->viscosity.fill(viscosity_properties["mu"]);
