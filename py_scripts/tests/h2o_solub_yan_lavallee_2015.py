@@ -25,8 +25,8 @@ ax22 = fig.add_subplot(gs[1, nax+ncb:])
 ax11cb = fig.add_subplot(gs[0, nax])
 
 Zcut = Z
-Zcut[Zcut > 7] = np.nan
-Zcut[Zcut < 0] = np.nan
+# Zcut[Zcut > 7] = 7
+Zcut[Zcut < -2] = np.nan
 pc11 = ax11.contourf(P, T, Z, cmap='viridis', levels=100)
 cb11 = fig.colorbar(pc11, cax=ax11cb)
 ax11.set_xlabel(r"Pressure (MPa)")

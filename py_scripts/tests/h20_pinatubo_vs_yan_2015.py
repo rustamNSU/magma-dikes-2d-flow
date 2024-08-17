@@ -15,18 +15,18 @@ H2O_yan = lambda p, t: (354.94*np.sqrt(p) + 9.623*p - 1.5233*np.sqrt(p)*p) / (t 
 
 
 pinatuboPaths = [
-    "./py_scripts/tests/pdpath0.4.csv",
+    # "./py_scripts/tests/pdpath0.4.csv",
     "./py_scripts/tests/pdpath0.6.csv",
-    "./py_scripts/tests/pdpath0.8.csv",
+    # "./py_scripts/tests/pdpath0.8.csv",
 ]
 
 
 Plist = []
 h2olist = []
 pinatuboLegend = [
-    ".pdpath0.4",
+    # ".pdpath0.4",
     ".pdpath0.6",
-    ".pdpath0.8",
+    # ".pdpath0.8",
 ]
 for path in pinatuboPaths:
     df = pd.read_csv(path)
@@ -42,9 +42,10 @@ fig = plt.figure(figsize=(8, 6), constrained_layout=True)
 gs = fig.add_gridspec(1, 1)
 ax = fig.add_subplot(gs[0, 0])
 
-Tlist = [400, 600, 800, 1000]
-for t in Tlist:
-    ax.plot(P1d, H2O_yan(P1d, t), lw=3, ls="--", label=fr"T = {t}$^\circ$C, Yan V. (2015)")
+Tlist = [700, 850]
+scale = [9.65/11.25, 1.0]
+for t, s in zip(Tlist,scale):
+    ax.plot(P1d, s*H2O_yan(P1d, t), lw=3, ls="--", label=fr"T = {t}$^\circ$C, Yan V. (2015)")
 
 
 for i in range(len(pinatuboPaths)):

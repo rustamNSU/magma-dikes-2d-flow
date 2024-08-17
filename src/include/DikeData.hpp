@@ -23,13 +23,18 @@ class DikeData{
         Eigen::VectorXd pressure;
         Eigen::VectorXd overpressure;
 
-        Eigen::MatrixXd density; // Magma density in each layer of mesh element
+        Eigen::MatrixXd density; // Total magma density in each layer of mesh element (rhom + rhoc + rhog)
+        Eigen::MatrixXd rhom; // Melt density in each layer of mesh element (rhol + rhod)
+        Eigen::MatrixXd rhoc; // Crystal density in each layer of mesh element
+        Eigen::MatrixXd rhog; // Exsolved gas density in each layer of mesh element
         Eigen::MatrixXd temperature; // Magma temperature in each layer of mesh element
         Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
         Eigen::MatrixXd Tliquidus; // Liquidus temperature
         Eigen::MatrixXd Tsolidus; // Solidus temperature
         Eigen::MatrixXd betaeq; // Equlibrium crystallization
-        Eigen::MatrixXd beta; // Crystallization
+        Eigen::MatrixXd beta; // Crystal volume concentration in melt
+        Eigen::MatrixXd alpha; // Exsolved gas volume concentration
+        Eigen::MatrixXd gamma; // Dissolved gas weight concentration in melt
         Eigen::MatrixXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
         Eigen::MatrixXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
         Eigen::MatrixXd A; // A^j on x_{i+1/2}, without (dp/dx + rho*g)
