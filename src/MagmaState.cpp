@@ -1,10 +1,13 @@
 #include "MagmaState.hpp"
+#include <exception>
 #ifdef USE_OMP
 #include <omp.h>
 #endif
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+using Eigen::ArrayXd;
+using Eigen::ArrayXXd;
 using json = nlohmann::json;
 
 
@@ -12,31 +15,120 @@ MagmaState::MagmaState(Mesh* mesh, json&& properties) :
     mesh(mesh),
     properties(properties)
 {
-    density_model = this->properties["densityModel"].get<std::string>();
-    viscosity_model = this->properties["viscosityModel"].get<std::string>();
+    setDensityModel();
+    setViscosityModel();
     thermal_conductivity = this->properties["thermalConductivity"];
     specific_heat = this->properties["specificHeatCapacity"];
     latent_heat = this->properties["latentHeat"];
+    saturation_model = SaturationModel::LAVALLEE2015;
+}
 
-    if (density_model == "constantDensity"){
-        rho = this->properties["constantDensity"]["rho"];
+
+void MagmaState::setDensityModel(){
+    auto model = properties["densityModel"].get<std::string>();
+    if (model == DensityModel::constant){
+        density_model = DensityModel::CONSTANT;
+        density_properties = properties["constantDensity"];
     }
-    if (viscosity_model == "constantViscosity"){
-        viscosity_properties = this->properties["constantViscosity"];
+    else if (model == DensityModel::water_saturated){
+        density_model = DensityModel::WATER_SATURATED;
+        density_properties = properties["waterSaturatedDensity"];
     }
-    else if (viscosity_model == "linearViscosity"){
-        viscosity_properties = this->properties["linearViscosity"];
+    else{
+        throw std::invalid_argument("Density model is incorrect!\n");
     }
-    else if (viscosity_model == "vftConstantViscosity" || "averageVftConstantViscosity" || "vftConstantViscosityCrystallization"){
-        viscosity_properties = this->properties["vftConstantViscosity"];
+    return;
+}
+
+
+void MagmaState::setViscosityModel(){
+    auto model = properties["viscosityModel"].get<std::string>();
+    if (model == ViscosityModel::constant){
+        viscosity_model = ViscosityModel::CONSTANT;
+        viscosity_properties = properties["constantViscosity"];
     }
+    else if (model == ViscosityModel::vft_const_coeff){
+        viscosity_model = ViscosityModel::VFT_CONST_COEFF;
+        viscosity_properties = properties["vftConstantViscosity"];
+    }
+    else if (model == ViscosityModel::vft_const_coeff_avg){
+        viscosity_model = ViscosityModel::VFT_CONST_COEFF_AVG;
+        viscosity_properties = properties["vftConstantViscosity"];
+    }
+    else if (model == ViscosityModel::vft_const_coeff_cryst){
+        viscosity_model = ViscosityModel::VFT_CONST_COEFF_CRYST;
+        viscosity_properties = properties["vftConstantViscosity"];
+    }
+    else{
+        throw std::invalid_argument("Viscosity model is incorrect (ro not realized)!\n");
+    }
+    return;
 }
 
 
 void MagmaState::updateDensity(DikeData* dike) const{
-    if (density_model == "constantDensity"){
+    if (density_model == DensityModel::CONSTANT){
+        double rho = density_properties["rho"].get<double>();
         dike->density.fill(rho);
     }
+    else if (density_model == DensityModel::WATER_SATURATED){
+        updateGasSaturation(dike);
+        updateMeltLiquidDensity(dike);
+        updateGasDensity(dike);
+        double rhom0 = density_properties["rhom0"].get<double>();
+        double rhow0 = density_properties["rhow0"].get<double>();
+        double rhoc0 = density_properties["rhoc0"].get<double>();
+        dike->rhoc = rhoc0 * (1.0 - dike->alpha) * dike->beta;
+        dike->rhom = (1.0 - dike->alpha) * (1.0 - dike->beta) * dike->rhom_liquid;
+        dike->density = dike->rhog + dike->rhoc + dike->rhom;
+    }
+}
+
+
+void MagmaState::updateGasDensity(DikeData* dike) const{
+    int nx = dike->meshX->size();
+    int ny = dike->getLayersNumber();
+    double rhoc0 = density_properties["rhoc0"].get<double>();
+    const auto& hw = dike->hw;
+    const auto& p = dike->pressure;
+    const auto& T = dike->temperature;
+    const auto& beta = dike->beta;
+    const auto& gamma = dike->gamma;
+    const auto& rhom_liquid = dike->rhom_liquid;
+    double R = 1000.0;
+    for (int ix = 0; ix < nx; ix++){
+        int il = std::max(0, ix-1);
+        int ir = std::min(nx-1, ix+1);
+        if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
+            continue;
+        }
+        else{
+            for (int iy = 0; iy < ny; iy++){
+                double rhog0 = h2o_vapor_density(p(ix), T(ix, iy), R);
+                double t1 = (1-beta(ix, iy))*(Mg0-gamma(ix,iy))*rhom_liquid(ix,iy);
+                double t2 = Mg0*beta(ix,iy)*rhoc0;
+                double alpha = std::max(0.0, (t1 + t2) / (t1 + t2 + (1.0-Mg0)*rhog0));
+                dike->rhog(ix, iy) = rhog0 * dike->alpha(ix, iy);
+            }
+        }
+    }
+    return;
+}
+
+
+
+void MagmaState::updateMeltLiquidDensity(DikeData* dike) const{
+    int nx = dike->meshX->size();
+    int ny = dike->getLayersNumber();
+    const auto& hw = dike->hw;
+    const auto& gamma = dike->gamma;
+    double rhom0 = density_properties["rhom0"].get<double>();
+    double rhow0 = density_properties["rhow0"].get<double>();
+    auto func = [=](double gamma){
+        return h2o_sat_melt_density(rhom0, rhow0, gamma);
+    };
+    dike->rhom_liquid = dike->gamma.unaryExpr(func);
+    return;
 }
 
 
@@ -136,6 +228,25 @@ void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
 }
 
 
+void MagmaState::updateGasSaturation(DikeData* dike) const{
+    int nx = dike->meshX->size();
+    int ny = dike->ny;
+    const auto& hw = dike->hw;
+    const auto& p = dike->pressure;
+    const auto& T = dike->temperature;
+    const auto& gamma = dike->gamma;
+    for (int ix = 0; ix < nx; ix++){
+        int il = std::max(0, ix-1);
+        int ir = std::min(nx-1, ix+1);
+        if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
+        for (int iy = 0; iy < ny; iy++){
+            dike->gamma(ix, iy) = h2o_wt_lavallee2015(p(ix, iy), T(ix, iy), 0.5);
+        }
+    }
+    return;
+}
+
+
 double MagmaState::getThermalConductivity() const{
     return thermal_conductivity;
 }
@@ -143,4 +254,13 @@ double MagmaState::getThermalConductivity() const{
 
 double MagmaState::getSpecificHeat() const{
     return specific_heat;
+}
+
+
+void MagmaState::setChamberInitialState(DikeData* dike){
+    gamma0 = dike->gamma(0, 0);
+    beta0 = dike->beta(0, 0);
+    rho0 = dike->density(0, 0);
+    rhom0 = dike->rhom(0, 0);
+    Mg0 = (1.0 - beta0) * gamma0 * rhom0 / rho0;
 }

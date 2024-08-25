@@ -1,14 +1,15 @@
 {
-    "simID": 3,
-    "simDir": "/home/rustam/repositories/magma-dikes-2d-flow/simulations/simID3",
+    "simID": 1,
+    "simDir": "/Users/rustam/Repositories/magma-dikes-2d-flow/simulations/simID1",
     "algorithmProperties": {
         "isDebug": true,
         "flowModel": "dike",
         "timestepScheme": "explicit",
-        "numberOfLayers": 30,
+        "numberOfLayers": 10,
         "cutoffVelocity": 1e-05,
         "lubricationCflFactor": 0.0001,
-        "massBalanceMinMobilityWidth": 1e-10
+        "massBalanceMinMobilityWidth": 1e-10,
+        "viscosityApproximation": "mean"
     },
     "reservoirProperties": {
         "E": 20000000000.0,
@@ -17,10 +18,10 @@
         "KIc": 0.0,
         "specificHeatCapacity": 1200,
         "thermalConductivity": 2,
-        "densityModel": "constantDensity",
-        "temperatureModel": "constantTemperatureGradient",
-        "numberOfLayers": 30,
-        "reservoirWidth": 5.0,
+        "densityModel": "constant",
+        "temperatureModel": "constant_gradient",
+        "numberOfLayers": 10,
+        "reservoirWidth": 3.0,
         "meshRefinementAlgorithm": "cosine",
         "constantDensity": {
             "rho": 2300.0
@@ -34,16 +35,19 @@
     "magmaProperties": {
         "thermalConductivity": 2,
         "specificHeatCapacity": 1200,
-        "densityModel": "constantDensity",
+        "latentHeat": 350000,
+        "densityModel": "water_saturated",
+        "viscosityModel": "vft_const_coeff",
+        "crystallizationModel": "const_relaxation",
+        "saturationModel": "lavallee2015",
         "constantDensity": {
             "rho": 2000
         },
-        "viscosityModel": "vftConstantViscosity",
         "vftConstantViscosity": {
             "A": -4.55,
-            "B": 11196,
-            "C": 93.4,
-            "muMaxLimit": 10000000000.0
+            "B": 7455,
+            "C": 180,
+            "muMaxLimit": 100000000000000.0
         },
         "constantViscosity": {
             "mu": 10000
@@ -51,6 +55,9 @@
         "linearViscosity": {
             "much": 50,
             "musurf": 1000
+        },
+        "constantRelaxationCrystallization": {
+            "tau": 86400
         }
     },
     "scheduleProperties": {
@@ -60,14 +67,15 @@
         ],
         "t": [
             0.0,
-            5000
+            10000
         ],
         "rho": 2000.0,
-        "T": 900
+        "T": 900,
+        "beta": 0.0
     },
     "timestepProperties": {
         "startTime": 0.0,
-        "endTime": 200000.0,
+        "endTime": 400000.0,
         "dtList": [
             1.0,
             10
@@ -81,6 +89,6 @@
     "meshProperties": {
         "n": 200,
         "xmin": -30000.0,
-        "xmax": -10000.0
+        "xmax": 0.0
     }
 }

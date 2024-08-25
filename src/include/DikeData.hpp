@@ -16,32 +16,33 @@ class DikeData{
         InputData* input;
         Mesh* meshX;
         int ny = 1; // Number of layers into dike
-        Eigen::VectorXd yc; // y/h(t, x)
-        Eigen::VectorXd yb; // yb/h(t, x)
+        Eigen::ArrayXd yc; // y/h(t, x)
+        Eigen::ArrayXd yb; // yb/h(t, x)
 
-        Eigen::VectorXd hw; // halfwidth
-        Eigen::VectorXd pressure;
-        Eigen::VectorXd overpressure;
+        Eigen::ArrayXd hw; // halfwidth
+        Eigen::ArrayXd pressure;
+        Eigen::ArrayXd overpressure;
 
-        Eigen::MatrixXd density; // Total magma density in each layer of mesh element (rhom + rhoc + rhog)
-        Eigen::MatrixXd rhom; // Melt density in each layer of mesh element (rhol + rhod)
-        Eigen::MatrixXd rhoc; // Crystal density in each layer of mesh element
-        Eigen::MatrixXd rhog; // Exsolved gas density in each layer of mesh element
-        Eigen::MatrixXd temperature; // Magma temperature in each layer of mesh element
-        Eigen::MatrixXd viscosity; // Magma viscosity in each layer of mesh element
-        Eigen::MatrixXd Tliquidus; // Liquidus temperature
-        Eigen::MatrixXd Tsolidus; // Solidus temperature
-        Eigen::MatrixXd betaeq; // Equlibrium crystallization
-        Eigen::MatrixXd beta; // Crystal volume concentration in melt
-        Eigen::MatrixXd alpha; // Exsolved gas volume concentration
-        Eigen::MatrixXd gamma; // Dissolved gas weight concentration in melt
-        Eigen::MatrixXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
-        Eigen::MatrixXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
-        Eigen::MatrixXd A; // A^j on x_{i+1/2}, without (dp/dx + rho*g)
-        Eigen::MatrixXd C; // C^j on x_{i+1/2}, without (dp/dx + rho*g)
-        Eigen::MatrixXd shear_heat;
-        Eigen::MatrixXd mobility; // Layer mobility into element
-        Eigen::VectorXd Qx; // Total flux between elements
+        Eigen::ArrayXXd density; // Total magma density in each layer of mesh element (rhom + rhoc + rhog)
+        Eigen::ArrayXXd rhom; // Melt density in each layer of mesh element (rhol + rhod)
+        Eigen::ArrayXXd rhoc; // Crystal density in each layer of mesh element
+        Eigen::ArrayXXd rhog; // Exsolved gas density in each layer of mesh element
+        Eigen::ArrayXXd rhom_liquid; // Melt phase density
+        Eigen::ArrayXXd temperature; // Magma temperature in each layer of mesh element
+        Eigen::ArrayXXd viscosity; // Magma viscosity in each layer of mesh element
+        Eigen::ArrayXXd Tliquidus; // Liquidus temperature
+        Eigen::ArrayXXd Tsolidus; // Solidus temperature
+        Eigen::ArrayXXd betaeq; // Equlibrium crystallization
+        Eigen::ArrayXXd beta; // Crystal volume concentration in melt
+        Eigen::ArrayXXd alpha; // Exsolved gas volume concentration
+        Eigen::ArrayXXd gamma; // Dissolved gas weight concentration in melt
+        Eigen::ArrayXXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
+        Eigen::ArrayXXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
+        Eigen::ArrayXXd A; // A^j on x_{i+1/2}, without (dp/dx + rho*g)
+        Eigen::ArrayXXd C; // C^j on x_{i+1/2}, without (dp/dx + rho*g)
+        Eigen::ArrayXXd shear_heat;
+        Eigen::ArrayXXd mobility; // Layer mobility into element
+        Eigen::ArrayXd Qx; // Total flux between elements
         Eigen::ArrayXd Twall;
         Eigen::ArrayXd G; // Total pressure gradient with buoyancy between elements
         double time = 0.0;

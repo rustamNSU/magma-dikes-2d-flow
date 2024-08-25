@@ -11,10 +11,10 @@ from matplotlib.widgets import Slider, Button
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from py_scripts.utils import set_matplotlib_settings, create_layers_mask
 from py_scripts.DikeData import DikeData
-set_matplotlib_settings()
 
-
-simID = 14
+FIG_SIZE = [10, 8]
+set_matplotlib_settings(MAC_OS=True)
+simID = 32
 sim_path = sim_dir + f"/simID{simID}"
 wlim = (0, 1)
 plim = (0, 700)
@@ -24,7 +24,7 @@ xlim = (-30000, 0)
 
 dike = DikeData(sim_path, step_rate=10)
 data = dike.data
-fig = plt.figure(figsize=(12, 10), constrained_layout=True)
+fig = plt.figure(figsize=FIG_SIZE, constrained_layout=True)
 
 n1d = 8
 n2d = 30

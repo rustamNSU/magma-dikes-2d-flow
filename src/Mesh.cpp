@@ -1,7 +1,5 @@
 #include "Mesh.hpp"
-
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
+using Eigen::ArrayXd;
 
 
 Mesh::Mesh(const nlohmann::json& properties){
@@ -9,21 +7,21 @@ Mesh::Mesh(const nlohmann::json& properties){
     xmin = properties["xmin"];
     xmax = properties["xmax"];
     dx = (xmax - xmin) / n;
-    xl = VectorXd::LinSpaced(n, xmin, xmax-dx);
-    xr = VectorXd::LinSpaced(n, xmin+dx, xmax);
+    xl = ArrayXd::LinSpaced(n, xmin, xmax-dx);
+    xr = ArrayXd::LinSpaced(n, xmin+dx, xmax);
     x = (xl + xr) / 2.0;
 }
 
 
-const VectorXd& Mesh::getx() const{
+const ArrayXd& Mesh::getx() const{
     return x;
 }
 
-const VectorXd& Mesh::getxl() const{
+const ArrayXd& Mesh::getxl() const{
     return xl;
 }
 
-const VectorXd& Mesh::getxr() const{
+const ArrayXd& Mesh::getxr() const{
     return xr;
 }
 

@@ -25,6 +25,7 @@ class DikeModel2d{
                 cfl_ratio = 2;
             }
         };
+        
 
     private:
         std::string input_path;
@@ -48,6 +49,9 @@ class DikeModel2d{
         double MIN_MOBILITY_WIDTH = 1e-10;
         double CUTOFF_VELOCITY = 1e-4;
         double CFL_FACTOR = 0.01;
+
+        int DENSITY_MODEL = 0;
+        int VISCOSITY_MODEL = 0;
 
     public:
         DikeModel2d(const std::string& input_path);
