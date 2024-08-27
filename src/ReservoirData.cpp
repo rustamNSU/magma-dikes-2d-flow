@@ -74,7 +74,7 @@ std::tuple<double, double, double> ReservoirData::getElasticityParameters() cons
 
 void ReservoirData::calculateDensity(){
     int nx = mesh->size();
-    if (density_model == "constantDensity"){
+    if (density_model == "constant"){
         auto density_properties = properties["constantDensity"];
         density = ArrayXd::Constant(nx, density_properties["rho"]);
     }
@@ -99,7 +99,7 @@ void ReservoirData::calculateLithostaticPressure(){
 
 
 void ReservoirData::calculateReservoirTemperature(){
-    if (temperature_model == "constantTemperatureGradient"){
+    if (temperature_model == "constant_gradient"){
         auto temperature_properties = properties["constantTemperatureGradient"];
         double dT = temperature_properties["dT"];
         double Tmax = temperature_properties["maximum_temperature"];

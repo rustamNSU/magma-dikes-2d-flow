@@ -33,24 +33,20 @@
             "name": "runner-codelldb",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/bin/runner",
+            "program": "${workspaceFolder}/debug/bin/runner",
             "cwd": "${workspaceFolder}",
             "args": ["${workspaceFolder}/input.json"],
-            "initCommands": [
-                "command source ${workspaceFolder}/.vscode/.lldbinit"
-            ]
         },
         {
-            "name": "runner-lldb",
-            "type": "cppdbg",
+            "name": "debug-lldb",
+            "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/build/bin/runner",
-            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/debug/bin/runner",
             "args": ["${workspaceFolder}/input.json"],
-            "MIMode": "lldb",
-            "externalConsole": false,
-            "environment": [],
-            // "initCommands": ["command source ${workspaceFolder}/.vscode/.lldbinit"]
+            "cwd": "${workspaceFolder}",
+            "initCommands": [
+                "comman source ${workspaceFolder}/.vscode/.lldbinit"
+            ]
         },
         // {
         //     "name": "incompressible_flow",

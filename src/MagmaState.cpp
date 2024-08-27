@@ -74,13 +74,18 @@ void MagmaState::updateDensity(DikeData* dike) const{
     else if (density_model == DensityModel::WATER_SATURATED){
         updateGasSaturation(dike);
         updateMeltLiquidDensity(dike);
-        updateGasDensity(dike);
+        if (!INITIAL_DATA){
+            updateGasDensity(dike);
+        }
         double rhom0 = density_properties["rhom0"].get<double>();
         double rhow0 = density_properties["rhow0"].get<double>();
         double rhoc0 = density_properties["rhoc0"].get<double>();
         dike->rhoc = rhoc0 * (1.0 - dike->alpha) * dike->beta;
         dike->rhom = (1.0 - dike->alpha) * (1.0 - dike->beta) * dike->rhom_liquid;
         dike->density = dike->rhog + dike->rhoc + dike->rhom;
+
+        // @debug
+        dike->density.fill(rhom0);
     }
 }
 
@@ -133,7 +138,7 @@ void MagmaState::updateMeltLiquidDensity(DikeData* dike) const{
 
 
 void MagmaState::updateViscosity(DikeData* dike) const{
-    if (viscosity_model == "vftConstantViscosityCrystallization"){
+    if (viscosity_model == ViscosityModel::VFT_CONST_COEFF_CRYST){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
         const double A = viscosity_properties["A"].get<double>();
@@ -163,18 +168,10 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         }
         // viscosity = T.binaryExpr()
     }
-    else if (viscosity_model == "constantViscosity"){
+    else if (viscosity_model == ViscosityModel::CONSTANT){
         dike->viscosity.fill(viscosity_properties["mu"]);
     }
-    else if (viscosity_model == "linearViscosity"){
-        double mu1 = viscosity_properties["much"];
-        double mu2 = viscosity_properties["musurf"];
-        auto mu_col = VectorXd::LinSpaced(mesh->size(), mu1, mu2);
-        for (int icol = 0; icol < dike->getLayersNumber(); icol++){
-            dike->viscosity.col(icol) = mu_col;
-        }
-    }
-    else if (viscosity_model == "vftConstantViscosity"){
+    else if (viscosity_model == ViscosityModel::VFT_CONST_COEFF){
         int nx = dike->meshX->size();
         int ny = dike->ny;
         double A = viscosity_properties["A"];
@@ -188,7 +185,7 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         };
         dike->viscosity = dike->temperature.unaryExpr(func);
     }
-    else if (viscosity_model == "averageVftConstantViscosity"){
+    else if (viscosity_model == ViscosityModel::VFT_CONST_COEFF_AVG){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
         double A = viscosity_properties["A"];
@@ -240,7 +237,7 @@ void MagmaState::updateGasSaturation(DikeData* dike) const{
         int ir = std::min(nx-1, ix+1);
         if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
-            dike->gamma(ix, iy) = h2o_wt_lavallee2015(p(ix, iy), T(ix, iy), 0.5);
+            dike->gamma(ix, iy) = h2o_wt_lavallee2015(p(ix), T(ix, iy), 0.5);
         }
     }
     return;
@@ -259,8 +256,9 @@ double MagmaState::getSpecificHeat() const{
 
 void MagmaState::setChamberInitialState(DikeData* dike){
     gamma0 = dike->gamma(0, 0);
-    beta0 = dike->beta(0, 0);
+    beta0 = dike->betaeq(0, 0);
     rho0 = dike->density(0, 0);
     rhom0 = dike->rhom(0, 0);
     Mg0 = (1.0 - beta0) * gamma0 * rhom0 / rho0;
+    INITIAL_DATA = false;
 }

@@ -37,11 +37,16 @@
         "specificHeatCapacity": 1200,
         "latentHeat": 350000,
         "densityModel": "water_saturated",
-        "viscosityModel": "vft_const_coeff",
+        "viscosityModel": "vft_const_coeff_cryst",
         "crystallizationModel": "const_relaxation",
         "saturationModel": "lavallee2015",
         "constantDensity": {
             "rho": 2000
+        },
+        "waterSaturatedDensity": {
+            "rhom0": 2300.0,
+            "rhow0": 852.0,
+            "rhoc0": 2700.0
         },
         "vftConstantViscosity": {
             "A": -4.55,

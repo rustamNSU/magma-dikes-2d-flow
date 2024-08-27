@@ -43,6 +43,7 @@ class DikeData{
         Eigen::ArrayXXd shear_heat;
         Eigen::ArrayXXd mobility; // Layer mobility into element
         Eigen::ArrayXd Qx; // Total flux between elements
+        Eigen::ArrayXd Mx; // Total mass rate between elements
         Eigen::ArrayXd Twall;
         Eigen::ArrayXd G; // Total pressure gradient with buoyancy between elements
         double time = 0.0;

@@ -2,8 +2,8 @@
 #include <cmath>
 #include <highfive/H5Easy.hpp>
 
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
+using Eigen::ArrayXXd;
+using Eigen::ArrayXd;
 using nlohmann::json;
 using H5Easy::File;
 using H5Easy::dump;
@@ -15,31 +15,39 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
 {
     ny = algorithm_properties["numberOfLayers"];
     int nx = meshX->size();
-    hw = VectorXd::Zero(nx);
-    pressure = VectorXd::Zero(nx);
-    overpressure = VectorXd::Zero(nx);
+    hw = ArrayXd::Zero(nx);
+    pressure = ArrayXd::Zero(nx);
+    overpressure = ArrayXd::Zero(nx);
 
-    yb = VectorXd::LinSpaced(ny+1, 0.0, 1.0);;
+    yb = ArrayXd::LinSpaced(ny+1, 0.0, 1.0);;
     yc = 0.5 * (
         yb(Eigen::seq(0, Eigen::last - 1)) + 
         yb(Eigen::seq(1, Eigen::last))
     );
     
-    density = MatrixXd::Zero(nx, ny);
-    temperature = MatrixXd::Zero(nx, ny);
-    viscosity = MatrixXd::Zero(nx, ny);
-    betaeq = MatrixXd::Zero(nx, ny);
-    beta = MatrixXd::Zero(nx, ny);
-    Tliquidus = MatrixXd::Zero(nx, ny);
-    Tsolidus = MatrixXd::Zero(nx, ny);
-    qx = MatrixXd::Zero(nx+1, ny);
-    A = MatrixXd::Zero(nx+1, ny);
-    C = MatrixXd::Zero(nx+1, ny);
-    shear_heat = MatrixXd::Zero(nx, ny);
-    qy = MatrixXd::Zero(nx, ny+1);
-    mobility = MatrixXd::Zero(nx, ny);
-    Qx = VectorXd::Zero(nx+1);
-    G = VectorXd::Zero(nx+1);
+    density = ArrayXXd::Zero(nx, ny);
+    rhom = ArrayXXd::Zero(nx, ny);
+    rhoc = ArrayXXd::Zero(nx, ny);
+    rhog = ArrayXXd::Zero(nx, ny);
+    rhom_liquid = ArrayXXd::Zero(nx, ny);
+    temperature = ArrayXXd::Zero(nx, ny);
+    viscosity = ArrayXXd::Zero(nx, ny);
+    Tliquidus = ArrayXXd::Zero(nx, ny);
+    Tsolidus = ArrayXXd::Zero(nx, ny);
+    betaeq = ArrayXXd::Zero(nx, ny);
+    beta = ArrayXXd::Zero(nx, ny);
+    alpha = ArrayXXd::Zero(nx, ny);
+    gamma = ArrayXXd::Zero(nx, ny);
+    qx = ArrayXXd::Zero(nx+1, ny);
+    qy = ArrayXXd::Zero(nx, ny+1);
+    A = ArrayXXd::Zero(nx+1, ny);
+    C = ArrayXXd::Zero(nx+1, ny);
+    shear_heat = ArrayXXd::Zero(nx, ny);
+    mobility = ArrayXXd::Zero(nx, ny);
+    Qx = ArrayXd::Zero(nx+1);
+    Mx = ArrayXd::Zero(nx+1);
+    Twall = ArrayXd::Zero(nx);
+    G = ArrayXd::Zero(nx+1);
 }
 
 
@@ -57,11 +65,14 @@ void DikeData::save(const std::string path) const{
     dump(file, "pressure", pressure);
     dump(file, "overpressure", overpressure);
     dump(file, "density", density);
-    dump(file, "viscosity", viscosity);
     dump(file, "temperature", temperature);
+    dump(file, "viscosity", viscosity);
     dump(file, "betaeq", betaeq);
     dump(file, "beta", beta);
+    dump(file, "alpha", alpha);
+    dump(file, "gamma", gamma);
     dump(file, "Twall", Twall);
+    dump(file, "dpdz", G);
     dump(file, "qx", qx);
     dump(file, "qy", qy);
     dump(file, "time", time);

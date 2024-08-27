@@ -18,7 +18,7 @@ class ViscosityModel(StrEnum):
     constant = "constant"
     vft_const_coeff = "vft_const_coeff"
     vft_const_coeff_avg = "vft_const_coeff_avg"
-    vft_const_coeff_cryst = "vft_const_coeff_avg_cryst"
+    vft_const_coeff_cryst = "vft_const_coeff_cryst"
     grdmodel08 = "grdmodel08" # Giordano D, Russell JK, & Dingwell DB (2008), Viscosity of Magmatic Liquids: A Model. Earth & Planetary Science, Letters, v. 271, 123-134.
 
 

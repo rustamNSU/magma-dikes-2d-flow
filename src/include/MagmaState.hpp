@@ -55,6 +55,7 @@ class MagmaState{
         double rhom0 = 0.0;
         double Mg0 = 0.0; // m_g+m_d / m_tot in chamber
         Mesh* mesh;
+        bool INITIAL_DATA = true;
     
     public:
         MagmaState(Mesh* mesh, nlohmann::json&& properties);

@@ -12,6 +12,7 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using Eigen::ArrayXd;
+using Eigen::ArrayXXd;
 using Eigen::VectorXi;
 using json = nlohmann::json;
 using H5Easy::File;
@@ -57,9 +58,10 @@ void DikeModel2d::setInitialData(){
     auto tlith = reservoir->getInitialTemperature();
     dike->setInitialPressure(plith);
     dike->setInitialTemperature(tlith);
-    magma_state->updateDensity(dike.get());
-    magma_state->updateViscosity(dike.get());
     magma_state->updateEquilibriumCrystallization(dike.get());
+    magma_state->updateDensity(dike.get());
+    magma_state->setChamberInitialState(dike.get());
+    magma_state->updateViscosity(dike.get());
     dike->time = timestep_controller->getCurrentTime();
     old_dike = std::make_shared<DikeData>(*dike);
 
@@ -107,7 +109,12 @@ void DikeModel2d::explicitSolver(){
     JUST_TIMER_START("2) Update viscosity time");
     magma_state->updateViscosity(dike.get());
     JUST_TIMER_STOP("2) Update viscosity time");
+    JUST_TIMER_START("2) Update pressure time");
     updatePressure();
+    JUST_TIMER_STOP("2) Update pressure time");
+    JUST_TIMER_START("2) Update density time");
+    magma_state->updateDensity(dike.get());
+    JUST_TIMER_STOP("2) Update density time");
     calculateVerticalFlow();
     solveMassBalance();
     if (!solver_log.successful){
@@ -120,8 +127,8 @@ void DikeModel2d::explicitSolver(){
 
 void DikeModel2d::updatePressure(){
     JUST_TIMER_START("2) Elasticity time");
-    dike->overpressure = 2 * (elasticity->getMatrix() * old_dike->hw);
-    dike->pressure = old_dike->overpressure + reservoir->getLithostaticPressure().matrix();
+    dike->overpressure = 2 * (elasticity->getMatrix() * dike->hw.matrix());
+    dike->pressure = dike->overpressure + reservoir->getLithostaticPressure();
     JUST_TIMER_STOP("2) Elasticity time");
 }
 
@@ -133,8 +140,10 @@ void DikeModel2d::calculateVerticalFlow(){
     const auto& x = mesh->getx();
     auto& hw = old_dike->hw;
     auto& viscosity = dike->viscosity;
+    const auto& rho = dike->density;
     auto& qx = dike->qx;
     auto& Qx = dike->Qx;
+    auto& Mx = dike->Mx;
     const auto& yb = dike->yb;
     const auto& yc = dike->yc;
     double dy = yb[1] - yb[0];
@@ -149,8 +158,8 @@ void DikeModel2d::calculateVerticalFlow(){
         double dpdx = (dike->pressure[ix] - dike->pressure[ix-1]) / (xr - xl);
         
         // @todo: add average density
-        double rho = dike->density(ix, 0);
-        double G = dpdx + rho * g;
+        double rho_avg = rho.row(ix).mean();
+        double G = dpdx + rho_avg * g;
         if (G > 0){
             G = 0;
         }
@@ -174,6 +183,7 @@ void DikeModel2d::calculateVerticalFlow(){
         ArrayXd ybb = yb(Eigen::seq(0, ny-1));
         qx.row(ix) = (A * (ybt.cube() - ybb.cube()) / 3 + C * (ybt - ybb)) * h * G;
         Qx(ix) = qx.row(ix).sum();
+        Mx(ix) = (qx.row(ix).cwiseProduct(rho.row(ix-1))).sum();
         dike->A.row(ix) = A * G;
         dike->C.row(ix) = C * G;
     }
@@ -198,19 +208,19 @@ void DikeModel2d::solveMassBalance(){
     int ny = dike->getLayersNumber();
     auto& h = dike->hw;
     const auto& hold = old_dike->hw;
+    const auto& rho_new = dike->density;
+    const auto& rho_old = old_dike->density;
+    ArrayXd rho_avg = dike->density.rowwise().mean();
+    ArrayXd rho_old_avg = old_dike->density.rowwise().mean();
     double dx = mesh->getdx();
     double dt = timestep_controller->getCurrentTimestep();
     double t1 = timestep_controller->getCurrentTime();
-
     const auto& Qx = dike->Qx;
-    double Q0 = 0.5 * schedule->getMassRate(t1, t1 + dt) / schedule->getMagmaChamberDensity();
-    VectorXd Qin = VectorXd::Zero(nx);
-    Qin[0] = Q0;
-    h = hold + dt/dx*(Qin + Qx(Eigen::seq(0, nx-1)) - Qx(Eigen::seq(1, nx)));
-    // ArrayXd cfl_array = CFL_FACTOR * dike->getElementsVolume() - dt * Qx(Eigen::seq(1, nx)).array();
-    // if (cfl_array.minCoeff() < 1e-12){
-        
-    // }
+    const auto& Mx = dike->Mx;
+    double M0 = 0.5 * schedule->getMassRate(t1, t1 + dt);
+    ArrayXd Min = ArrayXd::Zero(nx);
+    Min[0] = M0;
+    h = rho_old_avg / rho_avg * hold + dt/dx*(Min + Mx(Eigen::seq(0, nx-1)) - Mx(Eigen::seq(1, nx))) / rho_avg;
     ArrayXd Vold = old_dike->getElementsVolume();
     for (int ix = 1; ix < nx; ++ix){
         double Vout = Qx[ix] * dt;
@@ -233,11 +243,22 @@ void DikeModel2d::solveMassBalance(){
     double dy = yb[1] - yb[0];
     for (int ix = 0; ix < nx; ix++){
         if (h[ix] < MIN_MOBILITY_WIDTH) continue;
+        ArrayXd rho_jb = 0.5 * (rho_new.row(ix)(Eigen::seq(1, ny-1)) + rho_new.row(ix)(Eigen::seq(0, ny-2)));
+        ArrayXd rhoj = rho_new.row(ix);
+        rhoj(Eigen::seq(1, ny-1)) = rho_jb;
         for (int iy = 1; iy < ny; iy++){
-            qy(ix, iy) = qy(ix, iy-1) - qx(ix+1, iy-1) + qx(ix, iy-1) - dy*dx/dt*(h[ix] - hold[ix]) + Qin[ix]*dy;
+            qy(ix, iy) = (
+                rhoj(iy-1) * qy(ix, iy-1) - 
+                rho_new(ix, iy-1) * qx(ix+1, iy-1) + 
+                rho_new(std::max(0, ix-1), iy-1) * qx(ix, iy-1) - 
+                dy*dx/dt*(
+                    rho_new(ix, iy-1)*h[ix] - rho_old(ix, iy-1)*hold[ix]
+                ) + 
+                Min[ix]*dy
+            ) / rhoj(iy);
         }
         /* check convergence: must be zero */
-        double err = dy*dx/dt*(h[ix] - hold[ix]) - Qin[ix]*dy + qx(ix+1, ny-1) - qx(ix, ny-1) - qy(ix, ny-1);
+        // double err = dy*dx/dt*(h[ix] - hold[ix]) - Qin[ix]*dy + qx(ix+1, ny-1) - qx(ix, ny-1) - qy(ix, ny-1);
         double a = 0;
     }
     JUST_TIMER_STOP("2) Mass balance time");
