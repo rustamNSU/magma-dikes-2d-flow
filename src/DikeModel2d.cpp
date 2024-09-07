@@ -293,6 +293,7 @@ void DikeModel2d::solveEnergyBalance(){
     const auto& dyr = reservoir->dy;
 
     const auto& beta = dike->beta;
+    const auto& alpha = dike->alpha;
     const auto& betaeq = dike->betaeq;
     double Lm = magma_state->getLatentHeat();
     double tau = input->getMagmaProperties()["constantRelaxationCrystallization"]["tau"].get<double>();
@@ -323,7 +324,7 @@ void DikeModel2d::solveEnergyBalance(){
         a[0] = 0;
         b[0] = rhom*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/h[ix]*(1.0/dyt);
         c[0] = rhom*Cm*vtm - dx*km/h[ix]*(1.0/dyt);
-        rhs[0] = rhom*Cm*Told[0]*Vold/dt + Ein[0] + rhom*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
+        rhs[0] = rhom*Cm*Told[0]*Vold/dt + Ein[0] + (1.0 - alpha(ix, 0))*rhom*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
 
         for (int iy = 1; iy < ny-1; iy++){
             dyt = yc[iy+1] - yc[iy];
@@ -335,7 +336,7 @@ void DikeModel2d::solveEnergyBalance(){
             a[iy] = -rhom*Cm*vbp - dx*km/h[ix]/dyb;
             b[iy] = rhom*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
             c[iy] = rhom*Cm*vtm - dx*km/h[ix]/dyt;
-            rhs[iy] = rhom*Cm*Told[iy]*Vold/dt + Ein[iy] + rhom*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
+            rhs[iy] = rhom*Cm*Told[iy]*Vold/dt + Ein[iy] + (1.0 - alpha(ix, iy))*rhom*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
         }
         dyt = yb[ny] - yc[ny-1];
         dyb = yc[ny-1] - yc[ny-2];
@@ -344,7 +345,7 @@ void DikeModel2d::solveEnergyBalance(){
         a[ny-1] = -rhom*Cm*vbp - dx*km/h[ix]/dyb;
         b[ny-1] = rhom*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
         c[ny-1] = -dx*km/h[ix]/dyt;
-        rhs[ny-1] = rhom*Cm*Told[ny-1]*Vold/dt + Ein[ny-1] +  rhom*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
+        rhs[ny-1] = rhom*Cm*Told[ny-1]*Vold/dt + Ein[ny-1] +  (1.0 - alpha(ix, ny-1))*rhom*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
         a[ny] = -dx*km/h[ix]/dyt;
         b[ny] = dx*km/h[ix]/dyt;
 
@@ -397,6 +398,8 @@ void DikeModel2d::updateCrystallization(){
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
     const auto& hold = old_dike->hw;
+    // const auto& alpha = dike->alpha;
+    // const auto& alpha_old = old_dike->alpha;
     double dx = mesh->getdx();
     double dt = timestep_controller->getCurrentTimestep();
     double t1 = timestep_controller->getCurrentTime();
@@ -412,41 +415,42 @@ void DikeModel2d::updateCrystallization(){
     for (int ix = 0; ix < nx; ix++){
         if (h[ix] < MIN_MOBILITY_WIDTH) continue;
         std::vector<double> a(ny, 0.0), b(ny, 0.0), c(ny, 0.0), rhs(ny, 0.0);
-        // ArrayXd rhom = dike->density.row(ix); // @todo
         const ArrayXd bold = old_dike->beta.row(ix);
         const ArrayXd beq = dike->betaeq.row(ix);
         ArrayXd Ein = ArrayXd::Zero(ny);
+        const ArrayXd alpha = dike->alpha.row(ix);
+        const ArrayXd alpha_old = old_dike->alpha.row(ix);
         if (ix == 0){
             Ein.fill(Q0*dy);
         }
         else{
-            Ein = dike->beta.row(ix-1).array() * qx.row(ix).array();
+            Ein = (1.0 - dike->alpha.row(ix-1)) * dike->beta.row(ix-1).array() * qx.row(ix).array();
         }
         double dyt, dyb, vtp, vtm, vbp, vbm;
         dyt = yc[1] - yc[0];
         vtp = std::max(qy(ix, 1), 0.0); // qy in top
         vtm = -std::max(-qy(ix, 1), 0.0); // 0 if qy > 0 in top
         a[0] = 0;
-        b[0] = (h[ix]*dx*dy/dt + qx(ix+1, 0) + vtp) + h[ix]*dx*dy/tau;
-        c[0] = vtm;
-        rhs[0] = bold[0]*hold[ix]*dx*dy/dt + Ein[0] + beq[0]*h[ix]*dx*dy/tau;
+        b[0] = (1.0 - alpha[0])*(h[ix]*dx*dy/dt + qx(ix+1, 0) + vtp) + (1.0 - alpha[0])*h[ix]*dx*dy/tau;
+        c[0] = (1.0 - alpha[1])*vtm;
+        rhs[0] = (1.0 - alpha_old[0])*bold[0]*hold[ix]*dx*dy/dt + Ein[0] + (1.0 - alpha[0])*beq[0]*h[ix]*dx*dy/tau;
 
         for (int iy = 1; iy < ny-1; iy++){
             vtp = std::max(qy(ix, iy+1), 0.0); // qy in top
             vtm = -std::max(-qy(ix, iy+1), 0.0); // 0 if qy > 0 in top
             vbp = std::max(qy(ix, iy), 0.0); // qy in bot
             vbm = -std::max(-qy(ix, iy), 0.0); // 0 if qy > 0 in bot
-            a[iy] = -vbp;
-            b[iy] = (h[ix]*dx*dy/dt + qx(ix+1, iy) + vtp - vbm) + h[ix]*dx*dy/tau;
-            c[iy] = vtm;
-            rhs[iy] = bold[iy]*hold[ix]*dx*dy/dt + Ein[iy] + beq[iy]*h[ix]*dx*dy/tau;
+            a[iy] = -(1.0 - alpha[iy-1])*vbp;
+            b[iy] = (1.0 - alpha[iy])*(h[ix]*dx*dy/dt + qx(ix+1, iy) + vtp - vbm) + (1.0 - alpha[iy])*h[ix]*dx*dy/tau;
+            c[iy] = (1.0 - alpha[iy+1])*vtm;
+            rhs[iy] = (1.0 - alpha_old[iy])*bold[iy]*hold[ix]*dx*dy/dt + Ein[iy] + (1.0 - alpha[iy])*beq[iy]*h[ix]*dx*dy/tau;
         }
         vbp = std::max(qy(ix, ny-1), 0.0); // qy in bot
         vbm = -std::max(-qy(ix, ny-1), 0.0); // 0 if qy > 0 in bot
-        a[ny-1] = -vbp;
-        b[ny-1] = (h[ix]*dx*dy/dt + qx(ix+1, ny-1) - vbm) + h[ix]*dx*dy/tau;
+        a[ny-1] = -(1.0 - alpha[ny-2])*vbp;
+        b[ny-1] = (1.0 - alpha[ny-1])*(h[ix]*dx*dy/dt + qx(ix+1, ny-1) - vbm) + (1.0 - alpha[ny-1])*h[ix]*dx*dy/tau;
         c[ny-1] = 0;
-        rhs[ny-1] = bold[ny-1]*hold[ix]*dx*dy/dt + Ein[ny-1] + beq[ny-1]*h[ix]*dx*dy/tau;
+        rhs[ny-1] = (1.0 - alpha_old[ny-1])*bold[ny-1]*hold[ix]*dx*dy/dt + Ein[ny-1] + (1.0 - alpha[ny-1])*beq[ny-1]*h[ix]*dx*dy/tau;
 
         /* Solve tridiagonal system */
         auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
