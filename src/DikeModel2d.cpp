@@ -59,6 +59,7 @@ void DikeModel2d::setInitialData(){
     dike->setInitialPressure(plith);
     dike->setInitialTemperature(tlith);
     magma_state->updateEquilibriumCrystallization(dike.get());
+    dike->beta.setZero();
     magma_state->updateDensity(dike.get());
     magma_state->setChamberInitialState(dike.get());
     magma_state->updateViscosity(dike.get());
@@ -106,12 +107,12 @@ void DikeModel2d::explicitSolver(){
     auto nx = mesh->size();
     auto ny = dike->getLayersNumber();
     auto dt = timestep_controller->getCurrentTimestep();
-    JUST_TIMER_START("2) Update viscosity time");
-    magma_state->updateViscosity(dike.get());
-    JUST_TIMER_STOP("2) Update viscosity time");
     JUST_TIMER_START("2) Update pressure time");
     updatePressure();
     JUST_TIMER_STOP("2) Update pressure time");
+    JUST_TIMER_START("2) Update viscosity time");
+    magma_state->updateViscosity(dike.get());
+    JUST_TIMER_STOP("2) Update viscosity time");
     JUST_TIMER_START("2) Update density time");
     magma_state->updateDensity(dike.get());
     JUST_TIMER_STOP("2) Update density time");
@@ -158,7 +159,7 @@ void DikeModel2d::calculateVerticalFlow(){
         double dpdx = (dike->pressure[ix] - dike->pressure[ix-1]) / (xr - xl);
         
         // @todo: add average density
-        double rho_avg = rho.row(ix).mean();
+        double rho_avg = 0.5 * (rho.row(ix-1).mean() + rho.row(ix).mean());
         double G = dpdx + rho_avg * g;
         if (G > 0){
             G = 0;
@@ -195,7 +196,7 @@ void DikeModel2d::calculateVerticalFlow(){
         double h = hw[ix];
         ArrayXd ybt = yb(Eigen::seq(1, ny));
         ArrayXd ybb = yb(Eigen::seq(0, ny-1));
-        dike->shear_heat.row(ix) = dx*(h*h*h*G*G/3) * (ybt.cube() - ybb.cube()) / dike->viscosity.row(ix).array();
+        dike->shear_heat.row(ix) = dx*(h*h*h*G*G/3) * (ybt.cube() - ybb.cube()).transpose() / dike->viscosity.row(ix).array();
     }
     JUST_TIMER_STOP("2) Vert. flow calc. time");
     return;
@@ -292,6 +293,7 @@ void DikeModel2d::solveEnergyBalance(){
     const auto& ybr = reservoir->yb;
     const auto& dyr = reservoir->dy;
 
+    double rhoc0 = magma_state->density_properties["rhoc0"].get<double>();
     const auto& beta = dike->beta;
     const auto& alpha = dike->alpha;
     const auto& betaeq = dike->betaeq;
@@ -305,15 +307,15 @@ void DikeModel2d::solveEnergyBalance(){
     for (int ix = 0; ix < nx; ix++){
         if (h[ix] < MIN_MOBILITY_WIDTH) continue;
         std::vector<double> a(N, 0.0), b(N, 0.0), c(N, 0.0), rhs(N, 0.0);
-        // ArrayXd rhom = dike->density.row(ix); // @todo
-        double rhom = dike->density(0, 0);
         const ArrayXd Told = old_dike->temperature.row(ix);
+        const ArrayXd rho = dike->density.row(ix);
+        const ArrayXd rho_old = old_dike->density.row(ix);
         ArrayXd Ein = ArrayXd::Zero(ny);
         if (ix == 0){
             Ein.fill(E0*dy);
         }
         else{
-            Ein = rhom * Cm * dike->temperature.row(ix-1).array() * qx.row(ix).array();
+            Ein = rho * Cm * dike->temperature.row(ix-1).transpose() * qx.row(ix).transpose();
         }
         double dyt, dyb, vtp, vtm, vbp, vbm;
         double Vnew = h[ix]*dx*dy;
@@ -322,9 +324,9 @@ void DikeModel2d::solveEnergyBalance(){
         vtp = std::max(qy(ix, 1), 0.0); // qy in top
         vtm = -std::max(-qy(ix, 1), 0.0); // 0 if qy > 0 in top
         a[0] = 0;
-        b[0] = rhom*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/h[ix]*(1.0/dyt);
-        c[0] = rhom*Cm*vtm - dx*km/h[ix]*(1.0/dyt);
-        rhs[0] = rhom*Cm*Told[0]*Vold/dt + Ein[0] + (1.0 - alpha(ix, 0))*rhom*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
+        b[0] = rho[0]*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/h[ix]*(1.0/dyt);
+        c[0] = rho[1]*Cm*vtm - dx*km/h[ix]*(1.0/dyt);
+        rhs[0] = rho_old[0]*Cm*Told[0]*Vold/dt + Ein[0] + (1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
 
         for (int iy = 1; iy < ny-1; iy++){
             dyt = yc[iy+1] - yc[iy];
@@ -333,19 +335,19 @@ void DikeModel2d::solveEnergyBalance(){
             vtm = -std::max(-qy(ix, iy+1), 0.0); // 0 if qy > 0 in top
             vbp = std::max(qy(ix, iy), 0.0); // qy in bot
             vbm = -std::max(-qy(ix, iy), 0.0); // 0 if qy > 0 in bot
-            a[iy] = -rhom*Cm*vbp - dx*km/h[ix]/dyb;
-            b[iy] = rhom*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
-            c[iy] = rhom*Cm*vtm - dx*km/h[ix]/dyt;
-            rhs[iy] = rhom*Cm*Told[iy]*Vold/dt + Ein[iy] + (1.0 - alpha(ix, iy))*rhom*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
+            a[iy] = -rho[iy-1]*Cm*vbp - dx*km/h[ix]/dyb;
+            b[iy] = rho[iy]*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
+            c[iy] = rho[iy+1]*Cm*vtm - dx*km/h[ix]/dyt;
+            rhs[iy] = rho_old[iy]*Cm*Told[iy]*Vold/dt + Ein[iy] + (1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
         }
         dyt = yb[ny] - yc[ny-1];
         dyb = yc[ny-1] - yc[ny-2];
         vbp = std::max(qy(ix, ny-1), 0.0); // qy in bot
         vbm = -std::max(-qy(ix, ny-1), 0.0); // 0 if qy > 0 in bot
-        a[ny-1] = -rhom*Cm*vbp - dx*km/h[ix]/dyb;
-        b[ny-1] = rhom*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
+        a[ny-1] = -rho[ny-2]*Cm*vbp - dx*km/h[ix]/dyb;
+        b[ny-1] = rho[ny-1]*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
         c[ny-1] = -dx*km/h[ix]/dyt;
-        rhs[ny-1] = rhom*Cm*Told[ny-1]*Vold/dt + Ein[ny-1] +  (1.0 - alpha(ix, ny-1))*rhom*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
+        rhs[ny-1] = rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + Ein[ny-1] +  (1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
         a[ny] = -dx*km/h[ix]/dyt;
         b[ny] = dx*km/h[ix]/dyt;
 
@@ -411,7 +413,8 @@ void DikeModel2d::updateCrystallization(){
     double dy = yb[1] - yb[0];
     double tau = input->getMagmaProperties()["constantRelaxationCrystallization"]["tau"].get<double>();
 
-    double Q0 = 0.5 * schedule->getMassRate(t1, t1 + dt) / schedule->getMagmaChamberDensity() * schedule->getMagmaChamberCrystallization();
+    // double Q0 = 0.5 * schedule->getMassRate(t1, t1 + dt) / schedule->getMagmaChamberDensity() * schedule->getMagmaChamberCrystallization();
+    double Q0 = 0.5 * schedule->getMassRate(t1, t1 + dt) / schedule->getMagmaChamberDensity() * magma_state->getMagmaChamberCrystallization();
     for (int ix = 0; ix < nx; ix++){
         if (h[ix] < MIN_MOBILITY_WIDTH) continue;
         std::vector<double> a(ny, 0.0), b(ny, 0.0), c(ny, 0.0), rhs(ny, 0.0);
@@ -475,18 +478,27 @@ void DikeModel2d::saveData(const std::string &savepath){
     dump(file, "pressure", dike->pressure);
     dump(file, "overpressure", dike->overpressure);
     dump(file, "density", dike->density);
-    dump(file, "viscosity", dike->viscosity);
+    dump(file, "rhoc", dike->rhoc);
+    dump(file, "rhog", dike->rhog);
+    dump(file, "rhom", dike->rhom);
+
     dump(file, "temperature", dike->temperature);
+    dump(file, "viscosity", dike->viscosity);
     dump(file, "Twall", dike->Twall);
     dump(file, "qx", dike->qx);
     dump(file, "qy", dike->qy);
     dump(file, "A", dike->A);
     dump(file, "C", dike->C);
     dump(file, "G", dike->G);
+    dump(file, "alpha", dike->alpha);
     dump(file, "beta", dike->beta);
+    dump(file, "gamma", dike->gamma);
     dump(file, "betaeq", dike->betaeq);
     dump(file, "Tliquidus", dike->Tliquidus);
     dump(file, "Tsolidus", dike->Tsolidus);
+    dump(file, "TotalFluxElements", dike->Qx);
+    dump(file, "TotalMassRateElements", dike->Mx);
+
 
     dump(file, "reservoir/yc", reservoir->yc);
     dump(file, "reservoir/yb", reservoir->yb);

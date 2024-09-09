@@ -35,8 +35,15 @@ class DikeData:
         self.filepaths.sort(key=define_index)
         self.ntimesteps = len(self.filepaths)
         self.step_rate = step_rate
+        self._parse_input()
         self._preload_data()
         
+        
+    def _parse_input(self) -> None:
+        self.nx = int(self.input["meshProperties"]["n"])
+        self.xmin = float(self.input["meshProperties"]["xmin"])
+        self.xmax = float(self.input["meshProperties"]["xmax"])
+    
     
     def _preload_data(self):
         self.timesteps = range(0, self.ntimesteps, self.step_rate)
@@ -65,7 +72,9 @@ class DikeData:
             Twall = hdf5_read_array(data, "/Twall")
             qx = hdf5_read_array(data, "/qx")
             qy = hdf5_read_array(data, "/qy")
+            alpha = hdf5_read_array(data, "/alpha")
             beta = hdf5_read_array(data, "/beta")
+            gamma = hdf5_read_array(data, "/gamma")
             betaeq = hdf5_read_array(data, "/betaeq")
             Tliquidus = hdf5_read_array(data, "/Tliquidus")
             Tsolidus = hdf5_read_array(data, "/Tsolidus")
@@ -73,6 +82,7 @@ class DikeData:
             time = hdf5_read_single(data, "/time")
             A = hdf5_read_array(data, "/A")
             C = hdf5_read_array(data, "/C")
+            G = hdf5_read_array(data, "/G")
             self.time.append(time)
             result = dict(
                 xc=xc,
@@ -82,19 +92,26 @@ class DikeData:
                 halfwidth=halfwidth,
                 width=width,
                 pressure=pressure,
+                overpressure=overpressure,
+                density=density,
                 temperature=temperature,
                 Tmask=Tmask,
                 viscosity=viscosity,
                 Twall=Twall,
                 qx=qx,
                 qy=qy,
+                alpha=alpha,
                 beta=beta,
+                gamma=gamma,
                 betaeq=betaeq,
                 Tliquidus=Tliquidus,
                 Tsolidus=Tsolidus,
                 ux=ux,
                 A=A,
                 C=C,
+                G=-G,
                 time=time,
+                Qx=hdf5_read_array(data, "/TotalFluxElements"),
+                Mx=hdf5_read_array(data, "/TotalMassRateElements"),
             )
             self.data.append(result)

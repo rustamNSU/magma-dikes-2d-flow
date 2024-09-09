@@ -16,7 +16,7 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 10,
+    "numberOfLayers" : 20,
     "cutoffVelocity" : 1e-5,
     "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,
@@ -77,7 +77,7 @@ inputDict["magmaProperties"] = {
     }
 }
 inputDict["scheduleProperties"] = {
-    "Q": [1.0, 0.0],
+    "Q": [2.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
@@ -93,7 +93,7 @@ inputDict["timestepProperties"] = {
 inputDict["meshProperties"] = {
     "n" : 200,
     "xmin" : -30000.0,
-    "xmax" : 0.0
+    "xmax" : -10000.0
 }
 
 input_file = repository_dir + "/input.json"

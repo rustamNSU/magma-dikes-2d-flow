@@ -8,6 +8,9 @@
 #include "Degasation.hpp"
 
 
+class DikeModel2d;
+
+
 class MagmaState{
     private:
         struct DensityModel{
@@ -49,10 +52,10 @@ class MagmaState{
         double thermal_conductivity;
         double specific_heat;
         double latent_heat;
-        double gamma0 = 0.0;
-        double beta0 = 0.0;
-        double rho0 = 0.0;
-        double rhom0 = 0.0;
+        double gamma_chamber = 0.0;
+        double beta_chamber = 0.0;
+        double rho_chamber = 0.0;
+        double rhom_chamber = 0.0;
         double Mg0 = 0.0; // m_g+m_d / m_tot in chamber
         Mesh* mesh;
         bool INITIAL_DATA = true;
@@ -75,4 +78,9 @@ class MagmaState{
             return latent_heat;
         }
         void setChamberInitialState(DikeData* dike);
+        double getMagmaChamberCrystallization() const{
+            return beta_chamber;
+        }
+
+        friend class DikeModel2d;
 };

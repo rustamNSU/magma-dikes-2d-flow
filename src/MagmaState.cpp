@@ -83,9 +83,6 @@ void MagmaState::updateDensity(DikeData* dike) const{
         dike->rhoc = rhoc0 * (1.0 - dike->alpha) * dike->beta;
         dike->rhom = (1.0 - dike->alpha) * (1.0 - dike->beta) * dike->rhom_liquid;
         dike->density = dike->rhog + dike->rhoc + dike->rhom;
-
-        // @debug
-        dike->density.fill(rhom0);
     }
 }
 
@@ -255,10 +252,10 @@ double MagmaState::getSpecificHeat() const{
 
 
 void MagmaState::setChamberInitialState(DikeData* dike){
-    gamma0 = dike->gamma(0, 0);
-    beta0 = dike->betaeq(0, 0);
-    rho0 = dike->density(0, 0);
-    rhom0 = dike->rhom(0, 0);
-    Mg0 = (1.0 - beta0) * gamma0 * rhom0 / rho0;
+    gamma_chamber = dike->gamma(0, 0);
+    beta_chamber = dike->beta(0, 0);
+    rho_chamber = dike->density(0, 0);
+    rhom_chamber = dike->rhom(0, 0);
+    Mg0 = (1.0 - beta_chamber) * gamma_chamber * rhom_chamber / rho_chamber;
     INITIAL_DATA = false;
 }

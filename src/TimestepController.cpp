@@ -76,6 +76,7 @@ void TimestepController::update(){
         level = 0;
         updateBaseTimestep();
         current_dt = base_dt;
+        all_timesteps++;
         base_timesteps++;
         attempts = 1;
         return;
