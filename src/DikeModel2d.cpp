@@ -41,14 +41,10 @@ DikeModel2d::DikeModel2d(const std::string& input_path) :
 
 
 void DikeModel2d::setAlgorithmProperties(){
-    // TIMESTEP_SCHEME = properties["timestepScheme"];
     MIN_MOBILITY_WIDTH = algorithm_properties["massBalanceMinMobilityWidth"];
     CUTOFF_VELOCITY = algorithm_properties["cutoffVelocity"];
     CFL_FACTOR = algorithm_properties["lubricationCflFactor"];
     VISCOSITY_APPROXIMATION = algorithm_properties["viscosityApproximation"].get<std::string>();
-    // MAX_ITERATIONS = properties["massBalanceMaxIterations"];
-    // MIN_STAB_ITERATIONS = properties["massBalanceMinStabIterations"];
-    // TOLERANCE = properties["massBalanceTolerance"];
     return;
 }
 
@@ -56,12 +52,15 @@ void DikeModel2d::setAlgorithmProperties(){
 void DikeModel2d::setInitialData(){
     auto plith = reservoir->getLithostaticPressure();
     auto tlith = reservoir->getInitialTemperature();
+    magma_state->setChamberInitialState(plith[0], tlith[0]);
+    schedule->setMagmaChamberCrystallization(magma_state->chamber.beta);
     dike->setInitialPressure(plith);
     dike->setInitialTemperature(tlith);
     magma_state->updateEquilibriumCrystallization(dike.get());
     dike->beta.setZero();
+    dike->beta.row(0) = magma_state->chamber.beta;
+    dike->gamma.row(0) = magma_state->chamber.gamma;
     magma_state->updateDensity(dike.get());
-    magma_state->setChamberInitialState(dike.get());
     magma_state->updateViscosity(dike.get());
     dike->time = timestep_controller->getCurrentTime();
     old_dike = std::make_shared<DikeData>(*dike);
@@ -129,6 +128,9 @@ void DikeModel2d::explicitSolver(){
 void DikeModel2d::updatePressure(){
     JUST_TIMER_START("2) Elasticity time");
     dike->overpressure = 2 * (elasticity->getMatrix() * dike->hw.matrix());
+    dike->overpressure = dike->overpressure.unaryExpr([&](double x){
+        return 0.5*(x + std::abs(x));
+    });
     dike->pressure = dike->overpressure + reservoir->getLithostaticPressure();
     JUST_TIMER_STOP("2) Elasticity time");
 }
@@ -164,6 +166,8 @@ void DikeModel2d::calculateVerticalFlow(){
         if (G > 0){
             G = 0;
         }
+        double GMAX = -2000*g;
+        G = std::max(G, GMAX);
         dike->G[ix] = G;
         ArrayXd mul = viscosity.row(ix-1);
         ArrayXd mur = viscosity.row(ix);
@@ -230,6 +234,10 @@ void DikeModel2d::solveMassBalance(){
             solver_log.successful = false;
             solver_log.cfl_condition = false;
             solver_log.cfl_ratio = std::max(int(std::ceil(Vout / (CFL_FACTOR * Vtmp))), solver_log.cfl_ratio);
+            // if (solver_log.cfl_ratio > 1000){
+            //     double a = std::sin(solver_log.cfl_ratio);
+            //     solver_log.cfl_ratio = std::max(0, int(a));
+            // }
         }
     }
     if (!solver_log.successful){
@@ -326,7 +334,8 @@ void DikeModel2d::solveEnergyBalance(){
         a[0] = 0;
         b[0] = rho[0]*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/h[ix]*(1.0/dyt);
         c[0] = rho[1]*Cm*vtm - dx*km/h[ix]*(1.0/dyt);
-        rhs[0] = rho_old[0]*Cm*Told[0]*Vold/dt + Ein[0] + (1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
+        rhs[0] = rho_old[0]*Cm*Told[0]*Vold/dt + Ein[0];
+        // rhs[0] += (1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
 
         for (int iy = 1; iy < ny-1; iy++){
             dyt = yc[iy+1] - yc[iy];
@@ -338,7 +347,8 @@ void DikeModel2d::solveEnergyBalance(){
             a[iy] = -rho[iy-1]*Cm*vbp - dx*km/h[ix]/dyb;
             b[iy] = rho[iy]*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
             c[iy] = rho[iy+1]*Cm*vtm - dx*km/h[ix]/dyt;
-            rhs[iy] = rho_old[iy]*Cm*Told[iy]*Vold/dt + Ein[iy] + (1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
+            rhs[iy] = rho_old[iy]*Cm*Told[iy]*Vold/dt + Ein[iy];
+            // rhs[iy] += (1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
         }
         dyt = yb[ny] - yc[ny-1];
         dyb = yc[ny-1] - yc[ny-2];
@@ -347,7 +357,8 @@ void DikeModel2d::solveEnergyBalance(){
         a[ny-1] = -rho[ny-2]*Cm*vbp - dx*km/h[ix]/dyb;
         b[ny-1] = rho[ny-1]*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
         c[ny-1] = -dx*km/h[ix]/dyt;
-        rhs[ny-1] = rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + Ein[ny-1] +  (1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
+        rhs[ny-1] = rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + Ein[ny-1];
+        // rhs[ny-1] += (1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
         a[ny] = -dx*km/h[ix]/dyt;
         b[ny] = dx*km/h[ix]/dyt;
 
@@ -529,6 +540,10 @@ void DikeModel2d::updateData(){
         reservoir->saveData(reservoir_path);
         JUST_TIMER_STOP("2) Data saving time");
     }
+    // if (save_timestep > 362){
+    //     // std::cout << "dt = " << dt << std::endl;
+    //     if (dt < 1e-5) throw std::invalid_argument("fuck this all!\n");
+    // }
 }
 
 

@@ -26,7 +26,7 @@ xlim = (
 )
 
 
-fig = plt.figure(figsize=(12, 12), constrained_layout=True)
+fig = plt.figure(figsize=(12, 8), constrained_layout=True)
 nrows = 4
 ncols = 2
 nrax = 10
@@ -57,7 +57,7 @@ axOP = fig.add_subplot(gs[nrax:2*nrax, 1])
 axOP.set_xlabel(r"Depth (m)")
 axOP.set_ylabel(r"Overpressure (MPa)")
 axOP.set_xlim(xlim)
-axOP.set_ylim([-2, 10])
+axOP.set_ylim([-10, 20])
 axOP.grid()
 
 axQx = fig.add_subplot(gs[2*nrax:3*nrax, 0])
@@ -68,7 +68,7 @@ axQx.grid()
 
 axG = fig.add_subplot(gs[2*nrax:3*nrax, 1])
 axG.set_xlabel(r"Depth (m)")
-axG.set_ylabel(r"Pressure gradient (MPa/m)")
+axG.set_ylabel(r"Pressure gradient (Pa/m)")
 axG.set_xlim(xlim)
 axG.grid()
 

@@ -35,11 +35,28 @@ class MagmaState{
             inline static const std::string grdmodel08 = "grdmodel08";
         };
 
+
         struct SaturationModel{
             static constexpr int LAVALLEE2015 = 0;
             inline static const std::string lavallee2015 = "lavallee2015";
         };
 
+
+        struct Chamber{
+            double pressure;
+            double temperature;
+            double alpha;
+            double gamma;
+            double beta;
+            double density;
+            double rhom_liquid;
+            double rhom;
+            double rhoc;
+            double Mg0;
+            inline void calculateGasRatio(){
+                Mg0 = (1.0 - beta) * gamma * rhom_liquid / density;
+            }
+        };
 
     private:
         nlohmann::json properties;
@@ -52,13 +69,8 @@ class MagmaState{
         double thermal_conductivity;
         double specific_heat;
         double latent_heat;
-        double gamma_chamber = 0.0;
-        double beta_chamber = 0.0;
-        double rho_chamber = 0.0;
-        double rhom_chamber = 0.0;
-        double Mg0 = 0.0; // m_g+m_d / m_tot in chamber
+        Chamber chamber;
         Mesh* mesh;
-        bool INITIAL_DATA = true;
     
     public:
         MagmaState(Mesh* mesh, nlohmann::json&& properties);
@@ -77,9 +89,12 @@ class MagmaState{
         inline double getLatentHeat() const{
             return latent_heat;
         }
-        void setChamberInitialState(DikeData* dike);
+        void setChamberInitialState(
+            double pressure_chamber,
+            double temperature_chamber
+        );
         double getMagmaChamberCrystallization() const{
-            return beta_chamber;
+            return chamber.beta;
         }
 
         friend class DikeModel2d;

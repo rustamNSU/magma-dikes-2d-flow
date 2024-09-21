@@ -29,4 +29,8 @@ class Schedule{
         inline double getMagmaChamberCrystallization() const{
             return beta;
         }
+
+        inline void setMagmaChamberCrystallization(double beta_chamber){
+            beta = beta_chamber;
+        }
 };

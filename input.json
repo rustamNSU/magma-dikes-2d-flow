@@ -1,12 +1,13 @@
 {
     "simID": 1,
-    "simDir": "/Users/rustam/Repositories/magma-dikes-2d-flow/simulations/simID1",
+    "simDir": "/home/rustam/repositories/magma-dikes-2d-flow/simulations/simID1",
     "algorithmProperties": {
         "isDebug": true,
         "flowModel": "dike",
         "timestepScheme": "explicit",
         "numberOfLayers": 10,
         "cutoffVelocity": 1e-05,
+        "lubricationCflScheme": "spectral",
         "lubricationCflFactor": 0.0001,
         "massBalanceMinMobilityWidth": 1e-10,
         "viscosityApproximation": "mean"
@@ -24,7 +25,7 @@
         "reservoirWidth": 3.0,
         "meshRefinementAlgorithm": "cosine",
         "constantDensity": {
-            "rho": 2300.0
+            "rho": 2700.0
         },
         "constantTemperatureGradient": {
             "dT": 0.03,
@@ -87,13 +88,13 @@
         ],
         "dtTime": [
             0.0,
-            10000
+            20000
         ],
         "outputSaveRate": 50
     },
     "meshProperties": {
-        "n": 200,
+        "n": 100,
         "xmin": -30000.0,
-        "xmax": 0.0
+        "xmax": -10000.0
     }
 }

@@ -16,7 +16,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
 
 option(USE_OMP "with openmp" OFF)
-option(BUILD_TESTS "build tests" ON)
+option(BUILD_TESTS "build tests" OFF)
 
 if(USE_OMP)
 	find_package(OpenMP REQUIRED)

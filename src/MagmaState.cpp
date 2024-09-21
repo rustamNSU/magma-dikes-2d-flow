@@ -74,9 +74,7 @@ void MagmaState::updateDensity(DikeData* dike) const{
     else if (density_model == DensityModel::WATER_SATURATED){
         updateGasSaturation(dike);
         updateMeltLiquidDensity(dike);
-        if (!INITIAL_DATA){
-            updateGasDensity(dike);
-        }
+        updateGasDensity(dike);
         double rhom0 = density_properties["rhom0"].get<double>();
         double rhow0 = density_properties["rhow0"].get<double>();
         double rhoc0 = density_properties["rhoc0"].get<double>();
@@ -107,16 +105,17 @@ void MagmaState::updateGasDensity(DikeData* dike) const{
         else{
             for (int iy = 0; iy < ny; iy++){
                 double rhog0 = h2o_vapor_density(p(ix), T(ix, iy), R);
-                double t1 = (1-beta(ix, iy))*(Mg0-gamma(ix,iy))*rhom_liquid(ix,iy);
-                double t2 = Mg0*beta(ix,iy)*rhoc0;
-                double alpha = std::max(0.0, (t1 + t2) / (t1 + t2 + (1.0-Mg0)*rhog0));
-                dike->rhog(ix, iy) = rhog0 * dike->alpha(ix, iy);
+                double t1 = (1-beta(ix, iy))*(chamber.Mg0-gamma(ix,iy))*rhom_liquid(ix,iy);
+                double t2 = chamber.Mg0*beta(ix,iy)*rhoc0;
+                double alpha1 = (t1 + t2) / (t1 + t2 + (1.0-chamber.Mg0)*rhog0);
+                double alpha = std::max(0.0, alpha1);
+                dike->alpha(ix, iy) = alpha;
+                dike->rhog(ix, iy) = rhog0 * alpha;
             }
         }
     }
     return;
 }
-
 
 
 void MagmaState::updateMeltLiquidDensity(DikeData* dike) const{
@@ -213,7 +212,8 @@ void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
         int ir = std::min(nx-1, ix+1);
         if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
-            dike->betaeq(ix, iy) = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy));
+            double beta = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy));
+            dike->betaeq(ix, iy) = std::max(beta, chamber.beta);
             dike->Tliquidus(ix, iy) = liquidus_temperature(dike->pressure(ix));
             dike->Tsolidus(ix, iy) = solidus_temperature(dike->pressure(ix));
         }
@@ -228,13 +228,13 @@ void MagmaState::updateGasSaturation(DikeData* dike) const{
     const auto& hw = dike->hw;
     const auto& p = dike->pressure;
     const auto& T = dike->temperature;
-    const auto& gamma = dike->gamma;
     for (int ix = 0; ix < nx; ix++){
         int il = std::max(0, ix-1);
         int ir = std::min(nx-1, ix+1);
         if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
-            dike->gamma(ix, iy) = h2o_wt_lavallee2015(p(ix), T(ix, iy), 0.5);
+            double gamma = h2o_wt_lavallee2015(p(ix), T(ix, iy), 0.5);
+            dike->gamma(ix, iy) = std::max(gamma, chamber.gamma);
         }
     }
     return;
@@ -251,11 +251,23 @@ double MagmaState::getSpecificHeat() const{
 }
 
 
-void MagmaState::setChamberInitialState(DikeData* dike){
-    gamma_chamber = dike->gamma(0, 0);
-    beta_chamber = dike->beta(0, 0);
-    rho_chamber = dike->density(0, 0);
-    rhom_chamber = dike->rhom(0, 0);
-    Mg0 = (1.0 - beta_chamber) * gamma_chamber * rhom_chamber / rho_chamber;
-    INITIAL_DATA = false;
+void MagmaState::setChamberInitialState(
+    double pressure_chamber,
+    double temperature_chamber
+){
+    chamber.pressure = pressure_chamber;
+    chamber.temperature = temperature_chamber;
+    chamber.alpha = 0.0;
+    chamber.gamma = h2o_wt_lavallee2015(chamber.pressure, chamber.temperature, 0.5);
+    chamber.beta = beta_equilibrium(chamber.pressure, chamber.temperature);
+
+    double rhom0 = density_properties["rhom0"].get<double>();
+    double rhow0 = density_properties["rhow0"].get<double>();
+    double rhoc0 = density_properties["rhoc0"].get<double>();
+    chamber.rhom_liquid = h2o_sat_melt_density(rhom0, rhow0, chamber.gamma);
+    chamber.rhom = (1.0 - chamber.beta) * chamber.rhom_liquid;
+    chamber.rhoc = rhoc0 * chamber.beta;
+    chamber.density = chamber.rhom + chamber.rhoc;
+    chamber.calculateGasRatio();
+    return;
 }
