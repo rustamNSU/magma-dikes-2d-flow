@@ -234,7 +234,7 @@ void MagmaState::updateGasSaturation(DikeData* dike) const{
         if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
             double gamma = h2o_wt_lavallee2015(p(ix), T(ix, iy), 0.5);
-            dike->gamma(ix, iy) = std::max(gamma, chamber.gamma);
+            dike->gamma(ix, iy) = std::min(gamma, chamber.gamma);
         }
     }
     return;

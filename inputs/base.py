@@ -16,11 +16,14 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 20,
+    "numberOfLayers" : 10,
     "cutoffVelocity" : 1e-5,
+    "lubricationCflScheme" : "spectral",
     "lubricationCflFactor" : 0.0001,
     "massBalanceMinMobilityWidth" : 1e-10,
     "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
+    "shearHeating" : False,
+    "latentHeatCrystallization" : False,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -35,7 +38,7 @@ inputDict["reservoirProperties"] = {
     "reservoirWidth" : 3.0,
     "meshRefinementAlgorithm" : "cosine",
     "constantDensity" : {
-        "rho" : 2300.0
+        "rho" : 2700.0
     },
     "constantTemperatureGradient" : {
         "dT" : 30e-3,
@@ -77,7 +80,7 @@ inputDict["magmaProperties"] = {
     }
 }
 inputDict["scheduleProperties"] = {
-    "Q": [2.0, 0.0],
+    "Q": [1.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
@@ -87,11 +90,11 @@ inputDict["timestepProperties"] = {
     "startTime" : 0.0,
     "endTime" : 400000.0,
     "dtList" : [1.0, 10],
-    "dtTime" : [0.0, 10000],
+    "dtTime" : [0.0, 20000],
     "outputSaveRate" : 50
 }
 inputDict["meshProperties"] = {
-    "n" : 200,
+    "n" : 100,
     "xmin" : -30000.0,
     "xmax" : -10000.0
 }

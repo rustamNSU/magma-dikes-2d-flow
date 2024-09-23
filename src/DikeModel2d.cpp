@@ -45,6 +45,8 @@ void DikeModel2d::setAlgorithmProperties(){
     CUTOFF_VELOCITY = algorithm_properties["cutoffVelocity"];
     CFL_FACTOR = algorithm_properties["lubricationCflFactor"];
     VISCOSITY_APPROXIMATION = algorithm_properties["viscosityApproximation"].get<std::string>();
+    shearHeating = algorithm_properties["shearHeating"].get<bool>() ? 1.0 : 0.0;
+    latentHeatCrystallization = algorithm_properties["latentHeatCrystallization"].get<bool>() ? 1.0 : 0.0;
     return;
 }
 
@@ -128,9 +130,9 @@ void DikeModel2d::explicitSolver(){
 void DikeModel2d::updatePressure(){
     JUST_TIMER_START("2) Elasticity time");
     dike->overpressure = 2 * (elasticity->getMatrix() * dike->hw.matrix());
-    dike->overpressure = dike->overpressure.unaryExpr([&](double x){
-        return 0.5*(x + std::abs(x));
-    });
+    // dike->overpressure = dike->overpressure.unaryExpr([&](double x){
+    //     return 0.5*(x + std::abs(x));
+    // });
     dike->pressure = dike->overpressure + reservoir->getLithostaticPressure();
     JUST_TIMER_STOP("2) Elasticity time");
 }
@@ -335,7 +337,8 @@ void DikeModel2d::solveEnergyBalance(){
         b[0] = rho[0]*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/h[ix]*(1.0/dyt);
         c[0] = rho[1]*Cm*vtm - dx*km/h[ix]*(1.0/dyt);
         rhs[0] = rho_old[0]*Cm*Told[0]*Vold/dt + Ein[0];
-        // rhs[0] += (1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau + shear_heat(ix, 0);
+        rhs[0] += latentHeatCrystallization*(1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau
+                + shearHeating * shear_heat(ix, 0);
 
         for (int iy = 1; iy < ny-1; iy++){
             dyt = yc[iy+1] - yc[iy];
@@ -348,7 +351,8 @@ void DikeModel2d::solveEnergyBalance(){
             b[iy] = rho[iy]*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
             c[iy] = rho[iy+1]*Cm*vtm - dx*km/h[ix]/dyt;
             rhs[iy] = rho_old[iy]*Cm*Told[iy]*Vold/dt + Ein[iy];
-            // rhs[iy] += (1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + shear_heat(ix, iy);
+            rhs[iy] += latentHeatCrystallization*(1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + 
+                     + shearHeating * shear_heat(ix, iy);
         }
         dyt = yb[ny] - yc[ny-1];
         dyb = yc[ny-1] - yc[ny-2];
@@ -358,7 +362,8 @@ void DikeModel2d::solveEnergyBalance(){
         b[ny-1] = rho[ny-1]*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
         c[ny-1] = -dx*km/h[ix]/dyt;
         rhs[ny-1] = rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + Ein[ny-1];
-        // rhs[ny-1] += (1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + shear_heat(ix, ny-1);
+        rhs[ny-1] += latentHeatCrystallization*(1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + 
+                   + shearHeating * shear_heat(ix, ny-1);
         a[ny] = -dx*km/h[ix]/dyt;
         b[ny] = dx*km/h[ix]/dyt;
 
