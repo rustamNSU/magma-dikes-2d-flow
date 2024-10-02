@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 1
+simID = 100
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -51,7 +51,7 @@ inputDict["magmaProperties"] = {
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
     "densityModel" : MagmaDensity.water_saturated,
-    "viscosityModel" : ViscosityModel.vft_const_coeff_cryst,
+    "viscosityModel" : ViscosityModel.grdmodel08,
     "crystallizationModel" : CrystallizationModel.const_relaxation,
     "saturationModel": MagmaSaturationModel.lavallee2015,
     "constantDensity" : {
@@ -70,6 +70,11 @@ inputDict["magmaProperties"] = {
     },
     "constantViscosity" : {
         "mu" : 10000
+    },
+    "grdmodel08" : {
+        # SiO2 TiO2 Al2O3 FeO(T) MnO MgO CaO Na2O K2O P2O5 F2O-1
+        "composition" : [64.6, 0.53, 16.5, 4.47, 0.01, 2.39, 5.23, 4.49, 1.54, 0.04, 0],
+        "muMaxLimit" : 1e14
     },
     "linearViscosity" : {
         "much" : 50,

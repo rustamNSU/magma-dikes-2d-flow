@@ -59,6 +59,15 @@ void MagmaState::setViscosityModel(){
         viscosity_model = ViscosityModel::VFT_CONST_COEFF_CRYST;
         viscosity_properties = properties["vftConstantViscosity"];
     }
+    else if (model == ViscosityModel::grdmodel08){
+        viscosity_model = ViscosityModel::GRDMODEL08;
+        viscosity_properties = properties[ViscosityModel::grdmodel08];
+        // auto composition_vec = viscosity_properties["composition"].get<std::vector<double>>();
+        // std::array<double, 11> composition;
+        auto composition = viscosity_properties["composition"].get<std::array<double, 11>>();
+        // std::copy(composition_vec.begin(), composition_vec.end(), composition.begin());
+        grdvisc_model.setComposition(composition);
+    }
     else{
         throw std::invalid_argument("Viscosity model is incorrect (ro not realized)!\n");
     }
@@ -198,6 +207,32 @@ void MagmaState::updateViscosity(DikeData* dike) const{
             Tavg.row(ix).fill(dike->temperature.row(ix).mean());
         }
         dike->viscosity = Tavg.unaryExpr(func);
+    }
+    else if (viscosity_model == ViscosityModel::GRDMODEL08){
+        int nx = mesh->size();
+        int ny = dike->getLayersNumber();
+        double mu_max = viscosity_properties["muMaxLimit"].get<double>();
+        double K = 273.15;
+        const auto& T = dike->temperature;
+        const auto& beta = dike->beta;
+        const auto& gamma = dike->gamma;
+        auto& viscosity = dike->viscosity;
+        const auto& hw = dike->hw;
+        for (int ix = 0; ix < nx; ix++){
+            int il = std::max(0, ix-1);
+            int ir = std::min(nx-1, ix+1);
+            if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
+                viscosity.row(ix).fill(mu_max);
+            }
+            else{
+                for (int iy = 0; iy < ny; iy++){
+                    double theta = theta_coef(beta(ix, iy));
+                    // double mu_melt = T(ix, iy) + K > C ? VFT_constant_viscosity(T(ix, iy) + K, A, B, C) : mu_max;
+                    double mu_melt = grdvisc_model.calculateViscosity(gamma(ix, iy), T(ix, iy));
+                    viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
+                }
+            }
+        }
     }
 }
 

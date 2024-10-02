@@ -30,6 +30,31 @@
             ],
         },
         {
+            "name": "test1",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/debug/bin/test1",
+            "cwd": "${workspaceFolder}",
+            "args": [],
+            "stopAtEntry": false,
+            "externalConsole": false,
+            "internalConsoleOptions":"neverOpen",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true,
+                }
+            ],
+            "postRemoteConnectCommands": [
+                {
+                    "text": "source ${workspaceFolder}/.vscode/.gdbinit"
+                }
+            ],
+        },
+        {
             "name": "runner-codelldb",
             "type": "lldb",
             "request": "launch",

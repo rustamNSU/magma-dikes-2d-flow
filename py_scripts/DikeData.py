@@ -26,7 +26,7 @@ def define_index(str):
 
 
 class DikeData:
-    def __init__(self, sim_path: str, step_rate=1) -> None:
+    def __init__(self, sim_path: str, step_rate=1, zero_closed_elements=True) -> None:
         self.sim_path = sim_path
         self.input_path = sim_path + "/input.json"
         self.input = json.load(open(self.input_path))
@@ -35,6 +35,7 @@ class DikeData:
         self.filepaths.sort(key=define_index)
         self.ntimesteps = len(self.filepaths)
         self.step_rate = step_rate
+        self.zero_closed_elements = zero_closed_elements
         self._parse_input()
         self._preload_data()
         

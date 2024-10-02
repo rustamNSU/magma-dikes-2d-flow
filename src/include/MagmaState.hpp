@@ -71,6 +71,7 @@ class MagmaState{
         double latent_heat;
         Chamber chamber;
         Mesh* mesh;
+        GiordanoViscosity grdvisc_model;
     
     public:
         MagmaState(Mesh* mesh, nlohmann::json&& properties);

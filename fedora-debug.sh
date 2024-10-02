@@ -5,7 +5,8 @@ cd ./debug
 cmake -B .\
       -S ..\
       -D CMAKE_BUILD_TYPE=Debug \
-      -D CMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
+      -D CMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake \
+      -D BUILD_TESTS=ON
 cmake --build . --parallel -j4
 
 # -DCMAKE_BUILD_TYPE=Debug \
