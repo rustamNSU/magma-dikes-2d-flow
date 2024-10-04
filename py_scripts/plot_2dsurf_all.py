@@ -14,7 +14,7 @@ from py_scripts.DikeData import DikeData
 set_matplotlib_settings()
 
 
-simID = 11
+simID = 2
 sim_path = sim_dir + f"/simID{simID}"
 wlim = (0, 1)
 plim = (0, 700)

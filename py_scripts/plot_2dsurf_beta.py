@@ -13,8 +13,8 @@ from py_scripts.utils import set_matplotlib_settings, create_layers_mask
 from py_scripts.DikeData import DikeData
 
 FIG_SIZE = [10, 8]
-set_matplotlib_settings(MAC_OS=True)
-simID = 32
+set_matplotlib_settings()
+simID = 12
 sim_path = sim_dir + f"/simID{simID}"
 wlim = (0, 1)
 plim = (0, 700)
@@ -166,7 +166,7 @@ def time_update(val):
     hw = data[t]["halfwidth"]
     T = data[t]["Tmask"]
     qx = data[t]["qx"][1:-1, :]
-    beta = data[t]["beta"]
+    beta = data[t]["gamma"]
     betaeq = data[t]["betaeq"]
     lW.set_ydata(hw)
     
@@ -226,7 +226,7 @@ def xlim_update(val):
     lMu1d.set_xdata(mu)
     axMu1d.set_xlim(min(mu), max(mu))
     
-    beta = data[t]["beta"]
+    beta = data[t]["gamma"]
     betaeq = data[t]["betaeq"]
     lB1d.set_xdata(beta[ix, :])
     lBeq1d.set_xdata(betaeq[ix, :])

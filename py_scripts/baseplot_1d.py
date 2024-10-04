@@ -13,7 +13,9 @@ from py_scripts.utils import set_matplotlib_settings, create_layers_mask
 from py_scripts.DikeData import DikeData
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
-simIDs = [1]
+# simIDs = [1, 2]
+# simLegends = [r"ovepressure > 0", r"no limit"]
+simIDs = [100, 101]
 simLegends = [str(simID) for simID in simIDs]
 wlim = (0, 3)
 plim = (0, 700)
@@ -145,7 +147,7 @@ time_slider = Slider(
     ax=ax_time_slider, 
     label='timesteps', 
     valmin=0, 
-    valmax=max(max(data.timesteps) for data in dikes),
+    valmax=min(max(data.timesteps) for data in dikes),
     valinit=0, 
     valstep=1)
 
