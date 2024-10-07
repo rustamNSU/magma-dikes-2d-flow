@@ -62,9 +62,11 @@ namespace JustTimer {
             std::chrono::nanoseconds time_sum;
             size_t count = 0;
             bool is_running = false;
+            int level = 0; // For nested timers (to beatify printing)
         };
 
         std::map<std::string, SingleTimer> named_timers;
+        int level = -1;
 
     public:
         Timer() = default;
@@ -77,6 +79,8 @@ namespace JustTimer {
         inline void start(const std::string& timer_name) {
             named_timers[timer_name].time_start = Clock::now();
             named_timers.at(timer_name).is_running = true;
+            level++;
+            named_timers.at(timer_name).level = level;
         }
 
         /** @brief Stop timer by name. */
@@ -89,6 +93,7 @@ namespace JustTimer {
                 current_timer.time_sum += current_timer.time_end - current_timer.time_start;
                 current_timer.count++;
                 current_timer.is_running = false;
+                level--;
             } else {
                 throw std::logic_error("Timer " + timer_name + " is not running");
             }
@@ -110,14 +115,16 @@ namespace JustTimer {
         /** @brief Clean map of timers */
         void clear(){
             named_timers.clear();
+            level = -1;
         }
 
     public:
 
         /** @brief Print pretty summary table to the given stream (default is std::cout). */
         void print(std::ostream& stream = std::cout) {
-            int width_name = 45;
-            int width_number = 16;
+            int level_tab = 2;
+            int width_name = 30;
+            int width_number = 10;
 
             std::stringstream ss;
             std::string time_header = "Total Time " + std::string(suffix_time);

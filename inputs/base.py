@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 100
+simID = 101
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -16,14 +16,15 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "explicit",
-    "numberOfLayers" : 10,
+    "numberOfLayers" : 40,
     "cutoffVelocity" : 1e-5,
     "lubricationCflScheme" : "spectral",
-    "lubricationCflFactor" : 0.0001,
+    "lubricationCflFactor" : 0.001,
     "massBalanceMinMobilityWidth" : 1e-10,
     "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
     "shearHeating" : False,
     "latentHeatCrystallization" : False,
+    "highOrderApproximation" : False,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -93,13 +94,13 @@ inputDict["scheduleProperties"] = {
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 400000.0,
+    "endTime" : 20000.0,
     "dtList" : [1.0, 10],
     "dtTime" : [0.0, 20000],
     "outputSaveRate" : 50
 }
 inputDict["meshProperties"] = {
-    "n" : 100,
+    "n" : 400,
     "xmin" : -30000.0,
     "xmax" : -10000.0
 }

@@ -51,6 +51,7 @@ class DikeModel2d{
         double CFL_FACTOR = 0.01;
         double shearHeating = 0.0;
         double latentHeatCrystallization = 0.0;
+        bool highOrderApproximation = false;
 
         int DENSITY_MODEL = 0;
         int VISCOSITY_MODEL = 0;

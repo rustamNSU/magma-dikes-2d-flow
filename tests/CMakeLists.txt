@@ -4,3 +4,8 @@ add_executable(test1 test1.cpp)
 target_link_libraries(test1 PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog utils)
 target_include_directories(test1 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS test1 DESTINATION bin)
+
+add_executable(test2 test2.cpp)
+target_link_libraries(test2 PRIVATE nlohmann_json::nlohmann_json spdlog::spdlog utils)
+target_include_directories(test2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+install(TARGETS test2 DESTINATION bin)

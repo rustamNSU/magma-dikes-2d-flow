@@ -1,6 +1,30 @@
 #pragma once
 #include <cmath>
 
+
+/**
+ * @brief Approximation of liquidus temperature from Blundy report
+ * 
+ * @param p pressure [Pa]
+ * @param sio2 sio2 content in melt [wt.%]
+ * @return double 
+ */
+inline double liquidus_temperature(double p, double sio2){
+    constexpr double al = 1205.7; 
+    constexpr double bl = 6.0;    // bl = 6 for p in kbar (1e8 Pa)
+    constexpr double cl = 285.7;
+    constexpr double dl = 200.0;
+    constexpr double el = 0.7;    // el = 0.7 for p in kbar (1e8 Pa)
+    constexpr double fl = 11.0;   // fl = 6 for p in kbar (1e8 Pa)
+    constexpr double xh2od = 1.0;
+    double pkbar = p * 1e-8;
+    constexpr double A = 1287.6; 
+    constexpr double B = -20.154;
+    double dTliq = A + B * sio2;
+    return al + bl*pkbar - xh2od*(cl + fl*pkbar - dl/(pkbar + el)) + dTliq;
+}
+
+
 inline double liquidus_temperature(double p){
     constexpr double al = 1205.7; 
     constexpr double bl = 6.0;    // bl = 6 for p in kbar (1e8 Pa)
@@ -27,13 +51,11 @@ inline double solidus_temperature(double p){
 }
 
 
-inline double beta_equilibrium(double p, double T){
+inline double beta_equilibrium(double p, double T, double Tl, double Ts){
     double aF = -4.974;
     double bF = 28.623;
     double cF = -52.708;
     double dF = 34.816;
-    double Tl = liquidus_temperature(p);
-    double Ts = solidus_temperature(p);
     double x = (T-Ts) / (Tl - Ts);
     return 1.0 / (1.0 + std::exp(aF + bF*x + cF*x*x + dF*x*x*x));
 }

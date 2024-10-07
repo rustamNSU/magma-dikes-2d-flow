@@ -53,6 +53,8 @@ class MagmaState{
             double rhom;
             double rhoc;
             double Mg0;
+            double Tl;
+            double Ts;
             inline void calculateGasRatio(){
                 Mg0 = (1.0 - beta) * gamma * rhom_liquid / density;
             }
@@ -71,6 +73,7 @@ class MagmaState{
         double latent_heat;
         Chamber chamber;
         Mesh* mesh;
+        double sio2 = 63.888;
         GiordanoViscosity grdvisc_model;
     
     public:

@@ -62,10 +62,8 @@ void MagmaState::setViscosityModel(){
     else if (model == ViscosityModel::grdmodel08){
         viscosity_model = ViscosityModel::GRDMODEL08;
         viscosity_properties = properties[ViscosityModel::grdmodel08];
-        // auto composition_vec = viscosity_properties["composition"].get<std::vector<double>>();
-        // std::array<double, 11> composition;
         auto composition = viscosity_properties["composition"].get<std::array<double, 11>>();
-        // std::copy(composition_vec.begin(), composition_vec.end(), composition.begin());
+        sio2 = composition[0];
         grdvisc_model.setComposition(composition);
     }
     else{
@@ -247,10 +245,12 @@ void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
         int ir = std::min(nx-1, ix+1);
         if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
-            double beta = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy));
+            double Tl = liquidus_temperature(dike->pressure(ix), sio2);
+            double Ts = solidus_temperature(dike->pressure(ix));
+            double beta = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy), Tl, Ts);
             dike->betaeq(ix, iy) = std::max(beta, chamber.beta);
-            dike->Tliquidus(ix, iy) = liquidus_temperature(dike->pressure(ix));
-            dike->Tsolidus(ix, iy) = solidus_temperature(dike->pressure(ix));
+            dike->Tliquidus(ix, iy) = Tl;
+            dike->Tsolidus(ix, iy) = Ts;
         }
     }
     return;
@@ -294,7 +294,9 @@ void MagmaState::setChamberInitialState(
     chamber.temperature = temperature_chamber;
     chamber.alpha = 0.0;
     chamber.gamma = h2o_wt_lavallee2015(chamber.pressure, chamber.temperature, 0.5);
-    chamber.beta = beta_equilibrium(chamber.pressure, chamber.temperature);
+    chamber.Tl = liquidus_temperature(chamber.pressure, sio2);
+    chamber.Ts = solidus_temperature(chamber.pressure);
+    chamber.beta = beta_equilibrium(chamber.pressure, chamber.temperature, chamber.Tl, chamber.Ts);
 
     double rhom0 = density_properties["rhom0"].get<double>();
     double rhow0 = density_properties["rhow0"].get<double>();

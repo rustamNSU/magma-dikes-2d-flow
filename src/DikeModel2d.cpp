@@ -8,6 +8,7 @@
 #include "Utils.hpp"
 #include <Eigen/Core>
 #include <highfive/H5Easy.hpp>
+#include "Interp.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -47,6 +48,7 @@ void DikeModel2d::setAlgorithmProperties(){
     VISCOSITY_APPROXIMATION = algorithm_properties["viscosityApproximation"].get<std::string>();
     shearHeating = algorithm_properties["shearHeating"].get<bool>() ? 1.0 : 0.0;
     latentHeatCrystallization = algorithm_properties["latentHeatCrystallization"].get<bool>() ? 1.0 : 0.0;
+    highOrderApproximation = algorithm_properties["highOrderApproximation"].get<bool>();
     return;
 }
 
@@ -160,7 +162,13 @@ void DikeModel2d::calculateVerticalFlow(){
         double h = 0.5 * (hw[ix-1] + hw[ix]);
         double xl = x[ix-1];
         double xr = x[ix];
-        double dpdx = (dike->pressure[ix] - dike->pressure[ix-1]) / (xr - xl);
+        double dpdx;
+        if (ix > 1 && highOrderApproximation){
+            dpdx = parab_derivative(0.5*(xl+xr), {x[ix-2], x[ix-1], x[ix]}, {dike->pressure[ix-2], dike->pressure[ix-1], dike->pressure[ix]});
+        }
+        else{
+            dpdx = (dike->pressure[ix] - dike->pressure[ix-1]) / (xr - xl);
+        }
         
         // @todo: add average density
         double rho_avg = 0.5 * (rho.row(ix-1).mean() + rho.row(ix).mean());
