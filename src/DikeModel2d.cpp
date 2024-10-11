@@ -124,6 +124,7 @@ void DikeModel2d::explicitSolver(){
     if (!solver_log.successful){
         return;
     }
+    dike->updateOpenElements();
     updateCrystallization();
     solveEnergyBalance();
 }
@@ -132,6 +133,20 @@ void DikeModel2d::explicitSolver(){
 void DikeModel2d::implicitSolver(){
     auto nx = mesh->size();
     auto ny = dike->getLayersNumber();
+    auto dt = timestep_controller->getCurrentTimestep();
+    JUST_TIMER_START("2) Update magma visc. and density");
+    magma_state->updateViscosity(dike.get());
+    magma_state->updateDensity(dike.get());
+    JUST_TIMER_STOP("2) Update magma visc. and density");
+
+    JUST_TIMER_START("2) Update magma width and pressure");
+    calculateVerticalFlow();
+    solveMassBalance();
+    if (!solver_log.successful){
+        return;
+    }
+    implicitMassBalance();
+    JUST_TIMER_STOP("2) Update magma width and pressure");
 }
 
 
@@ -260,7 +275,6 @@ void DikeModel2d::solveMassBalance(){
         JUST_TIMER_STOP("2) Mass balance time");
         return;
     }
-    dike->updateOpenElements();
 
     auto &qy = dike->qy;
     const auto &qx = dike->qx; 
@@ -491,6 +505,21 @@ void DikeModel2d::updateCrystallization(){
         dike->beta.row(ix) = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
     }
     JUST_TIMER_STOP("2) Update crystal time");
+}
+
+
+void DikeModel2d::implicitMassBalance(){
+    int nx = mesh->size();
+    int ny = dike->getLayersNumber();
+    auto& hold = old_dike->hw;
+    auto& rho_avg = dike->density.rowwise().mean();
+    auto& rho_avg_old = old_dike->density.rowwise().mean();
+    auto& rho = dike->density;
+    auto& rho_old = old_dike->density;
+    double dx = mesh->getdx();
+    double dt = timestep_controller->getCurrentTimestep();
+    double t1 = timestep_controller->getCurrentTime();
+    
 }
 
 

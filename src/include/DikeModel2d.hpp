@@ -66,6 +66,7 @@ class DikeModel2d{
         void updatePressure();
         void calculateVerticalFlow();
         void solveMassBalance();
+        void implicitMassBalance();
         void solveEnergyBalance();
         void updateCrystallization();
         void reloadData();
