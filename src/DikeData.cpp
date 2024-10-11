@@ -48,6 +48,9 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     Mx = ArrayXd::Zero(nx+1);
     Twall = ArrayXd::Zero(nx);
     G = ArrayXd::Zero(nx+1);
+    open_elements = std::vector<bool>(nx, false);
+    tip_element = 0;
+    front = meshX->getxr()[tip_element];
 }
 
 
@@ -76,4 +79,19 @@ void DikeData::save(const std::string path) const{
     dump(file, "qx", qx);
     dump(file, "qy", qy);
     dump(file, "time", time);
+}
+
+
+void DikeData::updateOpenElements(){
+    tip_element = 0;
+    for (int i = 0; i < meshX->size(); i++){
+        if (hw[i] > min_width){
+            open_elements[i] = true;
+            tip_element = i;
+        }
+        else{
+            open_elements[i] = false;
+        }
+    }
+    front = meshX->getxr()(tip_element);
 }

@@ -129,6 +129,12 @@ void DikeModel2d::explicitSolver(){
 }
 
 
+void DikeModel2d::implicitSolver(){
+    auto nx = mesh->size();
+    auto ny = dike->getLayersNumber();
+}
+
+
 void DikeModel2d::updatePressure(){
     JUST_TIMER_START("2) Elasticity time");
     dike->overpressure = 2 * (elasticity->getMatrix() * dike->hw.matrix());
@@ -254,9 +260,10 @@ void DikeModel2d::solveMassBalance(){
         JUST_TIMER_STOP("2) Mass balance time");
         return;
     }
+    dike->updateOpenElements();
 
     auto &qy = dike->qy;
-    const auto &qx = dike->qx;
+    const auto &qx = dike->qx; 
     const auto& yb = dike->yb;
     const auto& yc = dike->yc;
     double dy = yb[1] - yb[0];

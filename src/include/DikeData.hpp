@@ -3,6 +3,7 @@
 #include "InputData.hpp"
 #include "Mesh.hpp"
 #include <nlohmann/json.hpp>
+#include <vector>
 
 
 class MagmaState;
@@ -48,6 +49,10 @@ class DikeData{
         Eigen::ArrayXd G; // Total pressure gradient with buoyancy between elements
         double time = 0.0;
         nlohmann::json algorithm_properties;
+        std::vector<bool> open_elements; // Mesh elements which filled with magma
+        int tip_element;
+        double front;
+        double min_width = 1e-10;
     
     public:
         DikeData(Mesh* mesh, const nlohmann::json& alg_properties);
@@ -80,6 +85,8 @@ class DikeData{
         inline Eigen::ArrayXd getWidth() const{
             return 2.0 * hw;
         }
+
+        void updateOpenElements();
 
         // const Eigen::VectorXd& getDensity() const;
         // const Eigen::VectorXd& getWidth() const;

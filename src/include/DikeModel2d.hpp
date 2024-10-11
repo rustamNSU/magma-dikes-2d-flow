@@ -62,6 +62,7 @@ class DikeModel2d{
         void setAlgorithmProperties();
         void run();
         void explicitSolver();
+        void implicitSolver();
         void updatePressure();
         void calculateVerticalFlow();
         void solveMassBalance();
