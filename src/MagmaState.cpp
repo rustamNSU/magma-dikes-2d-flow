@@ -297,14 +297,15 @@ void MagmaState::setChamberInitialState(
     chamber.Tl = liquidus_temperature(chamber.pressure, sio2);
     chamber.Ts = solidus_temperature(chamber.pressure);
     chamber.beta = beta_equilibrium(chamber.pressure, chamber.temperature, chamber.Tl, chamber.Ts);
-
-    double rhom0 = density_properties["rhom0"].get<double>();
-    double rhow0 = density_properties["rhow0"].get<double>();
-    double rhoc0 = density_properties["rhoc0"].get<double>();
-    chamber.rhom_liquid = h2o_sat_melt_density(rhom0, rhow0, chamber.gamma);
-    chamber.rhom = (1.0 - chamber.beta) * chamber.rhom_liquid;
-    chamber.rhoc = rhoc0 * chamber.beta;
-    chamber.density = chamber.rhom + chamber.rhoc;
-    chamber.calculateGasRatio();
+    if (density_model == DensityModel::WATER_SATURATED){
+        double rhom0 = density_properties["rhom0"].get<double>();
+        double rhow0 = density_properties["rhow0"].get<double>();
+        double rhoc0 = density_properties["rhoc0"].get<double>();
+        chamber.rhom_liquid = h2o_sat_melt_density(rhom0, rhow0, chamber.gamma);
+        chamber.rhom = (1.0 - chamber.beta) * chamber.rhom_liquid;
+        chamber.rhoc = rhoc0 * chamber.beta;
+        chamber.density = chamber.rhom + chamber.rhoc;
+        chamber.calculateGasRatio();
+    }
     return;
 }

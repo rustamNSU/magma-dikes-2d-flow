@@ -81,9 +81,16 @@ void DikeModel2d::run(){
         auto time = timestep_controller->getCurrentTime();
         auto dt = timestep_controller->getCurrentTimestep();
         solver_log.setDefault();
-        JUST_TIMER_START("1) Explicit solver time");
-        explicitSolver();
-        JUST_TIMER_STOP("1) Explicit solver time");
+        if (algorithm_properties["solverType"] == "explicit"){
+            JUST_TIMER_START("1) Explicit solver time");
+            explicitSolver();
+            JUST_TIMER_STOP("1) Explicit solver time");
+        }
+        else{
+            JUST_TIMER_START("1) Implicit solver time");
+            implicitSolver();
+            JUST_TIMER_STOP("1) Implicit solver time");
+        }
 
         JUST_TIMER_START("1) Update data time");
         if (solver_log.successful){
@@ -125,8 +132,8 @@ void DikeModel2d::explicitSolver(){
         return;
     }
     dike->updateOpenElements();
-    updateCrystallization();
-    solveEnergyBalance();
+    // updateCrystallization();
+    // solveEnergyBalance();
 }
 
 
@@ -140,13 +147,15 @@ void DikeModel2d::implicitSolver(){
     JUST_TIMER_STOP("2) Update magma visc. and density");
 
     JUST_TIMER_START("2) Update magma width and pressure");
-    calculateVerticalFlow();
-    solveMassBalance();
-    if (!solver_log.successful){
-        return;
-    }
+    // calculateVerticalFlow();
+    // solveMassBalance();
+    // if (!solver_log.successful){
+    //     return;
+    // }
     implicitMassBalance();
     JUST_TIMER_STOP("2) Update magma width and pressure");
+    // updateCrystallization();
+    // solveEnergyBalance();
 }
 
 
@@ -197,8 +206,8 @@ void DikeModel2d::calculateVerticalFlow(){
         if (G > 0){
             G = 0;
         }
-        double GMAX = -2000*g;
-        G = std::max(G, GMAX);
+        // double GMAX = -2000*g;
+        // G = std::max(G, GMAX);
         dike->G[ix] = G;
         ArrayXd mul = viscosity.row(ix-1);
         ArrayXd mur = viscosity.row(ix);
@@ -509,17 +518,184 @@ void DikeModel2d::updateCrystallization(){
 
 
 void DikeModel2d::implicitMassBalance(){
+    using Eigen::seq;
+    using Eigen::last;
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     auto& hold = old_dike->hw;
-    auto& rho_avg = dike->density.rowwise().mean();
-    auto& rho_avg_old = old_dike->density.rowwise().mean();
+    VectorXd rho_avg = dike->density.rowwise().mean();
+    VectorXd rho_avg_old = old_dike->density.rowwise().mean();
     auto& rho = dike->density;
     auto& rho_old = old_dike->density;
+    auto& viscosity = dike->viscosity; 
     double dx = mesh->getdx();
     double dt = timestep_controller->getCurrentTimestep();
     double t1 = timestep_controller->getCurrentTime();
+    const auto& yb = dike->yb;
+    const auto& yc = dike->yc;
+    ArrayXd ybt = yb(seq(1, ny));
+    ArrayXd ybb = yb(seq(0, ny-1));
+    double dy = yb[1] - yb[0];
+    double g = reservoir->getGravityAcceleration();
     
+    int tip_old = old_dike->tip_element;
+    int N = std::min({tip_old + 2, nx - 1}) + 1;
+    ArrayXd W = dike->hw(seq(0, N-1));
+    ArrayXd P = dike->pressure(seq(0, N-1));
+    VectorXd sol = VectorXd::Zero(2*N); // (W, P)
+    VectorXd rhs_base = VectorXd::Zero(2*N);
+    MatrixXd mat = MatrixXd::Zero(2*N, 2*N);
+    MatrixXd Iww = -2*elasticity->getMatrix()(seq(0, N-1), seq(0, N-1));
+    VectorXd sigmah = reservoir->getLithostaticPressure()(seq(0, N-1));
+    MatrixXd Iwp = MatrixXd::Identity(N, N);
+    VectorXd diag_pw = rho_avg(seq(0, N-1)) * dx / dt;
+    MatrixXd Ipw = diag_pw.asDiagonal();
+    rhs_base(seq(0, N-1)) = sigmah;
+    rhs_base(seq(N, last)) = (rho_avg_old(seq(0, N-1)) * dx / dt).array() * hold(seq(0, N-1)).array();
+    double M0 = 0.5 * schedule->getMassRate(t1, t1 + dt);
+    rhs_base(N) = rhs_base(N) + M0;
+
+    ArrayXd G = ArrayXd::Zero(N+1);
+    ArrayXd lambda = ArrayXd::Zero(N+1);
+    ArrayXd rhog = ArrayXd::Zero(N+1);
+    ArrayXd mobility = ArrayXd::Zero(N+1);
+    ArrayXd Qx = ArrayXd::Zero(N+1);
+    ArrayXd lambda_total = ArrayXd::Zero(N+1);
+    ArrayXd Mx = ArrayXd::Zero(N+1);
+    for (int i = 1; i < N; ++i){
+        ArrayXd mul = viscosity.row(i-1);
+        ArrayXd mur = viscosity.row(i);
+        ArrayXd mu = mul;
+        if (VISCOSITY_APPROXIMATION == "harmonic"){
+            mu = 2 * (mul * mur) / (mul + mur);
+        }
+        if (VISCOSITY_APPROXIMATION == "mean"){
+            mu = 0.5 * (mul + mur);
+        }
+        ArrayXd acoef = 0.5 * mu.cwiseInverse();
+        ArrayXd ccoef = ArrayXd::Zero(ny);
+        ccoef(ny-1) = -acoef(ny-1);
+        for (int iy = ny-2; iy >= 0; iy--){
+            ccoef(iy) = ccoef(iy+1) + yb(iy+1) * yb(iy+1) * (acoef(iy+1) - acoef(iy));
+        }
+        ArrayXd lambda = acoef * (ybt.cube() - ybb.cube()) / 3 + ccoef * (ybt - ybb);
+        lambda_total(i) = (lambda * rho.row(i-1).array().transpose()).sum();
+        rhog(i) = 0.5 * (rho_avg(i) + rho_avg(i-1)) * g;
+    }
+    
+    JUST_TIMER_START("3) Solve nonlinear equations");
+    int stab_iter = 0;
+    double error = 0;
+    int iter = 0;
+    for (iter = 0; iter < MAX_ITERATIONS; ++iter){
+        VectorXd rhs = rhs_base;
+        VectorXd rhsp = VectorXd::Zero(N);
+        MatrixXd Ipp = MatrixXd::Zero(N, N);
+        VectorXd sol_iter(2*N);
+        sol_iter << W, P;
+        for (int i = 1; i < N; ++i){
+            double h = 0.5 * (W[i] + W[i-1]);
+            if (h < MIN_MOBILITY_WIDTH) h = 0;
+            mobility(i) = h*h*h*lambda_total(i);
+            G(i) = (P(i) - P(i-1)) / dx + rhog(i);
+            if (G(i) > 0) mobility(i) = 0;
+            rhsp(i-1) += -mobility(i) * rhog(i);
+            rhsp(i) += mobility(i) * rhog(i);
+            double coef = mobility(i) / dx;
+            Ipp(i-1, i-1) += -coef;
+            Ipp(i-1, i) += coef;
+            Ipp(i, i-1) += coef;
+            Ipp(i, i) += -coef;
+        }
+        mat << Iww, Iwp, Ipw, Ipp;
+        rhs(seq(N, last)) += rhsp;
+        Eigen::FullPivLU<MatrixXd> lu(mat);
+        sol = lu.solve(rhs);
+        /* Check for Nan value */
+        for (int i = 0; i < sol.size(); ++i){
+            if (std::isnan(sol[i])){
+                solver_log.successful = false;
+                return;
+            }
+        }
+        // error = (sol-sol_iter).lpNorm<Eigen::Infinity>() / std::max(sol.lpNorm<Eigen::Infinity>(), 1e-4);
+        error = 0;
+        for (int iw = 0; iw < N; iw++){
+            double erri = std::abs(sol(iw) - sol_iter(iw)) / std::max(1e-4, std::abs(sol(iw)));
+            error = error < erri ? erri : error;
+        }
+        W = sol(seq(0, N-1));
+        P = sol(seq(N, last));
+        if (error < TOLERANCE){
+            stab_iter++;
+        }
+        else{
+            stab_iter = 0;
+        }
+        if (stab_iter == 2) break;
+    }
+    spdlog::trace("-- {:<10}) err = {:<8}, niter. = {:<3}", timestep_controller->getTimeIteration(), error, iter);
+    JUST_TIMER_STOP("3) Solve nonlinear equations");
+    for (int i = 1; i < N; ++i){
+        ArrayXd mul = viscosity.row(i-1);
+        ArrayXd mur = viscosity.row(i);
+        ArrayXd mu = mul;
+        double h = 0.5 * (W[i] + W[i-1]);
+        G(i) = (P(i) - P(i-1)) / dx + rhog(i);
+        if (G(i) > 0) G(i) = 0;
+        dike->G(i) = G(i);
+        if (VISCOSITY_APPROXIMATION == "harmonic"){
+            mu = 2 * (mul * mur) / (mul + mur);
+        }
+        if (VISCOSITY_APPROXIMATION == "mean"){
+            mu = 0.5 * (mul + mur);
+        }
+        ArrayXd acoef = 0.5 * mu.cwiseInverse() * h * h * G(i);
+        ArrayXd ccoef = ArrayXd::Zero(ny);
+        ccoef(ny-1) = -acoef(ny-1);
+        for (int iy = ny-2; iy >= 0; iy--){
+            ccoef(iy) = ccoef(iy+1) + yb(iy+1) * yb(iy+1) * (acoef(iy+1) - acoef(iy));
+        }
+        dike->qx.row(i) = h*(acoef * (ybt.cube() - ybb.cube()) / 3 + ccoef * (ybt - ybb));
+        dike->A.row(i) = acoef;
+        dike->C.row(i) = ccoef;
+        dike->Qx(i) = dike->qx.row(i).sum();
+        dike->Mx(i) = mobility(i) * G(i);
+    }
+
+    auto &qy = dike->qy;
+    const auto &qx = dike->qx;
+    ArrayXd Min = ArrayXd::Zero(N);
+    Min(0) = M0;
+    for (int ix = 0; ix < N; ++ix){
+        dike->hw(ix) = W(ix);
+        dike->pressure(ix) = P(ix);
+        double Gcell;
+        if (ix == 0){
+            Gcell = G(1);
+        }
+        else{
+            Gcell = 0.5 * (G(ix) + G(ix-1));
+        }
+        dike->shear_heat.row(ix) = dx * (std::pow(W(ix), 3) * Gcell*Gcell / 3) * (ybt.cube() - ybb.cube()).array() / dike->viscosity.row(ix).array().transpose();
+        
+        ArrayXd rho_jb = 0.5 * (rho.row(ix)(seq(1, ny-1)) + rho.row(ix)(seq(0, ny-2)));
+        ArrayXd rhoj = rho.row(ix);
+        rhoj(seq(1, ny-1)) = rho_jb;
+        for (int iy = 1; iy < ny; iy++){
+            qy(ix, iy) = (
+                rhoj(iy-1) * qy(ix, iy-1) - 
+                rho(ix, iy-1) * qx(ix+1, iy-1) + 
+                rho(std::max(0, ix-1), iy-1) * qx(ix, iy-1) - 
+                dy*dx/dt*(
+                    rho(ix, iy-1)*W[ix] - rho_old(ix, iy-1)*hold[ix]
+                ) + 
+                Min[ix]*dy
+            ) / rhoj(iy);
+        }
+    }
+    dike->overpressure = 2 * (elasticity->getMatrix() * dike->hw.matrix());
+    dike->updateOpenElements();
 }
 
 
