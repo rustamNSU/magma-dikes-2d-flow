@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 200
+simID = 313
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -15,17 +15,17 @@ inputDict["simDir"] = sim_dir
 inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
-    "timestepScheme" : "explicit",
-    "numberOfLayers" : 40,
+    "timestepScheme" : "implicit",
+    "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
     "lubricationCflScheme" : "spectral",
-    "lubricationCflFactor" : 0.001,
+    "lubricationCflFactor" : 0.1,
     "massBalanceMinMobilityWidth" : 1e-10,
     "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
-    "shearHeating" : False,
-    "latentHeatCrystallization" : False,
+    "shearHeating" : True,
+    "latentHeatCrystallization" : True,
     "highOrderApproximation" : False,
-    "solverType" : "explicit",
+    "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -71,7 +71,7 @@ inputDict["magmaProperties"] = {
         "muMaxLimit" : 1e14
     },
     "constantViscosity" : {
-        "mu" : 10000
+        "mu" : 1000
     },
     "grdmodel08" : {
         # SiO2 TiO2 Al2O3 FeO(T) MnO MgO CaO Na2O K2O P2O5 F2O-1
@@ -95,10 +95,10 @@ inputDict["scheduleProperties"] = {
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 20000.0,
-    "dtList" : [1.0, 10],
-    "dtTime" : [0.0, 20000],
-    "outputSaveRate" : 50
+    "endTime" : 200000.0,
+    "dtList" : [1.0/2.0, 2.0/2.0, 5.0/2.0],
+    "dtTime" : [0.0, 10000.0, 30000.0],
+    "outputSaveRate" : 100
 }
 inputDict["meshProperties"] = {
     "n" : 400,

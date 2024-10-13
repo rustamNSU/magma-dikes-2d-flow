@@ -14,13 +14,13 @@ from py_scripts.DikeData import DikeData
 
 FIG_SIZE = [10, 8]
 set_matplotlib_settings()
-simID = 12
+simID = 302
 sim_path = sim_dir + f"/simID{simID}"
 wlim = (0, 1)
 plim = (0, 700)
 Tlim = (600, 1100)
-# xlim = (-30000, -10000.0)
-xlim = (-30000, 0)
+xlim = (-30000, -10000.0)
+# xlim = (-30000, 0)
 
 dike = DikeData(sim_path, step_rate=10)
 data = dike.data
@@ -166,7 +166,7 @@ def time_update(val):
     hw = data[t]["halfwidth"]
     T = data[t]["Tmask"]
     qx = data[t]["qx"][1:-1, :]
-    beta = data[t]["gamma"]
+    beta = data[t]["beta"]
     betaeq = data[t]["betaeq"]
     lW.set_ydata(hw)
     
@@ -226,7 +226,7 @@ def xlim_update(val):
     lMu1d.set_xdata(mu)
     axMu1d.set_xlim(min(mu), max(mu))
     
-    beta = data[t]["gamma"]
+    beta = data[t]["beta"]
     betaeq = data[t]["betaeq"]
     lB1d.set_xdata(beta[ix, :])
     lBeq1d.set_xdata(betaeq[ix, :])

@@ -95,3 +95,18 @@ void DikeData::updateOpenElements(){
     }
     front = meshX->getxr()(tip_element);
 }
+
+
+void DikeData::setMagmaStateAfterTip(){
+    setMagmaStateAfterTip(tip_element, std::min(tip_element + 1, meshX->size()-1));
+    setMagmaStateAfterTip(tip_element, std::min(tip_element + 2, meshX->size()-1));
+}
+
+
+void DikeData::setMagmaStateAfterTip(int ntip, int nout){
+    density.row(nout) = density.row(ntip);
+    viscosity.row(nout) = viscosity.row(ntip);
+    betaeq.row(nout) = betaeq.row(ntip);
+    alpha.row(nout) = alpha.row(ntip);
+    gamma.row(nout) = gamma.row(ntip);
+}

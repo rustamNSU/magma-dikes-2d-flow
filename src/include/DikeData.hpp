@@ -87,6 +87,8 @@ class DikeData{
         }
 
         void updateOpenElements();
+        void setMagmaStateAfterTip();
+        void setMagmaStateAfterTip(int ntip, int nout);
 
         // const Eigen::VectorXd& getDensity() const;
         // const Eigen::VectorXd& getWidth() const;

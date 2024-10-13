@@ -13,12 +13,16 @@ from py_scripts.utils import set_matplotlib_settings, create_layers_mask
 from py_scripts.DikeData import DikeData
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
-# simIDs = [1, 2]
-# simLegends = [r"ovepressure > 0", r"no limit"]
-simIDs = [100, 101]
+
+# simIDs = [312, 322]
+# simLegends = [r"semi-implicit", r"explicit"]
+# simIDs = [312, 313]
+# simLegends = [r"no shear-heat", r"all effects"]
+simIDs = [340, 341]
+simIDs = [341, 342, 343, 344]
 simLegends = [str(simID) for simID in simIDs]
 wlim = (0, 3)
-plim = (0, 700)
+plim = (0, 900)
 Tlim = (600, 920)
 simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 dikes = [DikeData(sim_path, step_rate=1) for sim_path in simPaths]
@@ -28,9 +32,9 @@ xlim = (
 )
 
 
-fig = plt.figure(figsize=(12, 8), constrained_layout=True)
+fig = plt.figure(figsize=(17, 8), constrained_layout=True)
 nrows = 4
-ncols = 2
+ncols = 3
 nrax = 10
 nrslider = 1
 gs = fig.add_gridspec(nrows=(nrows*nrax + nrslider), ncols=ncols)
@@ -88,10 +92,27 @@ axBeta.set_xlim(xlim)
 axBeta.set_ylim([0, 1])
 axBeta.grid()
 
+axTw = fig.add_subplot(gs[nrax:2*nrax, 2])
+axTw.set_xlabel(r"Depth (m)")
+axTw.set_ylabel(r"Wall temperature (C$^\circ$)")
+axTw.set_xlim(xlim)
+axTw.set_ylim(Tlim)
+axTw.grid()
+
+axP.sharex(axW)
+axT.sharex(axW)
+axOP.sharex(axW)
+axQx.sharex(axW)
+axG.sharex(axW)
+axRho.sharex(axW)
+axBeta.sharex(axW)
+axTw.sharex(axW)
+
 
 laxWs   = []
 laxPs   = []
 laxTs   = []
+laxTws   = []
 laxOPs  = []
 laxQxs  = []
 laxGs = []
@@ -106,6 +127,7 @@ for i in range(len(dikes)):
     w = data[0]["width"]
     p = 1e-6*data[0]["pressure"]
     T = np.mean(data[0]["temperature"], axis=1)
+    Tw = data[0]["Twall"]
     rho = np.mean(data[0]["density"], axis=1)
     beta = np.mean(data[0]["beta"], axis=1)
     alpha = np.mean(data[0]["alpha"], axis=1)
@@ -115,6 +137,7 @@ for i in range(len(dikes)):
     laxW,   = axW.plot(x, w, lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxP,   = axP.plot(x, p, lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxT,   = axT.plot(x, T, lw=2, ls='-', color=colors[i], label=simLegends[i])
+    laxTw,   = axTw.plot(x, Tw, lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxOP,  = axOP.plot(x, op, lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxQx,  = axQx.plot(xb, Qx, lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxG, = axG.plot(xb, G, lw=2, ls='-', color=colors[i], label=simLegends[i])
@@ -123,7 +146,8 @@ for i in range(len(dikes)):
     laxAlpha, = axBeta.plot(x, alpha, lw=2, ls='--', color=colors[i], label=simLegends[i] + r" ,$\alpha$")
     laxWs.append(laxW) 
     laxPs.append(laxP) 
-    laxTs.append(laxT) 
+    laxTs.append(laxT)
+    laxTws.append(laxTw)
     laxOPs.append(laxOP)
     laxQxs.append(laxQx)
     laxGs.append(laxG)
@@ -134,6 +158,7 @@ for i in range(len(dikes)):
 axW.legend().set_draggable(True)
 axP.legend().set_draggable(True)
 axT.legend().set_draggable(True)
+axTw.legend().set_draggable(True)
 axOP.legend().set_draggable(True)
 axQx.legend().set_draggable(True)
 axG.legend().set_draggable(True)
@@ -160,6 +185,7 @@ def time_update(val):
         w = data["width"]
         p = 1e-6*data["pressure"]
         T = np.mean(data["temperature"], axis=1)
+        Tw = data["Twall"]
         rho = np.mean(data["density"], axis=1)
         beta = np.mean(data["beta"], axis=1)
         alpha = np.mean(data["alpha"], axis=1)
@@ -168,7 +194,8 @@ def time_update(val):
         G = data["G"]
         laxWs[i].set_ydata(w) 
         laxPs[i].set_ydata(p) 
-        laxTs[i].set_ydata(T) 
+        laxTs[i].set_ydata(T)
+        laxTws[i].set_ydata(Tw)
         laxOPs[i].set_ydata(op)
         laxQxs[i].set_ydata(Qx)
         laxGs[i].set_ydata(G)

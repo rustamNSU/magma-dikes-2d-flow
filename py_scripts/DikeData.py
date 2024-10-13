@@ -12,6 +12,13 @@ def hdf5_read_single(h5file, key):
             return float(np.array(data_h5))
     return None
 
+def hdf5_read_int(h5file, key):
+    if key in h5file.keys():
+        data_h5 = h5file[key]
+        if (data_h5.size == 1):
+            return int(np.array(data_h5))
+    return None
+
 
 def hdf5_read_array(h5file, key):
     if key in h5file.keys():
@@ -114,5 +121,7 @@ class DikeData:
                 time=time,
                 Qx=hdf5_read_array(data, "/TotalFluxElements"),
                 Mx=hdf5_read_array(data, "/TotalMassRateElements"),
+                tip_element=hdf5_read_int(data, "/TipElement"),
+                tip_front=hdf5_read_single(data, "/TipFront"),
             )
             self.data.append(result)

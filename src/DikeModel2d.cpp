@@ -5,10 +5,12 @@
 #include <iostream>
 #include <algorithm>
 #include <stack>
+#include <exception>
 #include "Utils.hpp"
 #include <Eigen/Core>
 #include <highfive/H5Easy.hpp>
 #include "Interp.hpp"
+#include "LinearSolver.hpp"
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -81,15 +83,18 @@ void DikeModel2d::run(){
         auto time = timestep_controller->getCurrentTime();
         auto dt = timestep_controller->getCurrentTimestep();
         solver_log.setDefault();
-        if (algorithm_properties["solverType"] == "explicit"){
+        if (algorithm_properties["timestepScheme"] == "explicit"){
             JUST_TIMER_START("1) Explicit solver time");
             explicitSolver();
             JUST_TIMER_STOP("1) Explicit solver time");
         }
-        else{
+        else if (algorithm_properties["timestepScheme"] == "implicit"){
             JUST_TIMER_START("1) Implicit solver time");
             implicitSolver();
             JUST_TIMER_STOP("1) Implicit solver time");
+        }
+        else{
+            throw std::invalid_argument("bad!\n");
         }
 
         JUST_TIMER_START("1) Update data time");
@@ -126,14 +131,19 @@ void DikeModel2d::explicitSolver(){
     JUST_TIMER_START("2) Update density time");
     magma_state->updateDensity(dike.get());
     JUST_TIMER_STOP("2) Update density time");
+    dike->setMagmaStateAfterTip();
     calculateVerticalFlow();
     solveMassBalance();
     if (!solver_log.successful){
         return;
     }
     dike->updateOpenElements();
-    // updateCrystallization();
-    // solveEnergyBalance();
+    JUST_TIMER_START("2) Update equilibrium crystallization");
+    magma_state->updateEquilibriumCrystallization(dike.get());
+    JUST_TIMER_STOP("2) Update equilibrium crystallization");
+    updateCrystallization();
+    dike->setMagmaStateAfterTip();
+    solveEnergyBalance();
 }
 
 
@@ -141,21 +151,18 @@ void DikeModel2d::implicitSolver(){
     auto nx = mesh->size();
     auto ny = dike->getLayersNumber();
     auto dt = timestep_controller->getCurrentTimestep();
-    JUST_TIMER_START("2) Update magma visc. and density");
+    JUST_TIMER_START("2) Update magma state");
     magma_state->updateViscosity(dike.get());
     magma_state->updateDensity(dike.get());
-    JUST_TIMER_STOP("2) Update magma visc. and density");
+    magma_state->updateEquilibriumCrystallization(dike.get());
+    dike->setMagmaStateAfterTip();
+    JUST_TIMER_STOP("2) Update magma state");
 
     JUST_TIMER_START("2) Update magma width and pressure");
-    // calculateVerticalFlow();
-    // solveMassBalance();
-    // if (!solver_log.successful){
-    //     return;
-    // }
     implicitMassBalance();
     JUST_TIMER_STOP("2) Update magma width and pressure");
-    // updateCrystallization();
-    // solveEnergyBalance();
+    updateCrystallization();
+    solveEnergyBalance();
 }
 
 
@@ -447,15 +454,10 @@ void DikeModel2d::solveEnergyBalance(){
 
 void DikeModel2d::updateCrystallization(){
     JUST_TIMER_START("2) Update crystal time");
-    JUST_TIMER_START("3) Update eq. cryst time");
-    magma_state->updateEquilibriumCrystallization(dike.get());
-    JUST_TIMER_STOP("3) Update eq. cryst time");
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
     const auto& hold = old_dike->hw;
-    // const auto& alpha = dike->alpha;
-    // const auto& alpha_old = old_dike->alpha;
     double dx = mesh->getdx();
     double dt = timestep_controller->getCurrentTimestep();
     double t1 = timestep_controller->getCurrentTime();
@@ -566,6 +568,10 @@ void DikeModel2d::implicitMassBalance(){
         ArrayXd mul = viscosity.row(i-1);
         ArrayXd mur = viscosity.row(i);
         ArrayXd mu = mul;
+        // ArrayXd dbeta = dike->beta.row(i);
+        // ArrayXd dbetaeq = dike->betaeq.row(i);
+        // ArrayXd dgamma = dike->gamma.row(i);
+        // ArrayXd dalpha = dike->alpha.row(i);
         if (VISCOSITY_APPROXIMATION == "harmonic"){
             mu = 2 * (mul * mur) / (mul + mur);
         }
@@ -583,11 +589,12 @@ void DikeModel2d::implicitMassBalance(){
         rhog(i) = 0.5 * (rho_avg(i) + rho_avg(i-1)) * g;
     }
     
-    JUST_TIMER_START("3) Solve nonlinear equations");
+    JUST_TIMER_START("2) Solve nonlinear equations");
     int stab_iter = 0;
     double error = 0;
     int iter = 0;
     for (iter = 0; iter < MAX_ITERATIONS; ++iter){
+        JUST_TIMER_START("3) Assemble matrix");
         VectorXd rhs = rhs_base;
         VectorXd rhsp = VectorXd::Zero(N);
         MatrixXd Ipp = MatrixXd::Zero(N, N);
@@ -609,8 +616,22 @@ void DikeModel2d::implicitMassBalance(){
         }
         mat << Iww, Iwp, Ipw, Ipp;
         rhs(seq(N, last)) += rhsp;
-        Eigen::FullPivLU<MatrixXd> lu(mat);
-        sol = lu.solve(rhs);
+        JUST_TIMER_STOP("3) Assemble matrix");
+
+        JUST_TIMER_START("3) Solver time");
+        if (algorithm_properties["solverName"] == "denselu"){
+            Eigen::FullPivLU<MatrixXd> lu(mat);
+            sol = lu.solve(rhs);
+        }
+        else if(algorithm_properties["solverName"] == "umfpack"){
+            Eigen::SparseMatrix<double> mat_sparse = mat.sparseView();
+            LinearSolver::solveUmfpack(mat_sparse, rhs, sol);
+        }
+        else if(algorithm_properties["solverName"] == "pardiso"){
+            Eigen::SparseMatrix<double> mat_sparse = mat.sparseView();
+            LinearSolver::solvePardiso(mat_sparse, rhs, sol);
+        }
+        JUST_TIMER_STOP("3) Solver time");
         /* Check for Nan value */
         for (int i = 0; i < sol.size(); ++i){
             if (std::isnan(sol[i])){
@@ -635,7 +656,7 @@ void DikeModel2d::implicitMassBalance(){
         if (stab_iter == 2) break;
     }
     spdlog::trace("-- {:<10}) err = {:<8}, niter. = {:<3}", timestep_controller->getTimeIteration(), error, iter);
-    JUST_TIMER_STOP("3) Solve nonlinear equations");
+    JUST_TIMER_STOP("2) Solve nonlinear equations");
     for (int i = 1; i < N; ++i){
         ArrayXd mul = viscosity.row(i-1);
         ArrayXd mur = viscosity.row(i);
@@ -675,8 +696,9 @@ void DikeModel2d::implicitMassBalance(){
             Gcell = G(1);
         }
         else{
-            Gcell = 0.5 * (G(ix) + G(ix-1));
+            Gcell = 0.5 * (G(ix+1) + G(ix));
         }
+        Gcell = std::abs(Gcell) < 2300*g ? Gcell : -2300*g;
         dike->shear_heat.row(ix) = dx * (std::pow(W(ix), 3) * Gcell*Gcell / 3) * (ybt.cube() - ybb.cube()).array() / dike->viscosity.row(ix).array().transpose();
         
         ArrayXd rho_jb = 0.5 * (rho.row(ix)(seq(1, ny-1)) + rho.row(ix)(seq(0, ny-2)));
@@ -734,6 +756,8 @@ void DikeModel2d::saveData(const std::string &savepath){
     dump(file, "Tsolidus", dike->Tsolidus);
     dump(file, "TotalFluxElements", dike->Qx);
     dump(file, "TotalMassRateElements", dike->Mx);
+    dump(file, "TipElement", dike->tip_element);
+    dump(file, "TipFront", dike->front);
 
 
     dump(file, "reservoir/yc", reservoir->yc);

@@ -103,22 +103,15 @@ void MagmaState::updateGasDensity(DikeData* dike) const{
     const auto& gamma = dike->gamma;
     const auto& rhom_liquid = dike->rhom_liquid;
     double R = 1000.0;
-    for (int ix = 0; ix < nx; ix++){
-        int il = std::max(0, ix-1);
-        int ir = std::min(nx-1, ix+1);
-        if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
-            continue;
-        }
-        else{
-            for (int iy = 0; iy < ny; iy++){
-                double rhog0 = h2o_vapor_density(p(ix), T(ix, iy), R);
-                double t1 = (1-beta(ix, iy))*(chamber.Mg0-gamma(ix,iy))*rhom_liquid(ix,iy);
-                double t2 = chamber.Mg0*beta(ix,iy)*rhoc0;
-                double alpha1 = (t1 + t2) / (t1 + t2 + (1.0-chamber.Mg0)*rhog0);
-                double alpha = std::max(0.0, alpha1);
-                dike->alpha(ix, iy) = alpha;
-                dike->rhog(ix, iy) = rhog0 * alpha;
-            }
+    for (int ix = 0; ix <= dike->tip_element; ix++){
+        for (int iy = 0; iy < ny; iy++){
+            double rhog0 = h2o_vapor_density(p(ix), T(ix, iy), R);
+            double t1 = (1-beta(ix, iy))*(chamber.Mg0-gamma(ix,iy))*rhom_liquid(ix,iy);
+            double t2 = chamber.Mg0*beta(ix,iy)*rhoc0;
+            double alpha1 = (t1 + t2) / (t1 + t2 + (1.0-chamber.Mg0)*rhog0);
+            double alpha = std::max(0.0, alpha1);
+            dike->alpha(ix, iy) = alpha;
+            dike->rhog(ix, iy) = rhog0 * alpha;
         }
     }
     return;
@@ -216,7 +209,7 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         const auto& gamma = dike->gamma;
         auto& viscosity = dike->viscosity;
         const auto& hw = dike->hw;
-        for (int ix = 0; ix < nx; ix++){
+        for (int ix = 0; ix <= dike->tip_element; ix++){
             int il = std::max(0, ix-1);
             int ir = std::min(nx-1, ix+1);
             if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
@@ -240,10 +233,9 @@ void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
     int ny = dike->ny;
     // #pragma omp parallel for
     const auto& hw = dike->hw;
-    for (int ix = 0; ix < nx; ix++){
+    for (int ix = 0; ix <= dike->tip_element; ix++){
         int il = std::max(0, ix-1);
         int ir = std::min(nx-1, ix+1);
-        if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
         for (int iy = 0; iy < ny; iy++){
             double Tl = liquidus_temperature(dike->pressure(ix), sio2);
             double Ts = solidus_temperature(dike->pressure(ix));
@@ -263,7 +255,7 @@ void MagmaState::updateGasSaturation(DikeData* dike) const{
     const auto& hw = dike->hw;
     const auto& p = dike->pressure;
     const auto& T = dike->temperature;
-    for (int ix = 0; ix < nx; ix++){
+    for (int ix = 0; ix <= dike->tip_element; ix++){
         int il = std::max(0, ix-1);
         int ir = std::min(nx-1, ix+1);
         if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)) continue;
