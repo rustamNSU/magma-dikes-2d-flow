@@ -18,8 +18,9 @@ set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 # simLegends = [r"semi-implicit", r"explicit"]
 # simIDs = [312, 313]
 # simLegends = [r"no shear-heat", r"all effects"]
-simIDs = [340, 341]
 simIDs = [341, 342, 343, 344]
+simLegends = [r"$\Delta x = 200$", r"$\Delta x = 100$", r"$\Delta x = 50$", r"$\Delta x = 25$"]
+simIDs = [344, 350, 352]
 simLegends = [str(simID) for simID in simIDs]
 wlim = (0, 3)
 plim = (0, 900)
@@ -207,6 +208,7 @@ def time_update(val):
         axQx.set_ylim(-1e-2*maxQx, maxQx)
         maxG = max(1e-6, max(G))
         axG.set_ylim(-1e-2*maxG, maxG)
+        axOP.set_ylim(min(-1e-6, min(op)), max(op))
 
 time_slider.on_changed(time_update)
 plt.show()

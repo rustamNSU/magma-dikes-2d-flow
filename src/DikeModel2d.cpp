@@ -692,13 +692,13 @@ void DikeModel2d::implicitMassBalance(){
         dike->hw(ix) = W(ix);
         dike->pressure(ix) = P(ix);
         double Gcell;
-        if (ix == 0){
-            Gcell = G(1);
+        if (ix == 0 || ix >= dike->tip_element - 1){
+            Gcell = 0.0;
         }
         else{
             Gcell = 0.5 * (G(ix+1) + G(ix));
         }
-        Gcell = std::abs(Gcell) < 2300*g ? Gcell : -2300*g;
+        Gcell = std::abs(Gcell) < 1000*g ? Gcell : -1000*g;
         dike->shear_heat.row(ix) = dx * (std::pow(W(ix), 3) * Gcell*Gcell / 3) * (ybt.cube() - ybb.cube()).array() / dike->viscosity.row(ix).array().transpose();
         
         ArrayXd rho_jb = 0.5 * (rho.row(ix)(seq(1, ny-1)) + rho.row(ix)(seq(0, ny-2)));

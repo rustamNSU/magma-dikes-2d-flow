@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 344
+simID = 352
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -22,7 +22,7 @@ inputDict["algorithmProperties"] = {
     "lubricationCflFactor" : 0.1,
     "massBalanceMinMobilityWidth" : 1e-10,
     "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
-    "shearHeating" : False,
+    "shearHeating" : True,
     "latentHeatCrystallization" : True,
     "highOrderApproximation" : False,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
@@ -101,7 +101,7 @@ inputDict["timestepProperties"] = {
     "outputSaveRate" : 50
 }
 inputDict["meshProperties"] = {
-    "n" : 800,
+    "n" : 400,
     "xmin" : -30000.0,
     "xmax" : -10000.0
 }
