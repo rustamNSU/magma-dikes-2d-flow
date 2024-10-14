@@ -10,6 +10,7 @@ class TimestepController{
         nlohmann::json timestep_properties;
         std::vector<double> dt_list;
         std::vector<double> dt_time;
+        std::vector<int> saverate_list;
         int base_dt_indx = 0;
         double start_time;
         double end_time;

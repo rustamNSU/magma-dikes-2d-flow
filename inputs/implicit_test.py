@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 352
+simID = 13
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -16,16 +16,17 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "implicit",
-    "numberOfLayers" : 40,
+    "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
     "lubricationCflScheme" : "spectral",
     "lubricationCflFactor" : 0.1,
     "massBalanceMinMobilityWidth" : 1e-10,
-    "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
+    "viscosityApproximation" : "harmonic", # "min", "harmonic", "mean"
     "shearHeating" : True,
     "latentHeatCrystallization" : True,
     "highOrderApproximation" : False,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
+    "isSparseElasticity" : True,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -83,7 +84,7 @@ inputDict["magmaProperties"] = {
         "musurf" : 1000,
     },
     "constantRelaxationCrystallization" : {
-        "tau" : 24 * 3600 * 1,
+        "tau" : 24 * 3600 * 0.5,
     }
 }
 inputDict["scheduleProperties"] = {
@@ -96,14 +97,14 @@ inputDict["scheduleProperties"] = {
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
     "endTime" : 200000.0,
-    "dtList" : [1.0, 2.0, 5.0, 10.0],
-    "dtTime" : [0.0, 10000.0, 30000.0, 80000.0],
-    "outputSaveRate" : 50
+    "dtList" : [1.0, 2.0, 5.0],
+    "dtTime" : [0.0, 20000.0, 40000.0],
+    "saverateList" : [100, 100, 100]
 }
 inputDict["meshProperties"] = {
-    "n" : 400,
+    "n" : 600,
     "xmin" : -30000.0,
-    "xmax" : -10000.0
+    "xmax" : 0.0
 }
 
 input_file = repository_dir + "/input.json"

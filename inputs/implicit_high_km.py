@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 200
+simID = 14
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -15,17 +15,18 @@ inputDict["simDir"] = sim_dir
 inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
-    "timestepScheme" : "explicit",
-    "numberOfLayers" : 2,
+    "timestepScheme" : "implicit",
+    "numberOfLayers" : 30,
     "cutoffVelocity" : 1e-5,
     "lubricationCflScheme" : "spectral",
     "lubricationCflFactor" : 0.1,
     "massBalanceMinMobilityWidth" : 1e-10,
-    "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
-    "shearHeating" : False,
-    "latentHeatCrystallization" : False,
+    "viscosityApproximation" : "harmonic", # "min", "harmonic", "mean"
+    "shearHeating" : True,
+    "latentHeatCrystallization" : True,
     "highOrderApproximation" : False,
-    "solverType" : "implicit",
+    "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
+    "isSparseElasticity" : True,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -49,11 +50,11 @@ inputDict["reservoirProperties"] = {
     },
 }
 inputDict["magmaProperties"] = {
-    "thermalConductivity" : 2,
+    "thermalConductivity" : 20000,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
-    "densityModel" : MagmaDensity.constant,
-    "viscosityModel" : ViscosityModel.constant,
+    "densityModel" : MagmaDensity.water_saturated,
+    "viscosityModel" : ViscosityModel.grdmodel08,
     "crystallizationModel" : CrystallizationModel.const_relaxation,
     "saturationModel": MagmaSaturationModel.lavallee2015,
     "constantDensity" : {
@@ -83,11 +84,11 @@ inputDict["magmaProperties"] = {
         "musurf" : 1000,
     },
     "constantRelaxationCrystallization" : {
-        "tau" : 24 * 3600 * 1,
+        "tau" : 24 * 3600 * 0.5,
     }
 }
 inputDict["scheduleProperties"] = {
-    "Q": [1.0, 0.0],
+    "Q": [2.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
@@ -95,15 +96,15 @@ inputDict["scheduleProperties"] = {
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 15000.0,
-    "dtList" : [1.0],
-    "dtTime" : [0.0],
-    "outputSaveRate" : 50
+    "endTime" : 200000.0,
+    "dtList" : [1.0, 2.0, 5.0],
+    "dtTime" : [0.0, 20000.0, 40000.0],
+    "saverateList" : [100, 100, 100]
 }
 inputDict["meshProperties"] = {
-    "n" : 200,
+    "n" : 300,
     "xmin" : -30000.0,
-    "xmax" : -10000.0
+    "xmax" : 0.0
 }
 
 input_file = repository_dir + "/input.json"

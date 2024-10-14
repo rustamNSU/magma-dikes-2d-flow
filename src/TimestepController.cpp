@@ -10,13 +10,14 @@ TimestepController::TimestepController(const json& timestep_properties) :
     end_time = timestep_properties["endTime"];
     dt_list = timestep_properties["dtList"].get<std::vector<double>>();
     dt_time = timestep_properties["dtTime"].get<std::vector<double>>();
+    saverate_list = timestep_properties["saverateList"].get<std::vector<int>>();
     base_dt = dt_list[0];
     current_dt = base_dt;
     level = 0;
     base_timesteps = 0;
     all_timesteps = 0;
     attempts = 1;
-    output_save_rate = timestep_properties["outputSaveRate"];
+    output_save_rate = saverate_list[0];
 }
 
 
@@ -144,6 +145,7 @@ void TimestepController::updateBaseTimestep(){
         if (std::abs(dt_time[base_dt_indx+1] - current_time) < 0.1 * base_dt){
             base_dt_indx++;
             base_dt = dt_list[base_dt_indx];
+            output_save_rate = saverate_list[base_dt_indx];
             current_dt = base_dt;
         }
         return;

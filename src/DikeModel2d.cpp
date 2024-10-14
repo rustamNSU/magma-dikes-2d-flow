@@ -548,6 +548,10 @@ void DikeModel2d::implicitMassBalance(){
     VectorXd rhs_base = VectorXd::Zero(2*N);
     MatrixXd mat = MatrixXd::Zero(2*N, 2*N);
     MatrixXd Iww = -2*elasticity->getMatrix()(seq(0, N-1), seq(0, N-1));
+    MatrixXd IwwA = -2*elasticity->getA()(seq(0, N-1), seq(0, N-1));
+    MatrixXd IwwB = -2*elasticity->getB()(seq(0, N-1), seq(0, N-1));
+
+
     VectorXd sigmah = reservoir->getLithostaticPressure()(seq(0, N-1));
     MatrixXd Iwp = MatrixXd::Identity(N, N);
     VectorXd diag_pw = rho_avg(seq(0, N-1)) * dx / dt;
@@ -568,10 +572,6 @@ void DikeModel2d::implicitMassBalance(){
         ArrayXd mul = viscosity.row(i-1);
         ArrayXd mur = viscosity.row(i);
         ArrayXd mu = mul;
-        // ArrayXd dbeta = dike->beta.row(i);
-        // ArrayXd dbetaeq = dike->betaeq.row(i);
-        // ArrayXd dgamma = dike->gamma.row(i);
-        // ArrayXd dalpha = dike->alpha.row(i);
         if (VISCOSITY_APPROXIMATION == "harmonic"){
             mu = 2 * (mul * mur) / (mul + mur);
         }
@@ -614,8 +614,15 @@ void DikeModel2d::implicitMassBalance(){
             Ipp(i, i-1) += coef;
             Ipp(i, i) += -coef;
         }
-        mat << Iww, Iwp, Ipw, Ipp;
         rhs(seq(N, last)) += rhsp;
+        if (algorithm_properties["isSparseElasticity"].get<bool>() == false){
+            mat << Iww, Iwp, Ipw, Ipp;
+        }
+        else{
+            VectorXd rhsw = IwwB * W.matrix();
+            rhs(seq(0, N-1)) -= rhsw;
+            mat << IwwA, Iwp, Ipw, Ipp;
+        }
         JUST_TIMER_STOP("3) Assemble matrix");
 
         JUST_TIMER_START("3) Solver time");

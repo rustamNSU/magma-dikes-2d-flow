@@ -8,7 +8,11 @@ class Elasticity{
         double nu;
         double Ep;
         Mesh* mesh;
-        Eigen::MatrixXd matrix;
+        Eigen::MatrixXd matrix; // C
+
+        int step = 1;
+        Eigen::MatrixXd A; // Sparse diagonal from C with (window = 2*step + 1)
+        Eigen::MatrixXd B; // C - A
 
         Elasticity() = delete;
 
@@ -21,4 +25,14 @@ class Elasticity{
 
         void generateMatrix();
         const Eigen::MatrixXd& getMatrix() const;
+
+
+        inline const Eigen::MatrixXd& getA() const{
+            return A;
+        }
+
+
+        inline const Eigen::MatrixXd& getB() const{
+            return B;
+        }
 };

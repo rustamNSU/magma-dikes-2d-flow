@@ -13,16 +13,16 @@ from py_scripts.utils import set_matplotlib_settings, create_layers_mask
 from py_scripts.DikeData import DikeData
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
-
-# simIDs = [312, 322]
-# simLegends = [r"semi-implicit", r"explicit"]
-# simIDs = [312, 313]
-# simLegends = [r"no shear-heat", r"all effects"]
-simIDs = [341, 342, 343, 344]
-simLegends = [r"$\Delta x = 200$", r"$\Delta x = 100$", r"$\Delta x = 50$", r"$\Delta x = 25$"]
-simIDs = [344, 350, 352]
-simLegends = [str(simID) for simID in simIDs]
-wlim = (0, 3)
+simIDs = [3, 4, 5]
+simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$", r"$\Delta x = 25$"]
+simIDs = [10, 11, 12]
+simLegends = [r"$N_y = 2$", r"$N_y = 10$", r"$N_y = 30$"]
+simIDs = [12, 13]
+simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$"]
+simIDs = [12, 14]
+simLegends = [r"$k_m = 2$", r"$k_m = 20000$"]
+# simLegends = [str(simID) for simID in simIDs]
+wlim = (0, 5)
 plim = (0, 900)
 Tlim = (600, 920)
 simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]

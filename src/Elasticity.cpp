@@ -21,16 +21,19 @@ void Elasticity::generateMatrix(){
     auto xl = mesh->getxl();
     auto xr = mesh->getxr();
     matrix = MatrixXd::Zero(n, n);
+    A = MatrixXd::Zero(n, n);
+    B = MatrixXd::Zero(n, n);
     for (int r = 0; r < n; ++r){
         for (int c = 0; c < n; ++c){
             matrix(r,c) = -Ep / (4.0 * M_PI) *
                     (1.0 / (x(r) - xr(c)) -
                     1.0 / (x(r) - xl(c)));
-            // if (std::abs(r-c) == 0){
-            //     matrix(r,c) = -Ep / (4.0 * M_PI) *
-            //         (1.0 / (x(r) - xr(c)) -
-            //         1.0 / (x(r) - xl(c)));
-            // }
+            if (std::abs(r-c) <= step){
+                A(r,c) = matrix(r,c);
+            }
+            else{
+                B(r,c) = matrix(r,c);
+            }
         }
     }
     return;
