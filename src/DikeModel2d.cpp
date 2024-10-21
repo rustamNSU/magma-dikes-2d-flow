@@ -51,6 +51,16 @@ void DikeModel2d::setAlgorithmProperties(){
     shearHeating = algorithm_properties["shearHeating"].get<bool>() ? 1.0 : 0.0;
     latentHeatCrystallization = algorithm_properties["latentHeatCrystallization"].get<bool>() ? 1.0 : 0.0;
     highOrderApproximation = algorithm_properties["highOrderApproximation"].get<bool>();
+
+
+    if (algorithm_properties["isCohesiveStress"].get<bool>()){
+        auto rp = input->getReservoirProperties();
+        elasticity->setCohesiveParameters(
+            rp["cohesiveStress"]["dc"].get<double>(),
+            rp["cohesiveStress"]["dm"].get<double>(),
+            rp["cohesiveStress"]["Gc"].get<double>()
+        );
+    }
     return;
 }
 
@@ -550,8 +560,6 @@ void DikeModel2d::implicitMassBalance(){
     MatrixXd Iww = -2*elasticity->getMatrix()(seq(0, N-1), seq(0, N-1));
     MatrixXd IwwA = -2*elasticity->getA()(seq(0, N-1), seq(0, N-1));
     MatrixXd IwwB = -2*elasticity->getB()(seq(0, N-1), seq(0, N-1));
-
-
     VectorXd sigmah = reservoir->getLithostaticPressure()(seq(0, N-1));
     MatrixXd Iwp = MatrixXd::Identity(N, N);
     VectorXd diag_pw = rho_avg(seq(0, N-1)) * dx / dt;
@@ -622,6 +630,14 @@ void DikeModel2d::implicitMassBalance(){
             VectorXd rhsw = IwwB * W.matrix();
             rhs(seq(0, N-1)) -= rhsw;
             mat << IwwA, Iwp, Ipw, Ipp;
+        }
+
+        if (algorithm_properties["isCohesiveStress"].get<bool>()){
+            auto coh_lambda = [=, this](double h){
+                return elasticity->getCohesiveStress(h);
+            };
+            VectorXd rhs_coh = W.unaryExpr(coh_lambda);
+            rhs(seq(0, N-1)) += rhs_coh;
         }
         JUST_TIMER_STOP("3) Assemble matrix");
 

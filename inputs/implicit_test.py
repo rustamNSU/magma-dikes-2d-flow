@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 13
+simID = 3
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -27,6 +27,7 @@ inputDict["algorithmProperties"] = {
     "highOrderApproximation" : False,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
     "isSparseElasticity" : True,
+    "isCohesiveStress" : True,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -48,6 +49,11 @@ inputDict["reservoirProperties"] = {
         "maximum_temperature" : 900,
         "minimum_temperature" : 0
     },
+    "cohesiveStress" : {
+        "Gc" : 46.875 * 50**2,
+        "dc" : 1e-1,
+        "dm" : 1e-5,
+    }
 }
 inputDict["magmaProperties"] = {
     "thermalConductivity" : 2,
