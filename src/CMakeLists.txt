@@ -11,6 +11,7 @@ add_executable(runner
     MagmaState.cpp
     TimestepController.cpp
     ReservoirData.cpp
+    CohesiveModel.cpp
 )
 target_link_libraries(runner
     Eigen3::Eigen

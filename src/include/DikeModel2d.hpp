@@ -4,6 +4,7 @@
 
 #include "Mesh.hpp"
 #include "Elasticity.hpp"
+#include "CohesiveModel.hpp"
 #include "DikeData.hpp"
 #include "InputData.hpp"
 #include "Schedule.hpp"
@@ -32,6 +33,7 @@ class DikeModel2d{
         std::shared_ptr<InputData> input;
         std::shared_ptr<ReservoirData> reservoir;
         std::shared_ptr<Elasticity> elasticity;
+        std::shared_ptr<CohesiveModel> cohesive_model;
         std::shared_ptr<TimestepController> timestep_controller;
         std::shared_ptr<Mesh> mesh;
         std::shared_ptr<Schedule> schedule;

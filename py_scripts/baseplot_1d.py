@@ -13,14 +13,18 @@ from py_scripts.utils import set_matplotlib_settings, create_layers_mask
 from py_scripts.DikeData import DikeData
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
-simIDs = [3, 4, 5]
-simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$", r"$\Delta x = 25$"]
-simIDs = [10, 11, 12]
-simLegends = [r"$N_y = 2$", r"$N_y = 10$", r"$N_y = 30$"]
+# simIDs = [3, 4, 5]
+# simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$", r"$\Delta x = 25$"]
+# simIDs = [10, 11, 12]
+# simLegends = [r"$N_y = 2$", r"$N_y = 10$", r"$N_y = 30$"]
+# simIDs = [12, 13]
+# simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$"]
+# simIDs = [12, 14]
+# simLegends = [r"$k_m = 2$", r"$k_m = 20000$"]
+# simIDs = [10, 11, 12]
+# simLegends = [r"$K_{Ic} = 1$ MPa$\cdot$m$^{-1/2}$", r"$K_{Ic} = 100$ MPa$\cdot$m$^{-1/2}$", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$"]
 simIDs = [12, 13]
-simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$"]
-simIDs = [12, 14]
-simLegends = [r"$k_m = 2$", r"$k_m = 20000$"]
+simLegends = [r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 50$ m", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 25$ m"]
 # simLegends = [str(simID) for simID in simIDs]
 wlim = (0, 5)
 plim = (0, 900)

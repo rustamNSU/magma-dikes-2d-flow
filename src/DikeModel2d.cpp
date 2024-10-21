@@ -54,12 +54,8 @@ void DikeModel2d::setAlgorithmProperties(){
 
 
     if (algorithm_properties["isCohesiveStress"].get<bool>()){
-        auto rp = input->getReservoirProperties();
-        elasticity->setCohesiveParameters(
-            rp["cohesiveStress"]["dc"].get<double>(),
-            rp["cohesiveStress"]["dm"].get<double>(),
-            rp["cohesiveStress"]["Gc"].get<double>()
-        );
+        auto [E, nu, K1c] = reservoir->getElasticityParameters();
+        cohesive_model = std::make_shared<CohesiveModel>(mesh.get(), E, nu, K1c);
     }
     return;
 }
@@ -633,10 +629,12 @@ void DikeModel2d::implicitMassBalance(){
         }
 
         if (algorithm_properties["isCohesiveStress"].get<bool>()){
-            auto coh_lambda = [=, this](double h){
-                return elasticity->getCohesiveStress(h);
-            };
-            VectorXd rhs_coh = W.unaryExpr(coh_lambda);
+            VectorXd rhs_coh = VectorXd::Zero(N);
+            if (N > cohesive_model->getCohesiveElementsSize()){
+                for (int i = N - cohesive_model->getCohesiveElementsSize(); i < N; i++){
+                    rhs_coh[i] = cohesive_model->getCohesiveStress(W[i]);
+                }
+            }
             rhs(seq(0, N-1)) += rhs_coh;
         }
         JUST_TIMER_STOP("3) Assemble matrix");

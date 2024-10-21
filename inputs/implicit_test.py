@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 3
+simID = 13
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -33,7 +33,7 @@ inputDict["reservoirProperties"] = {
     "E": 20e9,
     "nu": 0.25,
     "g": 10.0,
-    "KIc": 0.0,
+    "KIc": 1000.0e6,
     "specificHeatCapacity" : 1200,
     "thermalConductivity" : 2,
     "densityModel" : ReservoirDensity.constant,
@@ -108,7 +108,7 @@ inputDict["timestepProperties"] = {
     "saverateList" : [100, 100, 100]
 }
 inputDict["meshProperties"] = {
-    "n" : 600,
+    "n" : 2*600,
     "xmin" : -30000.0,
     "xmax" : 0.0
 }
