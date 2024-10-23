@@ -47,6 +47,7 @@ class DikeData{
         Eigen::ArrayXd Mx; // Total mass rate between elements
         Eigen::ArrayXd Twall;
         Eigen::ArrayXd G; // Total pressure gradient with buoyancy between elements
+        Eigen::ArrayXd magma_to_rock_heat_flux;
         double time = 0.0;
         nlohmann::json algorithm_properties;
         std::vector<bool> open_elements; // Mesh elements which filled with magma

@@ -48,6 +48,7 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     Mx = ArrayXd::Zero(nx+1);
     Twall = ArrayXd::Zero(nx);
     G = ArrayXd::Zero(nx+1);
+    magma_to_rock_heat_flux = ArrayXd::Zero(nx);
     open_elements = std::vector<bool>(nx, false);
     tip_element = 0;
     front = meshX->getxr()[tip_element];

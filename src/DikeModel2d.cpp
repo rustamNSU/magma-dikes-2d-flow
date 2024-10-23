@@ -425,6 +425,7 @@ void DikeModel2d::solveEnergyBalance(){
         double ktop, kbot;
         dyt = ycr[1] - ycr[0];
         dyb = ycr[0] - ybr[0];
+        double heat_coef = -kr / dyb;
         b[ny] += kr*dx/dyb; // on wall
         c[ny] = -kr*dx/dyb; // on wall
         a[ind] = -kr*dx/dyb;
@@ -453,6 +454,7 @@ void DikeModel2d::solveEnergyBalance(){
         dike->temperature.row(ix) = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
         dike->Twall[ix] = sol[ny];
         reservoir->temperature.row(ix) =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data() + ny+1, nr);
+        dike->magma_to_rock_heat_flux[ix] = heat_coef * (sol[ny+1] - sol[ny]);
     }
     JUST_TIMER_STOP("2) Energy balance time");
 }
@@ -549,6 +551,7 @@ void DikeModel2d::implicitMassBalance(){
     int tip_old = old_dike->tip_element;
     int N = std::min({tip_old + 2, nx - 1}) + 1;
     ArrayXd W = dike->hw(seq(0, N-1));
+    ArrayXd Witer = dike->hw(seq(0, N-1));
     ArrayXd P = dike->pressure(seq(0, N-1));
     VectorXd sol = VectorXd::Zero(2*N); // (W, P)
     VectorXd rhs_base = VectorXd::Zero(2*N);
@@ -604,6 +607,7 @@ void DikeModel2d::implicitMassBalance(){
         MatrixXd Ipp = MatrixXd::Zero(N, N);
         VectorXd sol_iter(2*N);
         sol_iter << W, P;
+        Witer = W;
         for (int i = 1; i < N; ++i){
             double h = 0.5 * (W[i] + W[i-1]);
             if (h < MIN_MOBILITY_WIDTH) h = 0;
@@ -682,7 +686,7 @@ void DikeModel2d::implicitMassBalance(){
         ArrayXd mul = viscosity.row(i-1);
         ArrayXd mur = viscosity.row(i);
         ArrayXd mu = mul;
-        double h = 0.5 * (W[i] + W[i-1]);
+        double h = 0.5 * (Witer[i] + Witer[i-1]);
         G(i) = (P(i) - P(i-1)) / dx + rhog(i);
         if (G(i) > 0) G(i) = 0;
         dike->G(i) = G(i);
@@ -779,7 +783,8 @@ void DikeModel2d::saveData(const std::string &savepath){
     dump(file, "TotalMassRateElements", dike->Mx);
     dump(file, "TipElement", dike->tip_element);
     dump(file, "TipFront", dike->front);
-
+    dump(file, "MagmaToRockHeatFlux", dike->magma_to_rock_heat_flux);
+    dump(file, "ShearHeat", dike->shear_heat);
 
     dump(file, "reservoir/yc", reservoir->yc);
     dump(file, "reservoir/yb", reservoir->yb);

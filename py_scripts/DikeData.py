@@ -91,6 +91,9 @@ class DikeData:
             A = hdf5_read_array(data, "/A")
             C = hdf5_read_array(data, "/C")
             G = hdf5_read_array(data, "/G")
+            heatflux = hdf5_read_array(data, "/MagmaToRockHeatFlux")
+            shearheat = hdf5_read_array(data, "/ShearHeat")
+            shear_heat_rate = np.mean(shearheat, axis=1) / (xr - xl)
             self.time.append(time)
             result = dict(
                 xc=xc,
@@ -123,5 +126,7 @@ class DikeData:
                 Mx=hdf5_read_array(data, "/TotalMassRateElements"),
                 tip_element=hdf5_read_int(data, "/TipElement"),
                 tip_front=hdf5_read_single(data, "/TipFront"),
+                heatflux=heatflux,
+                shear_heat_rate=shear_heat_rate,
             )
             self.data.append(result)
