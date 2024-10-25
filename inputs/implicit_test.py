@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 13
+simID = 24
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -16,29 +16,29 @@ inputDict["algorithmProperties"] = {
     "isDebug": True,
     "flowModel" : "dike", # "channel", "dike"
     "timestepScheme" : "implicit",
-    "numberOfLayers" : 30,
+    "numberOfLayers" : 2,
     "cutoffVelocity" : 1e-5,
     "lubricationCflScheme" : "spectral",
     "lubricationCflFactor" : 0.1,
     "massBalanceMinMobilityWidth" : 1e-10,
     "viscosityApproximation" : "harmonic", # "min", "harmonic", "mean"
-    "shearHeating" : True,
-    "latentHeatCrystallization" : True,
+    "shearHeating" : False,
+    "latentHeatCrystallization" : False,
     "highOrderApproximation" : False,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
     "isSparseElasticity" : True,
-    "isCohesiveStress" : True,
+    "isCohesiveStress" : False,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
     "nu": 0.25,
     "g": 10.0,
-    "KIc": 1000.0e6,
+    "KIc": 1.0e6,
     "specificHeatCapacity" : 1200,
-    "thermalConductivity" : 2,
+    "thermalConductivity" : 0,
     "densityModel" : ReservoirDensity.constant,
     "temperatureModel" : ReservoirTemperature.constant_gradient,
-    "numberOfLayers" : 10,
+    "numberOfLayers" : 30,
     "reservoirWidth" : 3.0,
     "meshRefinementAlgorithm" : "cosine",
     "constantDensity" : {
@@ -49,14 +49,9 @@ inputDict["reservoirProperties"] = {
         "maximum_temperature" : 900,
         "minimum_temperature" : 0
     },
-    "cohesiveStress" : {
-        "Gc" : 46.875 * 50**2,
-        "dc" : 1e-1,
-        "dm" : 1e-5,
-    }
 }
 inputDict["magmaProperties"] = {
-    "thermalConductivity" : 2,
+    "thermalConductivity" : 2000,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
     "densityModel" : MagmaDensity.water_saturated,
@@ -94,7 +89,7 @@ inputDict["magmaProperties"] = {
     }
 }
 inputDict["scheduleProperties"] = {
-    "Q": [2.0, 0.0],
+    "Q": [1.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
@@ -108,7 +103,7 @@ inputDict["timestepProperties"] = {
     "saverateList" : [100, 100, 100]
 }
 inputDict["meshProperties"] = {
-    "n" : 2*600,
+    "n" : 600,
     "xmin" : -30000.0,
     "xmax" : 0.0
 }
