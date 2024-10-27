@@ -13,7 +13,8 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     meshX(mesh),
     algorithm_properties(alg_properties)
 {
-    ny = algorithm_properties["numberOfLayers"];
+    ny = algorithm_properties["numberOfLayers"].get<int>();
+    MIN_WIDTH = algorithm_properties["minWidth"].get<double>();
     int nx = meshX->size();
     hw = ArrayXd::Zero(nx);
     pressure = ArrayXd::Zero(nx);
@@ -40,6 +41,8 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     gamma = ArrayXXd::Zero(nx, ny);
     qx = ArrayXXd::Zero(nx+1, ny);
     qy = ArrayXXd::Zero(nx, ny+1);
+    mx = ArrayXXd::Zero(nx+1, ny);
+    my = ArrayXXd::Zero(nx, ny+1);
     A = ArrayXXd::Zero(nx+1, ny);
     C = ArrayXXd::Zero(nx+1, ny);
     shear_heat = ArrayXXd::Zero(nx, ny);
@@ -79,6 +82,8 @@ void DikeData::save(const std::string path) const{
     dump(file, "dpdz", G);
     dump(file, "qx", qx);
     dump(file, "qy", qy);
+    dump(file, "mx", mx);
+    dump(file, "my", my);
     dump(file, "time", time);
 }
 
@@ -86,7 +91,7 @@ void DikeData::save(const std::string path) const{
 void DikeData::updateOpenElements(){
     tip_element = 0;
     for (int i = 0; i < meshX->size(); i++){
-        if (hw[i] > min_width){
+        if (hw[i] > MIN_WIDTH){
             open_elements[i] = true;
             tip_element = i;
         }
@@ -101,6 +106,7 @@ void DikeData::updateOpenElements(){
 void DikeData::setMagmaStateAfterTip(){
     setMagmaStateAfterTip(tip_element, std::min(tip_element + 1, meshX->size()-1));
     setMagmaStateAfterTip(tip_element, std::min(tip_element + 2, meshX->size()-1));
+    setMagmaStateAfterTip(tip_element, std::min(tip_element + 3, meshX->size()-1));
 }
 
 
@@ -110,4 +116,33 @@ void DikeData::setMagmaStateAfterTip(int ntip, int nout){
     betaeq.row(nout) = betaeq.row(ntip);
     alpha.row(nout) = alpha.row(ntip);
     gamma.row(nout) = gamma.row(ntip);
+}
+
+
+double DikeData::getTotalMass() const{
+    return 2.0 * getElementsVolume().cwiseProduct(density.rowwise().mean()).sum();
+}
+
+
+ArrayXd DikeData::getElementsHalfMass() const{
+    return getElementsVolume().cwiseProduct(density.rowwise().mean());
+}
+
+
+ArrayXd DikeData::getElementsHalfEnergy(double Cm) const{
+    ArrayXXd rhoT = density * temperature;
+    ArrayXd energy = Cm * getElementsVolume().cwiseProduct(rhoT.rowwise().mean());
+    return energy;
+}
+
+
+double DikeData::calculateMassBalanceError(const Eigen::ArrayXd &Mold, double dt) const{
+    double error = 0.0;
+    ArrayXd Mnew = getElementsHalfMass();
+    for (int i = 0; i < meshX->size(); i++){
+        double res = std::abs(Mnew[i] - Mold[i] - dt * Mx[i] + dt * Mx[i+1]);
+        double err = res / std::max(MIN_WIDTH * 2000 * meshX->getdx(), Mnew[i]);
+        error = error > err ? error : err;
+    }
+    return error;
 }

@@ -57,7 +57,7 @@ class DikeData:
         self.timesteps = range(0, self.ntimesteps, self.step_rate)
         self.data = []
         self.time = []
-        min_width = self.input["algorithmProperties"]["massBalanceMinMobilityWidth"]
+        min_width = self.input["algorithmProperties"]["minWidth"]
         for itime in self.timesteps:
             file = self.data_dir + "/" + self.filepaths[itime]
             data = h5py.File(file, 'r')

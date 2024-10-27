@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 
 #include "Mesh.hpp"
 #include "Elasticity.hpp"
@@ -17,13 +18,10 @@ class DikeModel2d{
     private:
         struct ExplicitSolverLog{
             bool successful = true;
-            bool cfl_condition = true;
-            int cfl_ratio = 2;
+            bool cfl_ratio = 2;
 
             inline void setDefault(){
                 successful = true;
-                cfl_condition = true;
-                cfl_ratio = 2;
             }
         };
         
@@ -43,31 +41,29 @@ class DikeModel2d{
         nlohmann::json algorithm_properties;
 
         ExplicitSolverLog solver_log;
-        std::string TIMESTEP_SCHEME;
         std::string VISCOSITY_APPROXIMATION = "harmonic";
         int MAX_ITERATIONS = 50;
         int MIN_STAB_ITERATIONS = 2;
-        double TOLERANCE = 1e-4;
-        double MIN_MOBILITY_WIDTH = 1e-10;
-        double CUTOFF_VELOCITY = 1e-4;
-        double CFL_FACTOR = 0.01;
-        double shearHeating = 0.0;
-        double latentHeatCrystallization = 0.0;
+        double TOLERANCE = 1e-6;
+        double MIN_MOBILITY_WIDTH = 1e-4;
+        double MIN_WIDTH = 1e-3;
+        double SHEAR_HEATING = 1.0;
+        double LATENT_HEAT = 1.0;
         bool highOrderApproximation = false;
 
         int DENSITY_MODEL = 0;
         int VISCOSITY_MODEL = 0;
+        double total_injected_energy = 0.0;
+        double total_injected_mass = 0.0;
 
     public:
         DikeModel2d(const std::string& input_path);
         void setInitialData();
         void setAlgorithmProperties();
         void run();
-        void explicitSolver();
         void implicitSolver();
-        void updatePressure();
-        void calculateVerticalFlow();
-        void solveMassBalance();
+        // void calculateVerticalFlow();
+        // void solveMassBalance();
         void implicitMassBalance();
         void solveEnergyBalance();
         void updateCrystallization();
@@ -75,4 +71,20 @@ class DikeModel2d{
         void updateData();
         void saveData(const std::string &savepath);
         void printTimer() const;
+    
+    public:
+        struct SummaryTable{
+            std::unordered_map<std::string, double> error;
+            std::unordered_map<std::string, double> table;
+
+            inline void clear(){
+                error.clear();
+                table.clear();
+            }
+
+            void print() const;
+        };
+    
+    private: 
+        SummaryTable summary;
 };

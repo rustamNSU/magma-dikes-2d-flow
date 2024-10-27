@@ -7,24 +7,19 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 24
+simID = 2
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
 inputDict["simDir"] = sim_dir
 inputDict["algorithmProperties"] = {
     "isDebug": True,
-    "flowModel" : "dike", # "channel", "dike"
-    "timestepScheme" : "implicit",
     "numberOfLayers" : 2,
-    "cutoffVelocity" : 1e-5,
-    "lubricationCflScheme" : "spectral",
-    "lubricationCflFactor" : 0.1,
-    "massBalanceMinMobilityWidth" : 1e-10,
+    "minWidth" : 1e-4,
+    "minMobilityWidth" : 1e-3,
     "viscosityApproximation" : "harmonic", # "min", "harmonic", "mean"
     "shearHeating" : False,
     "latentHeatCrystallization" : False,
-    "highOrderApproximation" : False,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
     "isSparseElasticity" : True,
     "isCohesiveStress" : False,
@@ -51,15 +46,18 @@ inputDict["reservoirProperties"] = {
     },
 }
 inputDict["magmaProperties"] = {
-    "thermalConductivity" : 2000,
+    "thermalConductivity" : 2,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
-    "densityModel" : MagmaDensity.water_saturated,
+    "densityModel" : MagmaDensity.constant,
     "viscosityModel" : ViscosityModel.grdmodel08,
     "crystallizationModel" : CrystallizationModel.const_relaxation,
     "saturationModel": MagmaSaturationModel.lavallee2015,
     "constantDensity" : {
-        "rho" : 2000
+        "rho" : 2000,
+        "rhom0" : 2300.0,
+        "rhow0" : 852.0,
+        "rhoc0" : 2700.0,
     },
     "waterSaturatedDensity" : {
         "rhom0" : 2300.0,
@@ -103,9 +101,9 @@ inputDict["timestepProperties"] = {
     "saverateList" : [100, 100, 100]
 }
 inputDict["meshProperties"] = {
-    "n" : 600,
+    "n" : 50,
     "xmin" : -30000.0,
-    "xmax" : 0.0
+    "xmax" : -20000.0
 }
 
 input_file = repository_dir + "/input.json"

@@ -39,6 +39,8 @@ class DikeData{
         Eigen::ArrayXXd gamma; // Dissolved gas weight concentration in melt
         Eigen::ArrayXXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
         Eigen::ArrayXXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
+        Eigen::ArrayXXd mx; // Mass rates for elements (Ox)
+        Eigen::ArrayXXd my; // Mass rates for elements (Oy)
         Eigen::ArrayXXd A; // A^j on x_{i+1/2}, without (dp/dx + rho*g)
         Eigen::ArrayXXd C; // C^j on x_{i+1/2}, without (dp/dx + rho*g)
         Eigen::ArrayXXd shear_heat;
@@ -53,7 +55,7 @@ class DikeData{
         std::vector<bool> open_elements; // Mesh elements which filled with magma
         int tip_element;
         double front;
-        double min_width = 1e-10;
+        double MIN_WIDTH = 1e-10;
     
     public:
         DikeData(Mesh* mesh, const nlohmann::json& alg_properties);
@@ -90,6 +92,10 @@ class DikeData{
         void updateOpenElements();
         void setMagmaStateAfterTip();
         void setMagmaStateAfterTip(int ntip, int nout);
+        double getTotalMass() const;
+        Eigen::ArrayXd getElementsHalfMass() const;
+        Eigen::ArrayXd getElementsHalfEnergy(double Cm) const;
+        double calculateMassBalanceError(const Eigen::ArrayXd &Mold, double dt) const;
 
         // const Eigen::VectorXd& getDensity() const;
         // const Eigen::VectorXd& getWidth() const;
