@@ -173,7 +173,7 @@ void DikeModel2d::solveEnergyBalance(){
     int tip_old = old_dike->tip_element;
     int Nx = std::min({tip_old + 2, nx - 1}) + 1;
     for (int ix = 0; ix < Nx; ix++){
-        if (h[ix] < MIN_WIDTH) continue;
+        if (h[ix] < 1e-10*MIN_WIDTH) continue;
         std::vector<double> a(N, 0.0), b(N, 0.0), c(N, 0.0), rhs(N, 0.0);
         const ArrayXd Told = old_dike->temperature.row(ix);
         const ArrayXd rho = dike->density.row(ix);
@@ -192,11 +192,11 @@ void DikeModel2d::solveEnergyBalance(){
         vtp = std::max(qy(ix, 1), 0.0); // qy in top
         vtm = -std::max(-qy(ix, 1), 0.0); // 0 if qy > 0 in top
         a[0] = 0;
-        b[0] = rho[0]*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/h[ix]*(1.0/dyt);
-        c[0] = rho[1]*Cm*vtm - dx*km/h[ix]*(1.0/dyt);
-        rhs[0] = rho_old[0]*Cm*Told[0]*Vold/dt + Ein[0];
-        rhs[0] += LATENT_HEAT*(1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau
-                + SHEAR_HEATING * shear_heat(ix, 0);
+        b[0] = h[ix]*rho[0]*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/dyt;
+        c[0] = h[ix]*rho[1]*Cm*vtm - dx*km/dyt;
+        rhs[0] = h[ix]*rho_old[0]*Cm*Told[0]*Vold/dt + h[ix]*Ein[0];
+        rhs[0] += LATENT_HEAT*h[ix]*(1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau
+                + SHEAR_HEATING * h[ix]*shear_heat(ix, 0);
 
         for (int iy = 1; iy < ny-1; iy++){
             dyt = yc[iy+1] - yc[iy];
@@ -205,25 +205,25 @@ void DikeModel2d::solveEnergyBalance(){
             vtm = -std::max(-qy(ix, iy+1), 0.0); // 0 if qy > 0 in top
             vbp = std::max(qy(ix, iy), 0.0); // qy in bot
             vbm = -std::max(-qy(ix, iy), 0.0); // 0 if qy > 0 in bot
-            a[iy] = -rho[iy-1]*Cm*vbp - dx*km/h[ix]/dyb;
-            b[iy] = rho[iy]*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
-            c[iy] = rho[iy+1]*Cm*vtm - dx*km/h[ix]/dyt;
-            rhs[iy] = rho_old[iy]*Cm*Told[iy]*Vold/dt + Ein[iy];
-            rhs[iy] += LATENT_HEAT*(1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + 
-                     + SHEAR_HEATING * shear_heat(ix, iy);
+            a[iy] = -h[ix]*rho[iy-1]*Cm*vbp - dx*km/dyb;
+            b[iy] = h[ix]*rho[iy]*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km*(1.0/dyt + 1.0/dyb);
+            c[iy] = h[ix]*rho[iy+1]*Cm*vtm - dx*km/dyt;
+            rhs[iy] = h[ix]*rho_old[iy]*Cm*Told[iy]*Vold/dt + h[ix]*Ein[iy];
+            rhs[iy] += LATENT_HEAT*h[ix]*(1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + 
+                     + SHEAR_HEATING * h[ix]*shear_heat(ix, iy);
         }
         dyt = yb[ny] - yc[ny-1];
         dyb = yc[ny-1] - yc[ny-2];
         vbp = std::max(qy(ix, ny-1), 0.0); // qy in bot
         vbm = -std::max(-qy(ix, ny-1), 0.0); // 0 if qy > 0 in bot
-        a[ny-1] = -rho[ny-2]*Cm*vbp - dx*km/h[ix]/dyb;
-        b[ny-1] = rho[ny-1]*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km/h[ix]*(1.0/dyt + 1.0/dyb);
-        c[ny-1] = -dx*km/h[ix]/dyt;
-        rhs[ny-1] = rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + Ein[ny-1];
-        rhs[ny-1] += LATENT_HEAT * (1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + 
-                   + SHEAR_HEATING * shear_heat(ix, ny-1);
-        a[ny] = -dx*km/h[ix]/dyt;
-        b[ny] = dx*km/h[ix]/dyt;
+        a[ny-1] = -h[ix]*rho[ny-2]*Cm*vbp - dx*km/dyb;
+        b[ny-1] = h[ix]*rho[ny-1]*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km*(1.0/dyt + 1.0/dyb);
+        c[ny-1] = -dx*km/dyt;
+        rhs[ny-1] = h[ix]*rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + h[ix]*Ein[ny-1];
+        rhs[ny-1] += LATENT_HEAT * h[ix]*(1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + 
+                   + SHEAR_HEATING * h[ix]*shear_heat(ix, ny-1);
+        a[ny] = -dx*km/dyt;
+        b[ny] = dx*km/dyt;
 
         /* Reservoir conduction */
         int ind = ny+1;
@@ -233,8 +233,8 @@ void DikeModel2d::solveEnergyBalance(){
         dyt = ycr[1] - ycr[0];
         dyb = ycr[0] - ybr[0];
         double heat_coef = -kr / dyb;
-        b[ny] += kr*dx/dyb; // on wall
-        c[ny] = -kr*dx/dyb; // on wall
+        b[ny] += h[ix]*kr*dx/dyb; // on wall
+        c[ny] = -h[ix]*kr*dx/dyb; // on wall
         a[ind] = -kr*dx/dyb;
         b[ind] = rhor*Cr*dx*dyr[0]/dt + kr*dx/dyt + kr*dx/dyb;
         c[ind] = -kr*dx/dyt;

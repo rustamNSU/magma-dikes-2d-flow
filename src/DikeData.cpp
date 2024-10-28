@@ -116,6 +116,7 @@ void DikeData::setMagmaStateAfterTip(int ntip, int nout){
     betaeq.row(nout) = betaeq.row(ntip);
     alpha.row(nout) = alpha.row(ntip);
     gamma.row(nout) = gamma.row(ntip);
+    temperature.row(nout) = temperature.row(ntip);
 }
 
 
