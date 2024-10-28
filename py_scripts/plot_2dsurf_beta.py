@@ -14,16 +14,15 @@ from py_scripts.DikeData import DikeData
 
 FIG_SIZE = [10, 8]
 set_matplotlib_settings()
-simID = 302
+simID = 10
 sim_path = sim_dir + f"/simID{simID}"
-wlim = (0, 1)
-plim = (0, 700)
-Tlim = (600, 1100)
-xlim = (-30000, -10000.0)
-# xlim = (-30000, 0)
-
 dike = DikeData(sim_path, step_rate=10)
 data = dike.data
+wlim = (0, 3)
+plim = (0, 900)
+Tlim = (800, 850)
+xlim = (dike.xmin, dike.xmax)
+
 fig = plt.figure(figsize=FIG_SIZE, constrained_layout=True)
 
 n1d = 8

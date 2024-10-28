@@ -23,12 +23,17 @@ set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 # simLegends = [r"$k_m = 2$", r"$k_m = 20000$"]
 # simIDs = [10, 11, 12]
 # simLegends = [r"$K_{Ic} = 1$ MPa$\cdot$m$^{-1/2}$", r"$K_{Ic} = 100$ MPa$\cdot$m$^{-1/2}$", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$"]
-simIDs = [12, 13]
-simLegends = [r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 50$ m", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 25$ m"]
-# simLegends = [str(simID) for simID in simIDs]
+# simIDs = [12, 13]
+# simLegends = [r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 50$ m", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 25$ m"]
+# simIDs = [13, 14]
+# simLegends = [r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $N_{coh} = 6$", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $N_{coh} = 10$"]
+simIDs = [20, 21]
+simIDs = [20, 22, 23]
+simIDs = [10, 11]
+simLegends = [str(simID) for simID in simIDs]
 wlim = (0, 5)
 plim = (0, 900)
-Tlim = (600, 920)
+Tlim = (800, 900)
 simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 dikes = [DikeData(sim_path, step_rate=1) for sim_path in simPaths]
 xlim = (
@@ -104,6 +109,18 @@ axTw.set_xlim(xlim)
 axTw.set_ylim(Tlim)
 axTw.grid()
 
+axHeat = fig.add_subplot(gs[2*nrax:3*nrax, 2])
+axHeat.set_xlabel(r"Depth (m)")
+axHeat.set_ylabel(r"Heat flux (cooling) (W$/$m$^2$)")
+axHeat.set_xlim(xlim)
+axHeat.grid()
+
+axShear = fig.add_subplot(gs[3*nrax:4*nrax, 2])
+axShear.set_xlabel(r"Depth (m)")
+axShear.set_ylabel(r"Width average shear heat rate (W$/$m$^2$)")
+axShear.set_xlim(xlim)
+axShear.grid()
+
 axP.sharex(axW)
 axT.sharex(axW)
 axOP.sharex(axW)
@@ -112,6 +129,8 @@ axG.sharex(axW)
 axRho.sharex(axW)
 axBeta.sharex(axW)
 axTw.sharex(axW)
+axHeat.sharex(axW)
+axShear.sharex(axW)
 
 
 laxWs   = []
@@ -124,6 +143,8 @@ laxGs = []
 laxRhos = []
 laxBetas = []
 laxAlphas = []
+laxHeats = []
+laxShears = []
 colors = ['k', 'b', 'r', 'g']
 for i in range(len(dikes)):
     data = dikes[i].data
@@ -149,6 +170,8 @@ for i in range(len(dikes)):
     laxRho, = axRho.plot(x, rho, lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxBeta, = axBeta.plot(x, beta, lw=2, ls='-', color=colors[i], label=simLegends[i] + r" ,$\beta$")
     laxAlpha, = axBeta.plot(x, alpha, lw=2, ls='--', color=colors[i], label=simLegends[i] + r" ,$\alpha$")
+    laxHeat, = axHeat.plot(x, data[0]["heatflux"], lw=2, ls='-', color=colors[i], label=simLegends[i])
+    laxShear, = axShear.plot(x, data[0]["shear_heat_rate"], lw=2, ls='-', color=colors[i], label=simLegends[i])
     laxWs.append(laxW) 
     laxPs.append(laxP) 
     laxTs.append(laxT)
@@ -159,6 +182,8 @@ for i in range(len(dikes)):
     laxRhos.append(laxRho)
     laxBetas.append(laxBeta)
     laxAlphas.append(laxAlpha)
+    laxHeats.append(laxHeat)
+    laxShears.append(laxShear)
 
 axW.legend().set_draggable(True)
 axP.legend().set_draggable(True)
@@ -169,6 +194,7 @@ axQx.legend().set_draggable(True)
 axG.legend().set_draggable(True)
 axRho.legend().set_draggable(True)
 axBeta.legend().set_draggable(True)
+axHeat.legend().set_draggable(True)
 
 
 
@@ -197,6 +223,9 @@ def time_update(val):
         op = 1e-6*data["overpressure"]
         Qx = data["Qx"]
         G = data["G"]
+        heatflux = data["heatflux"]
+        shear_heat_rate = data["shear_heat_rate"]
+        
         laxWs[i].set_ydata(w) 
         laxPs[i].set_ydata(p) 
         laxTs[i].set_ydata(T)
@@ -207,12 +236,17 @@ def time_update(val):
         laxRhos[i].set_ydata(rho)
         laxBetas[i].set_ydata(beta)
         laxAlphas[i].set_ydata(alpha)
+        laxAlphas[i].set_ydata(alpha)
+        laxHeats[i].set_ydata(heatflux)
+        laxShears[i].set_ydata(shear_heat_rate)
         
         maxQx = max(1e-6, max(Qx))
         axQx.set_ylim(-1e-2*maxQx, maxQx)
         maxG = max(1e-6, max(G))
         axG.set_ylim(-1e-2*maxG, maxG)
-        axOP.set_ylim(min(-1e-6, min(op)), max(op))
+        axOP.set_ylim(min(-1e-6, axOP.get_ylim()[0],  min(op)), max(axOP.get_ylim()[1], max(op)))
+        axHeat.set_ylim(min(-1e-6, axHeat.get_ylim()[0], min(heatflux)), max(axHeat.get_ylim()[1], max(heatflux)))
+        axShear.set_ylim(min(-1e-6, axShear.get_ylim()[0], min(shear_heat_rate)), max(axShear.get_ylim()[1], max(shear_heat_rate)))
 
 time_slider.on_changed(time_update)
 plt.show()

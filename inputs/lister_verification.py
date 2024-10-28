@@ -7,34 +7,33 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 101
+simID = 2
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
 inputDict["simDir"] = sim_dir
 inputDict["algorithmProperties"] = {
     "isDebug": True,
-    "flowModel" : "dike", # "channel", "dike"
-    "timestepScheme" : "explicit",
-    "numberOfLayers" : 10,
-    "cutoffVelocity" : 1e-5,
-    "lubricationCflScheme" : "spectral",
-    "lubricationCflFactor" : 0.0001,
-    "massBalanceMinMobilityWidth" : 1e-10,
-    "viscosityApproximation" : "mean", # "min", "harmonic", "mean"
+    "numberOfLayers" : 2,
+    "minWidth" : 1e-5,
+    "minMobilityWidth" : 1e-4,
+    "viscosityApproximation" : "harmonic", # "min", "harmonic", "mean"
     "shearHeating" : False,
     "latentHeatCrystallization" : False,
+    "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
+    "isSparseElasticity" : True,
+    "isCohesiveStress" : True,
 }
 inputDict["reservoirProperties"] = {
-    "E": 20e9,
+    "E": 18.75e9,
     "nu": 0.25,
     "g": 10.0,
-    "KIc": 0.0,
+    "KIc": 4*234.0e6, # 234e6
     "specificHeatCapacity" : 1200,
-    "thermalConductivity" : 2,
+    "thermalConductivity" : 0.0,
     "densityModel" : ReservoirDensity.constant,
     "temperatureModel" : ReservoirTemperature.constant_gradient,
-    "numberOfLayers" : 10,
+    "numberOfLayers" : 2,
     "reservoirWidth" : 3.0,
     "meshRefinementAlgorithm" : "cosine",
     "constantDensity" : {
@@ -50,12 +49,15 @@ inputDict["magmaProperties"] = {
     "thermalConductivity" : 2,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
-    "densityModel" : MagmaDensity.water_saturated,
-    "viscosityModel" : ViscosityModel.vft_const_coeff_cryst,
+    "densityModel" : MagmaDensity.constant,
+    "viscosityModel" : ViscosityModel.constant,
     "crystallizationModel" : CrystallizationModel.const_relaxation,
     "saturationModel": MagmaSaturationModel.lavallee2015,
     "constantDensity" : {
-        "rho" : 2000
+        "rho" : 2400,
+        "rhom0" : 2300.0,
+        "rhow0" : 852.0,
+        "rhoc0" : 2700.0,
     },
     "waterSaturatedDensity" : {
         "rhom0" : 2300.0,
@@ -64,12 +66,12 @@ inputDict["magmaProperties"] = {
     },
     "vftConstantViscosity" : {
         "A" : -4.55,
-        "B" : 6811,
-        "C" : 239,
+        "B" : 7455,
+        "C" : 180,
         "muMaxLimit" : 1e14
     },
     "constantViscosity" : {
-        "mu" : 10000
+        "mu" : 100
     },
     "grdmodel08" : {
         # SiO2 TiO2 Al2O3 FeO(T) MnO MgO CaO Na2O K2O P2O5 F2O-1
@@ -81,27 +83,27 @@ inputDict["magmaProperties"] = {
         "musurf" : 1000,
     },
     "constantRelaxationCrystallization" : {
-        "tau" : 24 * 3600 * 1,
+        "tau" : 24 * 3600 * 0.5,
     }
 }
 inputDict["scheduleProperties"] = {
-    "Q": [1.0, 0.0],
+    "Q": [20.0, 0.0],
     "t": [0.0, 10000],
-    "rho": 2000.0,
-    "T" : 900,
+    "rho": 2400.0,
+    "T" : 800,
     "beta" : 0.0,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 400000.0,
-    "dtList" : [1.0, 10],
-    "dtTime" : [0.0, 20000],
-    "outputSaveRate" : 50
+    "endTime" : 2500.0,
+    "dtList" : [0.05],
+    "dtTime" : [0.0],
+    "saverateList" : [100]
 }
 inputDict["meshProperties"] = {
-    "n" : 100,
+    "n" : 600,
     "xmin" : -30000.0,
-    "xmax" : -10000.0
+    "xmax" : 0.0
 }
 
 input_file = repository_dir + "/input.json"

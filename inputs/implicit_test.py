@@ -7,19 +7,19 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 3
+simID = 11
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
 inputDict["simDir"] = sim_dir
 inputDict["algorithmProperties"] = {
     "isDebug": True,
-    "numberOfLayers" : 5,
+    "numberOfLayers" : 30,
     "minWidth" : 1e-5,
     "minMobilityWidth" : 1e-4,
     "viscosityApproximation" : "harmonic", # "min", "harmonic", "mean"
-    "shearHeating" : False,
-    "latentHeatCrystallization" : False,
+    "shearHeating" : True,
+    "latentHeatCrystallization" : True,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
     "isSparseElasticity" : True,
     "isCohesiveStress" : False,
@@ -30,7 +30,7 @@ inputDict["reservoirProperties"] = {
     "g": 10.0,
     "KIc": 1.0e6,
     "specificHeatCapacity" : 1200,
-    "thermalConductivity" : 0.0,
+    "thermalConductivity" : 2.0,
     "densityModel" : ReservoirDensity.constant,
     "temperatureModel" : ReservoirTemperature.constant_gradient,
     "numberOfLayers" : 30,
@@ -40,13 +40,13 @@ inputDict["reservoirProperties"] = {
         "rho" : 2700.0
     },
     "constantTemperatureGradient" : {
-        "dT" : 0,
+        "dT" : 30e-3,
         "maximum_temperature" : 900,
-        "minimum_temperature" : 900
+        "minimum_temperature" : 0
     },
 }
 inputDict["magmaProperties"] = {
-    "thermalConductivity" : 2,
+    "thermalConductivity" : 20000,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
     "densityModel" : MagmaDensity.water_saturated,
@@ -90,12 +90,12 @@ inputDict["scheduleProperties"] = {
     "Q": [1.0, 0.0],
     "t": [0.0, 10000],
     "rho": 2000.0,
-    "T" : 900,
+    "T" : 800,
     "beta" : 0.0,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
-    "endTime" : 14000.0,
+    "endTime" : 200000.0,
     "dtList" : [1.0, 2.0, 5.0],
     "dtTime" : [0.0, 20000.0, 40000.0],
     "saverateList" : [100, 100, 100]

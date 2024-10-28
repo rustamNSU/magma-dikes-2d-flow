@@ -183,7 +183,7 @@ void DikeModel2d::solveEnergyBalance(){
             Ein.fill(E0*dy);
         }
         else{
-            Ein = rho * Cm * dike->temperature.row(ix-1).transpose() * qx.row(ix).transpose();
+            Ein = Cm * dike->temperature.row(ix-1).transpose() * mx.row(ix).transpose();
         }
         double dyt, dyb, vtp, vtm, vbp, vbm;
         double Vnew = h[ix]*dx*dy;
