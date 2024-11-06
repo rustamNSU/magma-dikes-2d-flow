@@ -1,4 +1,4 @@
-add_library(utils ViscosityModels.cpp LinearSolver.cpp)
+add_library(utils ViscosityModels.cpp LinearSolver.cpp uniform_interp.cpp)
 target_link_libraries(utils Eigen3::Eigen SuiteSparse::umfpack)
 if (USE_PARDISO)
     target_link_libraries(utils MKL::MKL)

@@ -18,8 +18,7 @@ set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
 # simIDs = [3, 4, 5]
 # simLegends = [r"$\Delta x = 100$", r"$\Delta x = 50$", r"$\Delta x = 25$"]
-simIDs = [10, 11, 12]
-simIDs = [12, 13]
+simIDs = [1, 2]
 simLegends = [str(simID) for simID in simIDs]
 simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 dikes = [DikeData(sim_path, step_rate=1) for sim_path in simPaths]
@@ -42,7 +41,7 @@ for sid in range(len(simIDs)):
     time = timeList[sid]
     front = frontList[sid]
     v = np.zeros(front.shape)
-    N = min(20, len(time)-1)
+    N = min(30, len(time)-1)
     for i in range(len(time)):
         if i < N:
             v[i] = (front[i+1] - front[i]) / (time[i+1] - time[i])

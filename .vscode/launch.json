@@ -30,10 +30,10 @@
             ],
         },
         {
-            "name": "test1",
+            "name": "test3",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/debug/bin/test1",
+            "program": "${workspaceFolder}/debug/bin/test3",
             "cwd": "${workspaceFolder}",
             "args": [],
             "stopAtEntry": false,

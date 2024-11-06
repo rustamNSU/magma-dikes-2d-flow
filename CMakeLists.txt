@@ -14,7 +14,7 @@ find_package(Eigen3 3.4 REQUIRED)
 find_package(HighFive REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(spdlog REQUIRED)
-
+find_package(fmt REQUIRED)
 option(USE_OMP "with openmp" OFF)
 option(BUILD_TESTS "build tests" OFF)
 option(USE_UMFPACK "eigen3 with umfpack" ON)
