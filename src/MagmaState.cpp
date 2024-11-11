@@ -297,6 +297,18 @@ void MagmaState::setChamberInitialState(
 }
 
 
+std::vector<double> arrayxxd_to_rowwise(const ArrayXXd& arr){
+    std::vector<double> result;
+    result.reserve(arr.size());
+    for (int i = 0; i < arr.rows(); i++){
+        for (int j = 0; j < arr.cols(); j++){
+            result.push_back(arr(i, j));
+        }
+    }
+    return result;
+}
+
+
 void MagmaState::test() const{
     if (density_model == DensityModel::MIXED_H2O_CO2){
         json data;
@@ -327,10 +339,14 @@ void MagmaState::test() const{
                 gas_density1(i, j) = gas_h2o_co2_density->getValue(p, 1.0, T);
             }
         }
-        // data["gas_density"]["pressure"] = pressure;
-        // data["gas_density"]["temperature"] = temperature;
-        // data["gas_density"]["case1"]["xh2og"] = 0.0;
-        // data["gas_density"]["case1"]["xh2og"] = 0.0;
+        data["exsolved"]["pressure"] = pressure;
+        data["exsolved"]["temperature"] = temperature;
+        data["exsolved"]["case1"]["xh2og"] = 0.0;
+        data["exsolved"]["case1"]["density"] = arrayxxd_to_rowwise(gas_density0);
+        data["exsolved"]["case2"]["xh2og"] = 0.5;
+        data["exsolved"]["case2"]["density"] = arrayxxd_to_rowwise(gas_density05);
+        data["exsolved"]["case3"]["xh2og"] = 1.0;
+        data["exsolved"]["case3"]["density"] = arrayxxd_to_rowwise(gas_density1);
         auto sim_dir = input->getSimDir();
         auto filepath = sim_dir / "test_magma_properties.json";
         std::ofstream f(filepath);
