@@ -32,7 +32,7 @@ DikeModel2d::DikeModel2d(const std::string& input_path) :
     mesh = std::make_shared<Mesh>(input->getMeshProperties());
     reservoir = std::make_shared<ReservoirData>(mesh.get(), input->getReservoirProperties());
     schedule = std::make_shared<Schedule>(mesh.get(), input->getScheduleProperties());
-    magma_state = std::make_shared<MagmaState>(mesh.get(), input->getMagmaProperties());
+    magma_state = std::make_shared<MagmaState>(mesh.get(), input->getMagmaProperties(), input.get());
     algorithm_properties = input->getAlgorithmProperties();
     dike = std::make_shared<DikeData>(mesh.get(), algorithm_properties);
 
@@ -67,7 +67,6 @@ void DikeModel2d::setInitialData(){
     magma_state->updateEquilibriumCrystallization(dike.get());
     dike->beta.setZero();
     dike->beta.row(0) = magma_state->chamber.beta;
-    dike->gamma.row(0) = magma_state->chamber.gamma;
     magma_state->updateDensity(dike.get());
     magma_state->updateViscosity(dike.get());
     dike->time = timestep_controller->getCurrentTime();

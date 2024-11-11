@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <tuple>
+#include <algorithm>
 
 
 inline bool is_uniform_data(const std::vector<double>& x){
@@ -40,9 +41,14 @@ UniformInterpolation1d::UniformInterpolation1d(
         throw std::invalid_argument("x and y must be the same size!\n");
     }
     double dx = X[1] - X[0];
+    double maxX = std::max({
+        std::abs(*std::max_element(X.begin(), X.end())),
+        std::abs(*std::min_element(X.begin(), X.end())),
+        1.0
+    });
     for (int i = 0; i < X.size()-1; i++){
         double dxx = X[i+1] - X[i];
-        if (std::abs(dxx - dx) > epsilon){
+        if (std::abs(dxx - dx) / maxX > epsilon){
             throw std::invalid_argument("x must be uniform spaced!\n");
         }
     }

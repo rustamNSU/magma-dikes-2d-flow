@@ -11,7 +11,7 @@ class ReservoirTemperature(StrEnum):
     
 class MagmaDensity(StrEnum):
     constant = "constant"
-    water_saturated = "mixed_h2o_co2"
+    mixed_h2o_co2 = "mixed_h2o_co2"
     
 
 class ViscosityModel(StrEnum):
@@ -28,4 +28,5 @@ class CrystallizationModel(StrEnum):
 
 
 class MagmaSaturationModel(StrEnum):
-    lavallee2015 = "lavallee2015"
+    lavallee2015 = "lavallee2015",
+    mixed_h2o_co2 = "mixed_h2o_co2"

@@ -1,8 +1,6 @@
 #include "MagmaState.hpp"
 #include <exception>
-#ifdef USE_OMP
-#include <omp.h>
-#endif
+#include <fstream>
 
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
@@ -11,9 +9,10 @@ using Eigen::ArrayXXd;
 using json = nlohmann::json;
 
 
-MagmaState::MagmaState(Mesh* mesh, json&& properties) : 
+MagmaState::MagmaState(Mesh* mesh, json&& properties, InputData* input) :
     mesh(mesh),
-    properties(properties)
+    properties(properties),
+    input(input)
 {
     setDensityModel();
     setViscosityModel();
@@ -33,6 +32,35 @@ void MagmaState::setDensityModel(){
     else if (model == DensityModel::mixed_h2o_co2){
         density_model = DensityModel::MIXED_H2O_CO2;
         density_properties = properties["mixed_h2o_co2"];
+        auto sim_dir = input->getSimDir();
+        std::string filepath;
+        filepath = density_properties["dissolved_data_path"].get<std::string>();
+        auto dissolved_data_path = sim_dir / "dissolved_data.json";
+        std::filesystem::copy(filepath, dissolved_data_path, std::filesystem::copy_options::overwrite_existing);
+        filepath = density_properties["gas_density_data_path"].get<std::string>();
+        auto gas_density_data_path = sim_dir / "gas_density_data.json";
+        std::filesystem::copy(filepath, gas_density_data_path, std::filesystem::copy_options::overwrite_existing);
+
+        std::ifstream file;
+        json data;
+        file.open(dissolved_data_path, std::fstream::in);
+        data = json::parse(file);
+        auto pressure = data["pressure"].get<std::vector<double>>();
+        auto wth2o = data["wth2o"].get<std::vector<double>>();
+        auto wtco2 = data["wtco2"].get<std::vector<double>>();
+        auto xh2og = data["xh2og"].get<std::vector<double>>();
+        dissolved_weighted_h2o = std::make_unique<UniformInterpolation1d>(pressure, wth2o);
+        dissolved_weighted_co2 = std::make_unique<UniformInterpolation1d>(pressure, wtco2);
+        gas_h2o_co2_ratio = std::make_unique<UniformInterpolation1d>(pressure, xh2og);
+        file.close();
+        file.open(gas_density_data_path, std::fstream::in);
+        data = json::parse(file);
+        pressure = data["pressure"].get<std::vector<double>>();
+        xh2og = data["xh2og"].get<std::vector<double>>();
+        auto temperature = data["temperature"].get<std::vector<double>>();
+        auto gas_density = data["density"].get<std::vector<double>>();
+        gas_h2o_co2_density = std::make_unique<UniformInterpolation3d>(pressure, xh2og, temperature, gas_density);
+        file.close();
     }
     else{
         throw std::invalid_argument("Density model is incorrect!\n");
@@ -79,47 +107,46 @@ void MagmaState::updateDensity(DikeData* dike) const{
         dike->density.fill(rho);
     }
     else if (density_model == DensityModel::MIXED_H2O_CO2){
-        updateMeltDensity(dike);
+        int nx = dike->meshX->size();
+        int ny = dike->getLayersNumber();
+        double rhom0 = density_properties["rhom0"].get<double>();
+        double rhoh2o0 = density_properties["rhoh2o0"].get<double>();
+        double rhoco20 = density_properties["rhoco20"].get<double>();
         double rhoc0 = density_properties["rhoc0"].get<double>();
-        dike->rhoc = rhoc0 * (1.0 - dike->alpha) * dike->beta;
-        dike->rhom = (1.0 - dike->alpha) * (1.0 - dike->beta) * dike->rhom_liquid;
-        dike->density = dike->rhog + dike->rhoc + dike->rhom;
-    }
-}
+        for (int ix = 0; ix <= dike->tip_element; ix++){
+            for (int iy = 0; iy < ny; iy++){
+                double p = dike->pressure(ix);
+                double T = dike->temperature(ix, iy);
+                double beta = dike->beta(ix, iy);
+                double wth2o = std::min(dissolved_weighted_h2o->getValue(p), chamber.wth2o);
+                double wtco2 = std::min(dissolved_weighted_co2->getValue(p), chamber.wtco2);
+                double gamma = wth2o + wtco2;
+                double xh2og = gas_h2o_co2_ratio->getValue(p);
+                dike->wth2o(ix, iy) = wth2o;
+                dike->wtco2(ix, iy) = wtco2;
+                dike->xh2od(ix, iy) = wth2o / gamma;
+                dike->xh2og(ix, iy) = xh2og;
+                dike->gamma(ix, iy) = gamma;
 
+                double rhom_liquid = melt_density(rhom0, rhoh2o0, rhoco20, wth2o, wtco2);
+                double rhog0 = gas_h2o_co2_density->getValue(p, xh2og, T);
+                dike->rhom_liquid(ix, iy) = rhom_liquid;
+                double t1 = (1-beta)*(chamber.Mg0-gamma)*rhom_liquid;
+                double t2 = chamber.Mg0*beta*rhoc0;
+                double alpha1 = (t1 + t2) / (t1 + t2 + (1.0-chamber.Mg0)*rhog0);
+                double alpha = std::max(0.0, alpha1);
+                dike->alpha(ix, iy) = alpha;
 
-void MagmaState::updateMeltDensity(DikeData* dike) const{
-    int nx = dike->meshX->size();
-    int ny = dike->getLayersNumber();
-    double rhom0 = density_properties["rhom0"].get<double>();
-    double rhoh2o0 = density_properties["rhoh2o0"].get<double>();
-    double rhoco20 = density_properties["rhoco20"].get<double>();
-    double rhoc0 = density_properties["rhoc0"].get<double>();
-    for (int ix = 0; ix <= dike->tip_element; ix++){
-        for (int iy = 0; iy < ny; iy++){
-            double p = dike->pressure(ix);
-            double T = dike->temperature(ix, iy);
-            double wth2o = std::min(dissolved_weighted_h2o->getValue(p), chamber.wth2o);
-            double wtco2 = std::min(dissolved_weighted_co2->getValue(p), chamber.wtco2);
-            double gamma = wth2o + wtco2;
-            double xh2og = gas_h2o_co2_ratio->getValue(p);
-            dike->wth2o(ix, iy) = wth2o;
-            dike->wtco2(ix, iy) = wtco2;
-            dike->xh2od(ix, iy) = wth2o / gamma;
-            dike->xh2og(ix, iy) = xh2og;
-            dike->gamma(ix, iy) = gamma;
-
-            double rhom_liquid = melt_density(rhom0, rhoh2o0, rhoco20, wth2o, wtco2);
-            double rhog0 = gas_h2o_co2_density->getValue(p, xh2og, T);
-            double t1 = (1-beta(ix, iy))*(chamber.Mg0-gamma(ix,iy))*rhom_liquid(ix,iy);
-            double t2 = chamber.Mg0*beta(ix,iy)*rhoc0;
-            double alpha1 = (t1 + t2) / (t1 + t2 + (1.0-chamber.Mg0)*rhog0);
-            double alpha = std::max(0.0, alpha1);
-            dike->alpha(ix, iy) = alpha;
-            dike->rhog(ix, iy) = rhog0 * alpha;
+                double rhog = alpha*rhog0;
+                double rhom = (1-alpha)*(1-beta)*rhom_liquid;
+                double rhoc = (1.0-alpha)*beta*rhoc0;
+                dike->rhog(ix, iy) = rhog;
+                dike->rhom(ix, iy) = rhom;
+                dike->rhoc(ix, iy) = rhoc;
+                dike->density(ix, iy) = rhog + rhom + rhoc;
+            }
         }
     }
-    return;
 }
 
 
@@ -200,18 +227,10 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         auto& viscosity = dike->viscosity;
         const auto& hw = dike->hw;
         for (int ix = 0; ix <= dike->tip_element; ix++){
-            int il = std::max(0, ix-1);
-            int ir = std::min(nx-1, ix+1);
-            if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
-                viscosity.row(ix).fill(mu_max);
-            }
-            else{
-                for (int iy = 0; iy < ny; iy++){
-                    double theta = theta_coef(beta(ix, iy));
-                    // double mu_melt = T(ix, iy) + K > C ? VFT_constant_viscosity(T(ix, iy) + K, A, B, C) : mu_max;
-                    double mu_melt = grdvisc_model.calculateViscosity(gamma(ix, iy), T(ix, iy));
-                    viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
-                }
+            for (int iy = 0; iy < ny; iy++){
+                double theta = theta_coef(beta(ix, iy));
+                double mu_melt = grdvisc_model.calculateViscosity(gamma(ix, iy), T(ix, iy));
+                viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
             }
         }
     }
@@ -221,15 +240,14 @@ void MagmaState::updateViscosity(DikeData* dike) const{
 void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
     int nx = dike->meshX->size();
     int ny = dike->ny;
-    // #pragma omp parallel for
-    const auto& hw = dike->hw;
     for (int ix = 0; ix <= dike->tip_element; ix++){
-        int il = std::max(0, ix-1);
-        int ir = std::min(nx-1, ix+1);
         for (int iy = 0; iy < ny; iy++){
-            double Tl = liquidus_temperature(dike->pressure(ix), sio2);
-            double Ts = solidus_temperature(dike->pressure(ix));
-            double beta = beta_equilibrium(dike->pressure(ix), dike->temperature(ix, iy), Tl, Ts);
+            double p = dike->pressure(ix);
+            double T = dike->temperature(ix, iy);
+            double xh2od = dike->xh2od(ix, iy);
+            double Tl = liquidus_temperature(p, xh2od, sio2);
+            double Ts = solidus_temperature(p, xh2od);
+            double beta = beta_equilibrium(p, T, Tl, Ts);
             dike->betaeq(ix, iy) = std::max(beta, chamber.beta);
             dike->Tliquidus(ix, iy) = Tl;
             dike->Tsolidus(ix, iy) = Ts;

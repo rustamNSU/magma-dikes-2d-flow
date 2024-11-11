@@ -27,13 +27,11 @@ set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 # simLegends = [r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 50$ m", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $\Delta x = 25$ m"]
 # simIDs = [13, 14]
 # simLegends = [r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $N_{coh} = 6$", r"$K_{Ic} = 1000$ MPa$\cdot$m$^{-1/2}$, $N_{coh} = 10$"]
-simIDs = [20, 21]
-simIDs = [20, 22, 23]
-simIDs = [10, 11]
+simIDs = [1]
 simLegends = [str(simID) for simID in simIDs]
 wlim = (0, 5)
 plim = (0, 900)
-Tlim = (800, 900)
+Tlim = (600, 900)
 simPaths = [sim_dir + f"/simID{simID}" for simID in simIDs]
 dikes = [DikeData(sim_path, step_rate=1) for sim_path in simPaths]
 xlim = (

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include "Mesh.hpp"
 #include "DikeData.hpp"
@@ -7,6 +8,7 @@
 #include "PinatubaCrystallization.hpp"
 #include "Degasation.hpp"
 #include "uniform_interp.hpp"
+#include "InputData.hpp"
 
 class DikeModel2d;
 
@@ -65,6 +67,7 @@ class MagmaState{
         };
 
     private:
+        InputData* input;
         nlohmann::json properties;
         int density_model = 0;
         int viscosity_model = 0;
@@ -79,18 +82,17 @@ class MagmaState{
         Mesh* mesh;
         double sio2 = 63.888;
         GiordanoViscosity grdvisc_model;
-        UniformInterpolation1d* dissolved_weighted_h2o;
-        UniformInterpolation1d* dissolved_weighted_co2;
-        UniformInterpolation1d* gas_h2o_co2_ratio;
-        UniformInterpolation3d* gas_h2o_co2_density; // [pressure, xh2od, temperature]
+        std::unique_ptr<UniformInterpolation1d> dissolved_weighted_h2o;
+        std::unique_ptr<UniformInterpolation1d> dissolved_weighted_co2;
+        std::unique_ptr<UniformInterpolation1d> gas_h2o_co2_ratio;
+        std::unique_ptr<UniformInterpolation3d> gas_h2o_co2_density; // [pressure, xh2od, temperature]
     
     public:
-        MagmaState(Mesh* mesh, nlohmann::json&& properties);
+        MagmaState(Mesh* mesh, nlohmann::json&& properties, InputData* input);
         void setDensityModel();
         void setViscosityModel();
         void setCrystallizationModel();
         void setSaturationModel();
-        void updateMeltDensity(DikeData* dike) const;
         void updateDensity(DikeData* dike) const;
         void updateViscosity(DikeData* dike) const;
         void updateEquilibriumCrystallization(DikeData* dike) const;

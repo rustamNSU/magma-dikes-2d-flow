@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 11
+simID = 1
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -46,23 +46,23 @@ inputDict["reservoirProperties"] = {
     },
 }
 inputDict["magmaProperties"] = {
-    "thermalConductivity" : 20000,
+    "thermalConductivity" : 2,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
-    "densityModel" : MagmaDensity.water_saturated,
+    "densityModel" : MagmaDensity.mixed_h2o_co2,
     "viscosityModel" : ViscosityModel.grdmodel08,
     "crystallizationModel" : CrystallizationModel.const_relaxation,
-    "saturationModel": MagmaSaturationModel.lavallee2015,
+    "saturationModel": MagmaSaturationModel.mixed_h2o_co2,
     "constantDensity" : {
         "rho" : 2000,
-        "rhom0" : 2300.0,
-        "rhow0" : 852.0,
-        "rhoc0" : 2700.0,
     },
-    "waterSaturatedDensity" : {
-        "rhom0" : 2300.0,
-        "rhow0" : 852.0,
+    "mixed_h2o_co2" : {
+        "rhom0" : 2360.0,
+        "rhoh2o0" : 852.0,
+        "rhoco20" : 2124,
         "rhoc0" : 2700.0,
+        "dissolved_data_path" : "./data/pinatubo/dissolved_06.json",
+        "gas_density_data_path" : "./data/pinatubo/h2o_co2_gas_density.json"
     },
     "vftConstantViscosity" : {
         "A" : -4.55,
