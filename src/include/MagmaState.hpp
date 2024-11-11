@@ -109,5 +109,7 @@ class MagmaState{
             return chamber.beta;
         }
 
+        void test() const;
+
         friend class DikeModel2d;
 };

@@ -75,6 +75,7 @@ void DikeModel2d::setInitialData(){
     auto [is_save, save_timestep] = timestep_controller->saveTimestepIteration();
     std::string savepath = (input->getDataDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
     saveData(savepath);
+    magma_state->test();
 }
 
 

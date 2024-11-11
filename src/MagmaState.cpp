@@ -295,3 +295,46 @@ void MagmaState::setChamberInitialState(
     }
     return;
 }
+
+
+void MagmaState::test() const{
+    if (density_model == DensityModel::MIXED_H2O_CO2){
+        json data;
+        ArrayXd pressure = ArrayXd::LinSpaced(101, 0.0, 1000e6);
+        ArrayXd temperature = ArrayXd::LinSpaced(51, 500.0, 1000.0);
+        ArrayXd wth2o = pressure;
+        ArrayXd wtco2 = pressure;
+        ArrayXd xh2og = pressure;
+        for (int i = 0; i < pressure.size(); i++){
+            wth2o[i] = dissolved_weighted_h2o->getValue(pressure[i]);
+            wtco2[i] = dissolved_weighted_co2->getValue(pressure[i]);
+            xh2og[i] = gas_h2o_co2_ratio->getValue(pressure[i]);
+        }
+        data["dissolved"]["pressure"] = pressure;
+        data["dissolved"]["wth2o"] = wth2o;
+        data["dissolved"]["wtco2"] = wtco2;
+        data["dissolved"]["xh2og"] = xh2og;
+
+        ArrayXXd gas_density0 = ArrayXXd::Zero(pressure.size(), temperature.size());
+        ArrayXXd gas_density05 = ArrayXXd::Zero(pressure.size(), temperature.size());
+        ArrayXXd gas_density1 = ArrayXXd::Zero(pressure.size(), temperature.size());
+        for (int i = 0; i < pressure.size(); i++){
+            for (int j = 0; j < temperature.size(); j++){
+                double p = pressure[i];
+                double T = temperature[j];
+                gas_density0(i, j) = gas_h2o_co2_density->getValue(p, 0.0, T);
+                gas_density05(i, j) = gas_h2o_co2_density->getValue(p, 0.5, T);
+                gas_density1(i, j) = gas_h2o_co2_density->getValue(p, 1.0, T);
+            }
+        }
+        // data["gas_density"]["pressure"] = pressure;
+        // data["gas_density"]["temperature"] = temperature;
+        // data["gas_density"]["case1"]["xh2og"] = 0.0;
+        // data["gas_density"]["case1"]["xh2og"] = 0.0;
+        auto sim_dir = input->getSimDir();
+        auto filepath = sim_dir / "test_magma_properties.json";
+        std::ofstream f(filepath);
+        f << data.dump(4) << std::endl;
+        f.close();
+    }
+}
