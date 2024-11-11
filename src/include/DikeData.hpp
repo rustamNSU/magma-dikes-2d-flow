@@ -37,6 +37,10 @@ class DikeData{
         Eigen::ArrayXXd beta; // Crystal volume concentration in melt
         Eigen::ArrayXXd alpha; // Exsolved gas volume concentration
         Eigen::ArrayXXd gamma; // Dissolved gas weight concentration in melt
+        Eigen::ArrayXXd xh2og; // Gas water weight ratio
+        Eigen::ArrayXXd xh2od; // Dissolved water weight ratio
+        Eigen::ArrayXXd wth2o; // Dissolved h2o weight concentration in melt
+        Eigen::ArrayXXd wtco2; // Dissolved co2 weight concentration in melt
         Eigen::ArrayXXd qx; // u d\xi on x_{i+1/2} [nx+1, ny]
         Eigen::ArrayXXd qy; // v dx on \xi_{j+1/2} [nx,   ny+1]
         Eigen::ArrayXXd mx; // Mass rates for elements (Ox)

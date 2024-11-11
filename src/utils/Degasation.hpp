@@ -40,3 +40,23 @@ inline double h2o_vapor_density(double p, double T, double R = 461.52){
 inline double h2o_sat_melt_density(double rhom0, double rhow0, double gamma){
     return rhom0 * rhow0 / (gamma * rhom0 + (1.0 - gamma) * rhow0);
 }
+
+
+/**
+ * @brief return mixed h2o-co2 saturated melt density
+ * @param rhom0 melt phase density
+ * @param rhoh2o0 dissolved water density
+ * @param rhoco20 dissolved water density
+ * @param gamma mass concentration of water into melt
+ * @return 
+ */
+inline double melt_density(
+    double rhom0,
+    double rhoh2o0, 
+    double rhoco20, 
+    double wth2o, 
+    double wtco2
+){
+    double wtmelt = 1.0 - wth2o - wtco2;
+    return 1.0 / (wtmelt / rhom0 + wth2o / rhoh2o0 + wtco2 / rhoco20);
+}

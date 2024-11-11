@@ -11,7 +11,7 @@ class ReservoirTemperature(StrEnum):
     
 class MagmaDensity(StrEnum):
     constant = "constant"
-    water_saturated = "water_saturated"
+    water_saturated = "mixed_h2o_co2"
     
 
 class ViscosityModel(StrEnum):

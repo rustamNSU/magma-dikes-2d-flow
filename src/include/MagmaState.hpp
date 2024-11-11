@@ -6,7 +6,7 @@
 #include "ViscosityModels.hpp"
 #include "PinatubaCrystallization.hpp"
 #include "Degasation.hpp"
-
+#include "uniform_interp.hpp"
 
 class DikeModel2d;
 
@@ -15,9 +15,9 @@ class MagmaState{
     private:
         struct DensityModel{
             static constexpr int CONSTANT = 0;
-            static constexpr int WATER_SATURATED = 1;
+            static constexpr int MIXED_H2O_CO2 = 1;
             inline static const std::string constant = "constant";
-            inline static const std::string water_saturated = "water_saturated";
+            inline static const std::string mixed_h2o_co2 = "mixed_h2o_co2";
         };
 
 
@@ -37,8 +37,8 @@ class MagmaState{
 
 
         struct SaturationModel{
-            static constexpr int LAVALLEE2015 = 0;
-            inline static const std::string lavallee2015 = "lavallee2015";
+            static constexpr int MIXED_H2O_CO2 = 0;
+            inline static const std::string mixed_h2o_co2 = "mixed_h2o_co2";
         };
 
 
@@ -47,6 +47,10 @@ class MagmaState{
             double temperature;
             double alpha;
             double gamma;
+            double wth2o; // dissolved h2o wt.%
+            double wtco2; // dissolved co2 wt.%
+            double xh2og; // gas h2o / (h2o + co2)
+            double xh2od; // dissolved gas h2o / (h2o + co2)
             double beta;
             double density;
             double rhom_liquid;
@@ -75,6 +79,10 @@ class MagmaState{
         Mesh* mesh;
         double sio2 = 63.888;
         GiordanoViscosity grdvisc_model;
+        UniformInterpolation1d* dissolved_weighted_h2o;
+        UniformInterpolation1d* dissolved_weighted_co2;
+        UniformInterpolation1d* gas_h2o_co2_ratio;
+        UniformInterpolation3d* gas_h2o_co2_density; // [pressure, xh2od, temperature]
     
     public:
         MagmaState(Mesh* mesh, nlohmann::json&& properties);
@@ -82,12 +90,10 @@ class MagmaState{
         void setViscosityModel();
         void setCrystallizationModel();
         void setSaturationModel();
-        void updateGasDensity(DikeData* dike) const;
-        void updateMeltLiquidDensity(DikeData* dike) const;
+        void updateMeltDensity(DikeData* dike) const;
         void updateDensity(DikeData* dike) const;
         void updateViscosity(DikeData* dike) const;
         void updateEquilibriumCrystallization(DikeData* dike) const;
-        void updateGasSaturation(DikeData* dike) const;
         double getThermalConductivity() const;
         double getSpecificHeat() const;
         inline double getLatentHeat() const{

@@ -39,6 +39,10 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     beta = ArrayXXd::Zero(nx, ny);
     alpha = ArrayXXd::Zero(nx, ny);
     gamma = ArrayXXd::Zero(nx, ny);
+    wth2o = ArrayXXd::Zero(nx, ny);
+    wtco2 = ArrayXXd::Zero(nx, ny);
+    xh2od = ArrayXXd::Zero(nx, ny);
+    xh2og = ArrayXXd::Zero(nx, ny);
     qx = ArrayXXd::Zero(nx+1, ny);
     qy = ArrayXXd::Zero(nx, ny+1);
     mx = ArrayXXd::Zero(nx+1, ny);
@@ -116,6 +120,10 @@ void DikeData::setMagmaStateAfterTip(int ntip, int nout){
     betaeq.row(nout) = betaeq.row(ntip);
     alpha.row(nout) = alpha.row(ntip);
     gamma.row(nout) = gamma.row(ntip);
+    wth2o.row(nout) = wth2o.row(ntip);
+    wtco2.row(nout) = wtco2.row(ntip);
+    xh2od.row(nout) = xh2od.row(ntip);
+    xh2og.row(nout) = xh2og.row(ntip);
     temperature.row(nout) = temperature.row(ntip);
 }
 

@@ -9,14 +9,13 @@
  * @param sio2 sio2 content in melt [wt.%]
  * @return double 
  */
-inline double liquidus_temperature(double p, double sio2){
+inline double liquidus_temperature(double p, double xh2od, double sio2){
     constexpr double al = 1205.7; 
     constexpr double bl = 6.0;    // bl = 6 for p in kbar (1e8 Pa)
     constexpr double cl = 285.7;
     constexpr double dl = 200.0;
     constexpr double el = 0.7;    // el = 0.7 for p in kbar (1e8 Pa)
     constexpr double fl = 11.0;   // fl = 6 for p in kbar (1e8 Pa)
-    constexpr double xh2od = 1.0;
     double pkbar = p * 1e-8;
     constexpr double A = 1287.6; 
     constexpr double B = -20.154;
@@ -25,27 +24,13 @@ inline double liquidus_temperature(double p, double sio2){
 }
 
 
-inline double liquidus_temperature(double p){
-    constexpr double al = 1205.7; 
-    constexpr double bl = 6.0;    // bl = 6 for p in kbar (1e8 Pa)
-    constexpr double cl = 285.7;
-    constexpr double dl = 200.0;
-    constexpr double el = 0.7;    // el = 0.7 for p in kbar (1e8 Pa)
-    constexpr double fl = 11.0;   // fl = 6 for p in kbar (1e8 Pa)
-    constexpr double xh2od = 1.0;
-    double pkbar = p * 1e-8;
-    return al + bl*pkbar - xh2od*(cl + fl*pkbar - dl/(pkbar + el));
-}
-
-
-inline double solidus_temperature(double p){
+inline double solidus_temperature(double p, double xh2od){
     constexpr double as = 854.0896; 
     constexpr double bs = 6.0;     // bs =6 for p in kbar (1e8 Pa)
     constexpr double cs = 224.0896;
     constexpr double ds = 80.0;
     constexpr double es = 0.357;   // es for p in kbar (1e8 Pa)
     constexpr double fs = 6.0;     // fs for p in kbar (1e8 Pa)
-    constexpr double xh2od = 1.0;
     double pkbar = p * 1e-8;
     return as + bs*pkbar - xh2od*(cs + fs*pkbar - ds/(pkbar + es));
 }
