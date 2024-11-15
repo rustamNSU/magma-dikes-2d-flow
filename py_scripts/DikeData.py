@@ -3,6 +3,7 @@ import h5py
 import numpy as np
 import fnmatch, os
 import re
+from tqdm import tqdm
 
 
 def hdf5_read_single(h5file, key):
@@ -58,7 +59,7 @@ class DikeData:
         self.data = []
         self.time = []
         min_width = self.input["algorithmProperties"]["minWidth"]
-        for itime in self.timesteps:
+        for itime in tqdm(self.timesteps):
             file = self.data_dir + "/" + self.filepaths[itime]
             data = h5py.File(file, 'r')
             self.keys = list(data.keys())

@@ -28,6 +28,7 @@ for ax, ylabel in zip([ax1, ax2, ax3], [r"H$_2$O, wt. %", r"CO$_2$, wt. %", r"x$
 fig.tight_layout()
 
 fig = plt.figure(figsize=(12, 4))
+fig.suptitle("Gas density")
 ax1 = fig.add_subplot(1, 3, 1, projection='3d')
 ax2 = fig.add_subplot(1, 3, 2, projection='3d')
 ax3 = fig.add_subplot(1, 3, 3, projection='3d')

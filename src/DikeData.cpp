@@ -115,8 +115,10 @@ void DikeData::setMagmaStateAfterTip(){
 
 
 void DikeData::setMagmaStateAfterTip(int ntip, int nout){
+    if (ntip == nout) return;
     density.row(nout) = density.row(ntip);
     viscosity.row(nout) = viscosity.row(ntip);
+    beta.row(nout) = beta.row(ntip);
     betaeq.row(nout) = betaeq.row(ntip);
     alpha.row(nout) = alpha.row(ntip);
     gamma.row(nout) = gamma.row(ntip);
@@ -125,6 +127,7 @@ void DikeData::setMagmaStateAfterTip(int ntip, int nout){
     xh2od.row(nout) = xh2od.row(ntip);
     xh2og.row(nout) = xh2og.row(ntip);
     temperature.row(nout) = temperature.row(ntip);
+    return;
 }
 
 

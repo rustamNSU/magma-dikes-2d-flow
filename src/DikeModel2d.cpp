@@ -459,19 +459,37 @@ void DikeModel2d::implicitMassBalance(){
         JUST_TIMER_STOP("3) Assemble matrix");
 
         JUST_TIMER_START("3) Solver time");
-        if (algorithm_properties["solverName"] == "denselu"){
-            Eigen::FullPivLU<MatrixXd> lu(mat);
-            sol = lu.solve(rhs);
-        }
-        else if(algorithm_properties["solverName"] == "umfpack"){
-            Eigen::SparseMatrix<double> mat_sparse = mat.sparseView();
-            LinearSolver::solveUmfpack(mat_sparse, rhs, sol);
-        }
-        else if(algorithm_properties["solverName"] == "pardiso"){
-            Eigen::SparseMatrix<double> mat_sparse = mat.sparseView();
-            LinearSolver::solvePardiso(mat_sparse, rhs, sol);
-        }
+        Eigen::SparseMatrix<double> mat_sparse = mat.sparseView();
+        auto info = LinearSolver::solveUmfpack(mat_sparse, rhs, sol);
         JUST_TIMER_STOP("3) Solver time");
+        if (info.is_converge == false){
+            solver_log.successful = false;
+            auto sim_dir = input->getSimDir();
+            auto filepath = sim_dir / "error.h5";
+            File file(filepath, File::Overwrite);
+            dump(file, "time", timestep_controller->getCurrentTime());
+            dump(file, "dt", timestep_controller->getCurrentTimestep());
+            dump(file, "tip_old", tip_old);
+            dump(file, "N", N);
+            dump(file, "W", W);
+            dump(file, "P", P);
+            dump(file, "G", G);
+            dump(file, "lambda_total", lambda_total);
+            dump(file, "mat", mat);
+            dump(file, "rhs", rhs);
+            dump(file, "rhog", rhog);
+            dump(file, "mobility", mobility);
+            dump(file, "nonlinear_iter", iter);
+            ArrayXd arr_hold = hold(seq(0, N-1)).array();
+            ArrayXd arr_rho_avg_old = rho_avg_old(seq(0, N-1)).array();
+            ArrayXd arr_rho_avg = rho_avg(seq(0, N-1)).array();
+            ArrayXd arr_alpha_avg = (dike->alpha.rowwise().mean())(seq(0, N-1)).array();
+            dump(file, "hold", arr_hold);
+            dump(file, "rho_avg_old", arr_rho_avg_old);
+            dump(file, "rho_avg", arr_rho_avg);
+            dump(file, "alpha_avg", arr_alpha_avg);
+            throw std::runtime_error("solver doesnt converge\n");
+        }
         /* Check for Nan value */
         for (int i = 0; i < sol.size(); ++i){
             if (std::isnan(sol[i])){

@@ -128,7 +128,7 @@ void MagmaState::updateDensity(DikeData* dike) const{
                 dike->xh2og(ix, iy) = xh2og;
                 dike->gamma(ix, iy) = gamma;
 
-                double rhom_liquid = melt_density(rhom0, rhoh2o0, rhoco20, wth2o, wtco2);
+                double rhom_liquid = melt_density(rhom0, rhoh2o0, rhoco20, wth2o, wtco2);  // Effective melt density
                 double rhog0 = gas_h2o_co2_density->getValue(p, xh2og, T);
                 dike->rhom_liquid(ix, iy) = rhom_liquid;
                 double t1 = (1-beta)*(chamber.Mg0-gamma)*rhom_liquid;

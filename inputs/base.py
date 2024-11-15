@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 1
+simID = 22
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -22,7 +22,7 @@ inputDict["algorithmProperties"] = {
     "latentHeatCrystallization" : True,
     "solverName" : "umfpack", # "denselu", "umfpack", "pardiso"
     "isSparseElasticity" : True,
-    "isCohesiveStress" : False,
+    "isCohesiveStress" : True,
 }
 inputDict["reservoirProperties"] = {
     "E": 20e9,
@@ -46,7 +46,7 @@ inputDict["reservoirProperties"] = {
     },
 }
 inputDict["magmaProperties"] = {
-    "thermalConductivity" : 2,
+    "thermalConductivity" : 2e4,
     "specificHeatCapacity" : 1200,
     "latentHeat" : 350000,
     "densityModel" : MagmaDensity.mixed_h2o_co2,
@@ -61,7 +61,7 @@ inputDict["magmaProperties"] = {
         "rhoh2o0" : 852.0,
         "rhoco20" : 2124,
         "rhoc0" : 2700.0,
-        "dissolved_data_path" : "./data/pinatubo/dissolved_06.json",
+        "dissolved_data_path" : "./data/pinatubo/dissolved_04.json",
         "gas_density_data_path" : "./data/pinatubo/h2o_co2_gas_density.json"
     },
     "vftConstantViscosity" : {
@@ -83,21 +83,21 @@ inputDict["magmaProperties"] = {
         "musurf" : 1000,
     },
     "constantRelaxationCrystallization" : {
-        "tau" : 24 * 3600 * 0.5,
+        "tau" : 24 * 3600 * 1,
     }
 }
 inputDict["scheduleProperties"] = {
     "Q": [1.0, 0.0],
-    "t": [0.0, 10000],
+    "t": [0.0, 15000],
     "rho": 2000.0,
-    "T" : 800,
+    "T" : 900,
     "beta" : 0.0,
 }
 inputDict["timestepProperties"] = {
     "startTime" : 0.0,
     "endTime" : 200000.0,
-    "dtList" : [1.0, 2.0, 5.0],
-    "dtTime" : [0.0, 20000.0, 40000.0],
+    "dtList" : [1.0, 2.0],
+    "dtTime" : [0.0, 20000.0],
     "saverateList" : [100, 100, 100]
 }
 inputDict["meshProperties"] = {
