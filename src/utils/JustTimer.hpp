@@ -1,12 +1,20 @@
 #pragma once
 
 #include <chrono>
-#include <map>
 #include <stdexcept>
 #include <string_view>
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <fmt/core.h>
+#include <fmt/chrono.h>
+#include <fmt/args.h>
+#include <fmt/format.h>
+#include <fmt/ostream.h>
+#include <fmt/compile.h>
 
 #ifndef JUST_TIMER_DEFAULT_INSTANCE_ID
     #define JUST_TIMER_DEFAULT_INSTANCE_ID 0
@@ -56,17 +64,20 @@ namespace JustTimer {
         struct default_suffix<std::chrono::seconds, Dummy> { static constexpr std::string_view value() { return "(s)"; } };
         constexpr static std::string_view suffix_time = default_suffix<Resolution>::value();
 
-        struct SingleTimer {
+        struct SingleTimer{
+            std::string name;
             Clock::time_point time_start;
             Clock::time_point time_end;
-            std::chrono::nanoseconds time_sum;
+            std::chrono::nanoseconds time_sum = std::chrono::nanoseconds(0);
             size_t count = 0;
             bool is_running = false;
             int level = 0; // For nested timers (to beatify printing)
+            SingleTimer(const std::string& name_, int level_) : name(name_), level(level_){}
         };
 
-        std::map<std::string, SingleTimer> named_timers;
+        std::vector<SingleTimer> timers;
         int level = -1;
+        int max_level = -1;
 
     public:
         Timer() = default;
@@ -75,27 +86,55 @@ namespace JustTimer {
         Timer(const Timer& et) = delete;
         Timer& operator=(const Timer& et) = delete;
 
+        inline bool is_new_timer(const std::string& timer_name){
+            if (timers.size() == 0) return true;
+            auto it = std::find_if(timers.begin(), timers.end(),
+                [&timer_name](const SingleTimer& x){
+                    return x.name == timer_name;
+                }
+            );
+            return it == timers.end();
+        }
+
+        SingleTimer& get_timer(const std::string& timer_name){
+            auto it = std::find_if(timers.begin(), timers.end(),
+                [&timer_name](const SingleTimer& x){
+                    return x.name == timer_name;
+                }
+            );
+            return *it;
+        }
+
         /** @brief Start timer by name. */
-        inline void start(const std::string& timer_name) {
-            named_timers[timer_name].time_start = Clock::now();
-            named_timers.at(timer_name).is_running = true;
-            level++;
-            named_timers.at(timer_name).level = level;
+        inline void start(const std::string& timer_name){
+            if (is_new_timer(timer_name)){
+                level++;
+                timers.push_back(SingleTimer(timer_name, level));
+                max_level = std::max(max_level, level);
+            }
+            SingleTimer& tptr = get_timer(timer_name);
+            if (tptr.is_running){
+                throw std::logic_error("Timer " + timer_name + " is running! Must be stop before restarting\n");
+            }
+            tptr.time_start = Clock::now();
+            tptr.is_running = true;
         }
 
         /** @brief Stop timer by name. */
         inline void stop(const std::string& timer_name) {
             Clock::time_point end_point = Clock::now();
-
-            SingleTimer& current_timer = named_timers.at(timer_name);
-            if (current_timer.is_running) {
-                current_timer.time_end = end_point;
-                current_timer.time_sum += current_timer.time_end - current_timer.time_start;
-                current_timer.count++;
-                current_timer.is_running = false;
-                level--;
+            if (is_new_timer(timer_name)){
+                throw std::logic_error("Timer " + timer_name + " doesn't exist\n");
+            }
+            SingleTimer& tptr = get_timer(timer_name);
+            if (tptr.is_running){
+                tptr.time_end = end_point;
+                tptr.time_sum += tptr.time_end - tptr.time_start;
+                if (tptr.count == 0) level--;
+                tptr.count++;
+                tptr.is_running = false;
             } else {
-                throw std::logic_error("Timer " + timer_name + " is not running");
+                throw std::logic_error("Timer " + timer_name + " is not running\n");
             }
         }
 
@@ -103,70 +142,73 @@ namespace JustTimer {
 
         /** @brief Calculate total execution time for the given timer name. */
         auto total_time(const std::string& timer_name) {
-            const SingleTimer& timer = named_timers.at(timer_name);
+            SingleTimer& timer = get_timer(timer_name);
             return std::chrono::duration_cast<Resolution>(timer.time_sum).count();
         }
 
         /** @brief Calculate number of calls for the given timer name. */
         auto count(const std::string& timer_name) {
-            return named_timers.at(timer_name).count;
+            return get_timer(timer_name).count;
         }
 
         /** @brief Clean map of timers */
         void clear(){
-            named_timers.clear();
+            timers.clear();
             level = -1;
+            max_level = -1;
         }
 
-    public:
-
-        /** @brief Print pretty summary table to the given stream (default is std::cout). */
-        void print(std::ostream& stream = std::cout) {
-            int level_tab = 2;
-            int width_name = 30;
-            int width_number = 10;
-
-            std::stringstream ss;
-            std::string time_header = "Total Time " + std::string(suffix_time);
-            ss << std::left << " " << std::setw(width_name)   << "Timer Name" << " | "
-                                << std::setw(width_number) << time_header  << " | "
-                                << std::setw(width_number) << "Count"      << "\n";
-            stream << std::string(ss.str().size(), '-') << "\n" << ss.str() << std::string(ss.str().size(), '-') << "\n";
-
-            for (const auto& timer : named_timers) {
-                auto time_sum = std::chrono::duration_cast<Resolution>(timer.second.time_sum).count();
-                stream << std::left << " " << std::setw(width_name)    << timer.first        << " | "
-                                        << std::setw(width_number)  << time_sum           << " | "
-                                        << std::setw(width_number)  << timer.second.count << "\n";
-            }
-            stream << std::string(ss.str().size(), '-') << "\n";
-        }
-
-        
+    public:       
         /** @brief Print pretty summary table to the given stream (default is std::cout) with ratio related with TotalTimerName */
-        void print(std::ostream& stream, const std::string& total_timer_name) {
-            int width_name = 35;
-            int width_number = 12;
+        void print(std::ostream& stream){
+            int level_tab = 2;
+            int level_tabs = std::max(0, level_tab * max_level);
+            int width_name = 30 + level_tabs;
+            int width_time = 10;
+            int width_ratio = 7;
+            int width_count = 7;
+            std::string time_header = "Time " + std::string(suffix_time);
+            std::string line = fmt::format(" {:<{}} | {:<{}} | {:<{}} | {:<{}} \n", "Timer Name", width_name, time_header, width_time, "Ratio", width_ratio, "Count", width_count);
+            stream << std::string(line.size(), '-') << "\n" << line << std::string(line.size(), '-') << "\n";
 
-            std::stringstream ss;
-            std::string time_header = "Total Time " + std::string(suffix_time);
-            ss << std::left << " " << std::setw(width_name)   << "Timer Name" << " | "
-                                << std::setw(width_number) << time_header  << " | "
-                                << std::setw(width_number) << "Ratio"      << " | "
-                                << std::setw(width_number) << "Count"      << "\n";
-            stream << std::string(ss.str().size(), '-') << "\n" << ss.str() << std::string(ss.str().size(), '-') << "\n";
-
-            auto total_timer = named_timers[total_timer_name];
-            auto total_time = std::chrono::duration_cast<Resolution>(total_timer.time_sum).count();
-            for (const auto& timer : named_timers) {
-                auto time_sum = std::chrono::duration_cast<Resolution>(timer.second.time_sum).count();
-                stream << std::left << " " << std::setw(width_name)    << timer.first        << " | "
-                                        << std::setw(width_number)  << time_sum           << " | "
-                                        << std::setw(width_number)  << double(time_sum) / total_time << " | "
-                                        << std::setw(width_number)  << timer.second.count << "\n";
+            const SingleTimer& total_timer = timers.front();
+            double total_time = std::chrono::duration_cast<Resolution>(total_timer.time_sum).count();
+            for (const auto& timer : timers) {
+                double time_sum = std::chrono::duration_cast<Resolution>(timer.time_sum).count();
+                std::string timer_name = std::string(timer.level * level_tab, '-') + " " + timer.name;
+                std::string lline = fmt::format(" {:<{}} | {:<{}} | {:<{}.3f} | {:<{}} \n", timer_name, width_name, time_sum, width_time, double(time_sum) / total_time, width_ratio, timer.count, width_count);
+                stream << lline;
             }
-            stream << std::string(ss.str().size(), '-') << "\n";
+            stream << std::string(line.size(), '-') << "\n";
         }
+        // void print(std::ostream& stream){
+        //     int level_tab = 2;
+        //     int level_tabs = std::max(0, level_tab * max_level);
+        //     int width_name = 30 + level_tabs;
+        //     constexpr int width_time = 10;
+        //     constexpr int width_ratio = 7;
+        //     constexpr int width_count = 7;
+        //     std::string time_header = "Time " + std::string(suffix_time);
+        //     std::stringstream ss;
+        //     std::string line = fmt::format(" {:<{}} | {:<{}} | {:<{}} | {:<{}} ", "Timer Name", width_name, time_header, width_time, "Ratio", width_ratio, "Count", width_count);
+        //     ss  << std::setw(width_name) << std::left << " " << "Timer Name" << " | "
+        //         << std::setw(width_time) << time_header << " | "
+        //         << std::setw(width_ratio) << "Ratio" << " | "
+        //         << std::setw(width_count) << "Count" << "\n";
+        //     stream << std::string(ss.str().size(), '-') << "\n" << ss.str() << std::string(ss.str().size(), '-') << "\n";
+
+        //     const SingleTimer& total_timer = timers.front();
+        //     auto total_time = std::chrono::duration_cast<Resolution>(total_timer.time_sum).count();
+        //     for (const auto& timer : timers) {
+        //         auto time_sum = std::chrono::duration_cast<Resolution>(timer.time_sum).count();
+        //         std::string timer_name = std::string(timer.level * level_tab, '-') + " " + timer.name;
+        //         stream  << std::left << " " << std::setw(width_name) << timer_name << " | "
+        //                 << std::setw(width_time) << std::setprecision(std::min(15, width_time)) << time_sum << " | "
+        //                 << std::setw(width_ratio) << std::setprecision(std::min(15, width_ratio)) << double(time_sum) / total_time << " | "
+        //                 << std::setw(width_count) << std::setprecision(std::min(15, width_count)) << timer.count << "\n";
+        //     }
+        //     stream << std::string(ss.str().size(), '-') << "\n";
+        // }
     };
 
     /********************************************************************
@@ -222,5 +264,3 @@ namespace JustTimer {
 
 #define JUST_TIMER_CLEAR_(InstanceID) JustTimer::get<InstanceID>().clear()
 #define JUST_TIMER_CLEAR JUST_TIMER_CLEAR_(JUST_TIMER_DEFAULT_INSTANCE_ID)
-
-#define JUST_TIMER_PRINT_RATIO(stream, TotalTimerName) JustTimer::get<JUST_TIMER_DEFAULT_INSTANCE_ID>().print(stream, #TotalTimerName)

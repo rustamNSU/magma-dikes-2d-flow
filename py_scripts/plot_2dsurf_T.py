@@ -14,11 +14,11 @@ from py_scripts.DikeData import DikeData
 set_matplotlib_settings()
 
 
-simID = 4
+simID = 3
 sim_path = sim_dir + f"/simID{simID}"
 wlim = (0, 3)
-plim = (0, 700)
-xlim = (-30000, -10000.0)
+plim = (0, 800)
+xlim = (-30000, 00.0)
 
 
 dike = DikeData(sim_path, step_rate=10)

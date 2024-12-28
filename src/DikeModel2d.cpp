@@ -80,28 +80,28 @@ void DikeModel2d::setInitialData(){
 
 
 void DikeModel2d::run(){
-    JUST_TIMER_START("0) Total run time");
+    JUST_TIMER_START(Total run time);
     while (!timestep_controller->isFinish()){
         auto time = timestep_controller->getCurrentTime();
         auto dt = timestep_controller->getCurrentTimestep();
         solver_log.setDefault();
         summary.clear();
-        JUST_TIMER_START("1) Implicit solver time");
+        JUST_TIMER_START(Implicit solver time);
         implicitSolver();
-        JUST_TIMER_STOP("1) Implicit solver time");
-        JUST_TIMER_START("1) Update data time");
+        JUST_TIMER_STOP(Implicit solver time);
+        JUST_TIMER_START(Update data time);
         if (solver_log.successful){
             updateData();
         }
         else{
             reloadData();
         }
-        JUST_TIMER_STOP("1) Update data time");
+        JUST_TIMER_STOP(Update data time);
     }
-    JUST_TIMER_STOP("0) Total run time");
+    JUST_TIMER_STOP(Total run time);
     std::stringstream ss;
     std::string token;
-    JUST_TIMER_PRINT_RATIO(ss, "0) Total run time");
+    JUST_TIMER_PRINT(ss);
     while (std::getline(ss, token, '\n')){
         spdlog::info(token);
     }
@@ -114,24 +114,24 @@ void DikeModel2d::implicitSolver(){
     auto ny = dike->getLayersNumber();
     auto dt = timestep_controller->getCurrentTimestep();
     summary.table["Old tip element"] = old_dike->tip_element;
-    JUST_TIMER_START("2) Update magma state");
+    JUST_TIMER_START(Update magma state);
     magma_state->updateViscosity(dike.get());
     magma_state->updateDensity(dike.get());
     magma_state->updateEquilibriumCrystallization(dike.get());
     dike->setMagmaStateAfterTip();
-    JUST_TIMER_STOP("2) Update magma state");
+    JUST_TIMER_STOP(Update magma state);
 
-    JUST_TIMER_START("2) Update magma width and pressure");
+    JUST_TIMER_START(Update magma width and pressure);
     implicitMassBalance();
     summary.table["New tip element"] = dike->tip_element;
-    JUST_TIMER_STOP("2) Update magma width and pressure");
+    JUST_TIMER_STOP(Update magma width and pressure);
     updateCrystallization();
     solveEnergyBalance();
 }
 
 
 void DikeModel2d::solveEnergyBalance(){
-    JUST_TIMER_START("2) Energy balance time");
+    JUST_TIMER_START(Energy balance time);
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
@@ -269,12 +269,12 @@ void DikeModel2d::solveEnergyBalance(){
     summary.table["Total injected energy (J)"] = total_injected_energy;
     summary.table["Total dike energy (J)"] = energy_total;
     summary.error["Total energy error"] = error;
-    JUST_TIMER_STOP("2) Energy balance time");
+    JUST_TIMER_STOP(Energy balance time);
 }
 
 
 void DikeModel2d::updateCrystallization(){
-    JUST_TIMER_START("2) Update crystal time");
+    JUST_TIMER_START(Update crystal time);
     int nx = mesh->size();
     int ny = dike->getLayersNumber();
     const auto& h = dike->hw;
@@ -337,7 +337,7 @@ void DikeModel2d::updateCrystallization(){
         auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
         dike->beta.row(ix) = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data(), ny);
     }
-    JUST_TIMER_STOP("2) Update crystal time");
+    JUST_TIMER_STOP(Update crystal time);
 }
 
 
@@ -411,12 +411,12 @@ void DikeModel2d::implicitMassBalance(){
         rhog(i) = 0.5 * (rho_avg(i) + rho_avg(i-1)) * g;
     }
     
-    JUST_TIMER_START("2) Solve nonlinear equations");
+    JUST_TIMER_START(Solve nonlinear equations);
     int stab_iter = 0;
     double error = 0;
     int iter = 0;
     for (iter = 0; iter < MAX_ITERATIONS; ++iter){
-        JUST_TIMER_START("3) Assemble matrix");
+        JUST_TIMER_START(Assemble matrix);
         VectorXd rhs = rhs_base;
         VectorXd rhsp = VectorXd::Zero(N);
         MatrixXd Ipp = MatrixXd::Zero(N, N);
@@ -456,12 +456,12 @@ void DikeModel2d::implicitMassBalance(){
             }
             rhs(seq(0, N-1)) += rhs_coh;
         }
-        JUST_TIMER_STOP("3) Assemble matrix");
+        JUST_TIMER_STOP(Assemble matrix);
 
-        JUST_TIMER_START("3) Solver time");
+        JUST_TIMER_START(Solver time);
         Eigen::SparseMatrix<double> mat_sparse = mat.sparseView();
         auto info = LinearSolver::solveUmfpack(mat_sparse, rhs, sol);
-        JUST_TIMER_STOP("3) Solver time");
+        JUST_TIMER_STOP(Solver time);
         if (info.is_converge == false){
             solver_log.successful = false;
             auto sim_dir = input->getSimDir();
@@ -515,7 +515,7 @@ void DikeModel2d::implicitMassBalance(){
     }
     summary.error["Mass balance nonlinear error"] = error;
     spdlog::trace("-- {:<10}) err = {:<8}, niter. = {:<3}", timestep_controller->getTimeIteration(), error, iter);
-    JUST_TIMER_STOP("2) Solve nonlinear equations");
+    JUST_TIMER_STOP(Solve nonlinear equations);
 
     dike->hw(seq(0, N-1)) = W;
     dike->pressure(seq(0, N-1)) = P;
@@ -651,7 +651,7 @@ void DikeModel2d::updateData(){
     *old_dike = *dike;
     auto [is_save, save_timestep] = timestep_controller->saveTimestepIteration();
     if (is_save){
-        JUST_TIMER_START("2) Data saving time");
+        JUST_TIMER_START(Data saving time);
         spdlog::info("{:>7} | {:>8.4} h | dt = {:>8.4} | tot. iter. = {:>8} |",
             save_timestep,
             timestep_controller->getCurrentTime() / 3600.0,
@@ -664,7 +664,7 @@ void DikeModel2d::updateData(){
         std::string reservoir_path = (input->getReservoirDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
         reservoir->saveData(reservoir_path);
         summary.print();
-        JUST_TIMER_STOP("2) Data saving time");
+        JUST_TIMER_STOP(Data saving time);
     }
 }
 

@@ -7,7 +7,7 @@ import json
 import h5py
 from py_scripts.input_utils import *
 
-simID = 22
+simID = 102
 sim_dir = repository_dir + "/simulations/simID{}".format(simID)
 inputDict = dict()
 inputDict["simID"] = simID
@@ -88,7 +88,7 @@ inputDict["magmaProperties"] = {
 }
 inputDict["scheduleProperties"] = {
     "Q": [1.0, 0.0],
-    "t": [0.0, 15000],
+    "t": [0.0, 10000],
     "rho": 2000.0,
     "T" : 900,
     "beta" : 0.0,
