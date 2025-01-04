@@ -24,6 +24,29 @@ class DikeModel2d{
                 successful = true;
             }
         };
+
+
+        struct DikeFront{
+            std::vector<double> time;
+            std::vector<double> front;
+            
+            inline void addTimestep(double t, double x){
+                time.push_back(t);
+                front.push_back(x);
+            }
+        };
+
+
+        struct DikeFrontUnique{
+            std::vector<double> time;
+            std::vector<double> front;
+            int last_tip = -1;
+            
+            inline void addTimestep(double t, double x){
+                time.push_back(t);
+                front.push_back(x);
+            }
+        };
         
 
     private:
@@ -55,6 +78,8 @@ class DikeModel2d{
         int VISCOSITY_MODEL = 0;
         double total_injected_energy = 0.0;
         double total_injected_mass = 0.0;
+        DikeFront dike_front;
+        DikeFrontUnique dike_front_unique;
 
     public:
         DikeModel2d(const std::string& input_path);

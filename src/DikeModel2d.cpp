@@ -40,6 +40,7 @@ DikeModel2d::DikeModel2d(const std::string& input_path) :
     elasticity = std::make_shared<Elasticity>(E, nu, mesh.get());
     setAlgorithmProperties();
     setInitialData();
+    dike_front.addTimestep(timestep_controller->getCurrentTime(), dike->front);
 }
 
 
@@ -106,6 +107,19 @@ void DikeModel2d::run(){
         spdlog::info(token);
     }
     JUST_TIMER_CLEAR;
+    
+    std::ofstream output(input->getSimDir() / "front.txt", std::ios::trunc);
+    for (int i = 0; i < dike_front.time.size(); i++){
+        output << dike_front.time[i] << ";" << dike_front.front[i];
+        if (i != dike_front.time.size() - 1) output << "\n";
+    }
+    output.close();
+
+    output.open(input->getSimDir() / "front_unique.txt", std::ios::trunc);
+    for (int i = 0; i < dike_front_unique.time.size(); i++){
+        output << dike_front_unique.time[i] << ";" << dike_front_unique.front[i];
+        if (i != dike_front_unique.time.size() - 1) output << "\n";
+    }
 }
 
 
@@ -650,6 +664,11 @@ void DikeModel2d::updateData(){
     reservoir->time = timestep_controller->getCurrentTime();
     *old_dike = *dike;
     auto [is_save, save_timestep] = timestep_controller->saveTimestepIteration();
+    dike_front.addTimestep(timestep_controller->getCurrentTime(), dike->front);
+    if (dike_front_unique.last_tip < dike->tip_element){
+        dike_front_unique.last_tip = dike->tip_element;
+        dike_front_unique.addTimestep(timestep_controller->getCurrentTime(), dike->front);
+    }
     if (is_save){
         JUST_TIMER_START(Data saving time);
         spdlog::info("{:>7} | {:>8.4} h | dt = {:>8.4} | tot. iter. = {:>8} |",

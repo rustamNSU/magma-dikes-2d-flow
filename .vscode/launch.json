@@ -60,14 +60,14 @@
             "request": "launch",
             "program": "${workspaceFolder}/debug/bin/runner",
             "cwd": "${workspaceFolder}",
-            "args": ["${workspaceFolder}/input.json"],
+            "args": ["${workspaceFolder}/runner.json"],
         },
         {
             "name": "debug-lldb",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/debug/bin/runner",
-            "args": ["${workspaceFolder}/input.json"],
+            "args": ["${workspaceFolder}/runner.json"],
             "cwd": "${workspaceFolder}",
             "initCommands": [
                 "comman source ${workspaceFolder}/.vscode/.lldbinit"

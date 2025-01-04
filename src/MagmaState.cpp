@@ -27,7 +27,7 @@ void MagmaState::setDensityModel(){
     auto model = properties["densityModel"].get<std::string>();
     if (model == DensityModel::constant){
         density_model = DensityModel::CONSTANT;
-        density_properties = properties["constant"];
+        density_properties = properties["constantDensity"];
     }
     else if (model == DensityModel::mixed_h2o_co2){
         density_model = DensityModel::MIXED_H2O_CO2;
