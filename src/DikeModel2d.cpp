@@ -50,9 +50,15 @@ void DikeModel2d::setAlgorithmProperties(){
     VISCOSITY_APPROXIMATION = algorithm_properties["viscosityApproximation"].get<std::string>();
     SHEAR_HEATING = algorithm_properties["shearHeating"].get<bool>() ? 1.0 : 0.0;
     LATENT_HEAT = algorithm_properties["latentHeatCrystallization"].get<bool>() ? 1.0 : 0.0;
+    ADD_ELEMENTS = 3;
+    if (algorithm_properties.contains("additionalElementsAfterTip")){
+        ADD_ELEMENTS = algorithm_properties["additionalElementsAfterTip"].get<int>();
+    }
     if (algorithm_properties["isCohesiveStress"].get<bool>()){
         auto [E, nu, K1c] = reservoir->getElasticityParameters();
-        cohesive_model = std::make_shared<CohesiveModel>(mesh.get(), E, nu, K1c);
+        int Ncoh = 6; // number of cohesive elements (cohesive zone)
+        if (algorithm_properties.contains("cohesiveElements")) Ncoh = algorithm_properties["cohesiveElements"];
+        cohesive_model = std::make_shared<CohesiveModel>(mesh.get(), E, nu, K1c, Ncoh);
     }
     return;
 }
@@ -377,7 +383,7 @@ void DikeModel2d::implicitMassBalance(){
     double g = reservoir->getGravityAcceleration();
     
     int tip_old = old_dike->tip_element;
-    int N = std::min({tip_old + 2, nx - 1}) + 1;
+    int N = std::min({tip_old + ADD_ELEMENTS, nx});
     ArrayXd W = dike->hw(seq(0, N-1));
     ArrayXd Witer = dike->hw(seq(0, N-1));
     ArrayXd P = dike->pressure(seq(0, N-1));

@@ -72,6 +72,7 @@ class DikeModel2d{
         double MIN_WIDTH = 1e-3;
         double SHEAR_HEATING = 1.0;
         double LATENT_HEAT = 1.0;
+        int ADD_ELEMENTS = 3; // Additional elements after tip element in elasticity solver
         bool highOrderApproximation = false;
 
         int DENSITY_MODEL = 0;

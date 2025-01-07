@@ -43,11 +43,3 @@ void Elasticity::generateMatrix(){
 const MatrixXd& Elasticity::getMatrix() const{
     return matrix;
 }
-
-
-void Elasticity::setCohesiveParameters(double dc, double dm, double Gc){
-    this->dc = dc;
-    this->dm = dm;
-    this->Gc = Gc;
-    sigmac = 2 * Gc / dc;
-}

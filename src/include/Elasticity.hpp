@@ -10,12 +10,6 @@ class Elasticity{
         Mesh* mesh;
         Eigen::MatrixXd matrix; // C
 
-        /* Cohesive stress parameters */
-        double dc = 1e-3;
-        double dm = 1e-5;
-        double Gc = 0.0;
-        double sigmac = 0.0;
-
         int step = 1;
         Eigen::MatrixXd A; // Sparse diagonal from C with (window = 2*step + 1)
         Eigen::MatrixXd B; // C - A
@@ -40,14 +34,5 @@ class Elasticity{
 
         inline const Eigen::MatrixXd& getB() const{
             return B;
-        }
-
-
-        void setCohesiveParameters(double dc, double dm, double Gc);
-        inline double getCohesiveStress(double h) const{
-            double w = 2*h;
-            if (w < dm) return sigmac * w / dm;
-            if (w < dc) return sigmac * (dc - w) / (dc - dm);
-            return 0.0;
         }
 };
