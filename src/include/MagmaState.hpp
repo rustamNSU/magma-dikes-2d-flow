@@ -16,31 +16,20 @@ class DikeModel2d;
 class MagmaState{
     private:
         struct DensityModel{
-            static constexpr int CONSTANT = 0;
-            static constexpr int MIXED_H2O_CO2 = 1;
-            inline static const std::string constant = "constant";
+            inline static const std::string constant = "constant_density";
             inline static const std::string mixed_h2o_co2 = "mixed_h2o_co2";
         };
 
-
         struct ViscosityModel{
-            static constexpr int CONSTANT = 0;
-            static constexpr int VFT_CONST_COEFF = 1;
-            static constexpr int VFT_CONST_COEFF_AVG = 2;
-            static constexpr int VFT_CONST_COEFF_CRYST = 3;
-            static constexpr int GRDMODEL08 = 4;
-
-            inline static const std::string constant = "constant";
+            inline static const std::string constant = "constant_viscosity";
             inline static const std::string vft_const_coeff = "vft_const_coeff";
-            inline static const std::string vft_const_coeff_avg = "vft_const_coeff_avg";
-            inline static const std::string vft_const_coeff_cryst = "vft_const_coeff_cryst";
             inline static const std::string grdmodel08 = "grdmodel08";
         };
 
-
-        struct SaturationModel{
-            static constexpr int MIXED_H2O_CO2 = 0;
-            inline static const std::string mixed_h2o_co2 = "mixed_h2o_co2";
+        struct CrystallizationModel{
+            inline static const std::string equilibrium_crystallization = "equilibrium_crystallization";
+            inline static const std::string constant_relaxation_crystallization = "constant_relaxation_crystallization";
+            inline static const std::string arrhenius_relaxation_crystallization = "arrhenius_relaxation_crystallization";
         };
 
 
@@ -69,12 +58,9 @@ class MagmaState{
     private:
         InputData* input;
         nlohmann::json properties;
-        int density_model = 0;
-        int viscosity_model = 0;
-        int saturation_model = 0;
-        nlohmann::json density_properties;
-        nlohmann::json viscosity_properties;
-        nlohmann::json saturation_properties;
+        nlohmann::json density_model;
+        nlohmann::json viscosity_model;
+        nlohmann::json crystallization_model;
         double thermal_conductivity;
         double specific_heat;
         double latent_heat;
@@ -95,6 +81,7 @@ class MagmaState{
         void setSaturationModel();
         void updateDensity(DikeData* dike) const;
         void updateViscosity(DikeData* dike) const;
+        void updateRelaxationCrystallization(DikeData* dike) const;
         void updateEquilibriumCrystallization(DikeData* dike) const;
         double getThermalConductivity() const;
         double getSpecificHeat() const;

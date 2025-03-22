@@ -1,16 +1,20 @@
 #include "TimestepController.hpp"
 #include <cmath>
+#include <cassert>
+#include <filesystem>
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
-TimestepController::TimestepController(const json& timestep_properties) :
-    timestep_properties(timestep_properties)
+
+TimestepController::TimestepController(const json& timestep_properties) : timestep_properties(timestep_properties)
 {
-    start_time = timestep_properties["startTime"];
+    start_time = timestep_properties["start_time"];
     current_time = start_time;
-    end_time = timestep_properties["endTime"];
-    dt_list = timestep_properties["dtList"].get<std::vector<double>>();
-    dt_time = timestep_properties["dtTime"].get<std::vector<double>>();
-    saverate_list = timestep_properties["saverateList"].get<std::vector<int>>();
+    end_time = timestep_properties["end_time"];
+    dt_list = timestep_properties["dt_list"].get<std::vector<double>>();
+    dt_time = timestep_properties["dt_time"].get<std::vector<double>>();
+    saverate_list = timestep_properties["saverate_list"].get<std::vector<int>>();
+    
     base_dt = dt_list[0];
     current_dt = base_dt;
     level = 0;
@@ -21,51 +25,51 @@ TimestepController::TimestepController(const json& timestep_properties) :
 }
 
 
-void TimestepController::setBaseTimestep(double base_dt){
+void TimestepController::setBaseTimestep(double base_dt) {
     assert(level == 0 && "setBaseTimestep used in wrong time, level not equal zero!\n");
     this->base_dt = base_dt;
     current_dt = base_dt;
 }
 
 
-double TimestepController::getCurrentTimestep() const{
+double TimestepController::getCurrentTimestep() const {
     return current_dt;
 }
 
 
-double TimestepController::getCurrentTime() const{
+double TimestepController::getCurrentTime() const {
     return current_time;
 }
 
 
-double TimestepController::getNextTime() const{
+double TimestepController::getNextTime() const {
     return current_time + current_dt;
 }
 
 
-int TimestepController::getTimeIteration() const{
+int TimestepController::getTimeIteration() const {
     return base_timesteps;
 }
 
 
-std::tuple<bool, int> TimestepController::saveTimestepIteration() const{
+std::tuple<bool, int> TimestepController::saveTimestepIteration() const {
     bool is_save = ((base_timesteps % output_save_rate) == 0) && (level == 0);
     int save_iteration = base_timesteps / output_save_rate;
     return std::make_tuple(is_save, save_iteration);
 }
 
 
-int TimestepController::getTimestepAttempts() const{
+int TimestepController::getTimestepAttempts() const {
     return attempts;
 }
 
 
-int TimestepController::getLevel() const{
+int TimestepController::getLevel() const {
     return level;
 }
 
 
-void TimestepController::update(){
+void TimestepController::update() {
     current_time += current_dt;
     attempts += 1;
     nonlinear_iteration = 0;
@@ -80,17 +84,15 @@ void TimestepController::update(){
         all_timesteps++;
         base_timesteps++;
         attempts = 1;
-        return;
-    } else{
+    } else {
         current_dt = dt_stack.top();
         level = level_stack.top();
         all_timesteps++;
-        return;
     }
 }
 
 
-void TimestepController::divideTimestep(int steps){
+void TimestepController::divideTimestep(int steps) {
     if (!dt_stack.empty()){
         dt_stack.pop();
         level_stack.pop();
@@ -104,24 +106,22 @@ void TimestepController::divideTimestep(int steps){
     }
     attempts += 1;
     nonlinear_iteration = 0;
-    return;
 }
 
 
-void TimestepController::updateNonlinearIteration(){
+void TimestepController::updateNonlinearIteration() {
     nonlinear_iteration++;
-    return;
 }
 
 
-bool TimestepController::isFinish() const{
+bool TimestepController::isFinish() const {
     return !(current_time < end_time - 1e-10);
 }
 
 
-double TimestepController::getRelaxationParameter() const{
+double TimestepController::getRelaxationParameter() const {
     int i = 0;
-    for (auto rel_iter : relaxation_iterations){
+    for (auto rel_iter : relaxation_iterations) {
         if (nonlinear_iteration < rel_iter){
             return relaxation_parameters[i];
         }
@@ -131,23 +131,21 @@ double TimestepController::getRelaxationParameter() const{
 }
 
 
-int TimestepController::getNonlinearIteration() const{
+int TimestepController::getNonlinearIteration() const {
     return nonlinear_iteration;
 }
 
 
-void TimestepController::updateBaseTimestep(){
+void TimestepController::updateBaseTimestep() {
     assert(level == 0 && "setBaseTimestep used in wrong time, level not equal zero!\n");
-    if (base_dt_indx >= dt_list.size() - 1){
+    if (base_dt_indx >= dt_list.size() - 1) {
         return;
-    }
-    else{
-        if (std::abs(dt_time[base_dt_indx+1] - current_time) < 0.1 * base_dt){
+    } else {
+        if (std::abs(dt_time[base_dt_indx + 1] - current_time) < 0.1 * base_dt) {
             base_dt_indx++;
             base_dt = dt_list[base_dt_indx];
             output_save_rate = saverate_list[base_dt_indx];
             current_dt = base_dt;
         }
-        return;
     }
 }

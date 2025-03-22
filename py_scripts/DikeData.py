@@ -49,16 +49,16 @@ class DikeData:
         
         
     def _parse_input(self) -> None:
-        self.nx = int(self.input["meshProperties"]["n"])
-        self.xmin = float(self.input["meshProperties"]["xmin"])
-        self.xmax = float(self.input["meshProperties"]["xmax"])
+        self.nx = int(self.input["mesh_properties"]["n"])
+        self.xmin = float(self.input["mesh_properties"]["xmin"])
+        self.xmax = float(self.input["mesh_properties"]["xmax"])
     
     
     def _preload_data(self):
         self.timesteps = range(0, self.ntimesteps, self.step_rate)
         self.data = []
         self.time = []
-        min_width = self.input["algorithmProperties"]["minWidth"]
+        min_width = self.input["algorithm_properties"]["min_width"]
         for itime in tqdm(self.timesteps):
             file = self.data_dir + "/" + self.filepaths[itime]
             data = h5py.File(file, 'r')

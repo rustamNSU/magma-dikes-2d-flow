@@ -13,8 +13,8 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     meshX(mesh),
     algorithm_properties(alg_properties)
 {
-    ny = algorithm_properties["numberOfLayers"].get<int>();
-    MIN_WIDTH = algorithm_properties["minWidth"].get<double>();
+    ny = algorithm_properties["number_of_layers"].get<int>();
+    MIN_WIDTH = algorithm_properties["min_width"].get<double>();
     int nx = meshX->size();
     hw = ArrayXd::Zero(nx);
     pressure = ArrayXd::Zero(nx);
@@ -37,6 +37,7 @@ DikeData::DikeData(Mesh* mesh, const json& alg_properties) :
     Tsolidus = ArrayXXd::Zero(nx, ny);
     betaeq = ArrayXXd::Zero(nx, ny);
     beta = ArrayXXd::Zero(nx, ny);
+    tau = ArrayXXd::Zero(nx, ny);
     alpha = ArrayXXd::Zero(nx, ny);
     gamma = ArrayXXd::Zero(nx, ny);
     wth2o = ArrayXXd::Zero(nx, ny);
@@ -120,6 +121,7 @@ void DikeData::setMagmaStateAfterTip(int ntip, int nout){
     viscosity.row(nout) = viscosity.row(ntip);
     beta.row(nout) = beta.row(ntip);
     betaeq.row(nout) = betaeq.row(ntip);
+    tau.row(nout) = tau.row(ntip);
     alpha.row(nout) = alpha.row(ntip);
     gamma.row(nout) = gamma.row(ntip);
     wth2o.row(nout) = wth2o.row(ntip);

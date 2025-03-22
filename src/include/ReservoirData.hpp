@@ -26,8 +26,8 @@ class ReservoirData{
         double g = 9.81; // Gravity acceleration
         double C; // Reservoir specific heat
         double k; // Reservoir conductivity
-        std::string density_model;
-        std::string temperature_model;
+        nlohmann::json density_model;
+        nlohmann::json temperature_model;
 
         int ny; // Number of layers
         double L; // Reservoir width

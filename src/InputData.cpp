@@ -8,7 +8,7 @@ namespace fs = std::filesystem;
 
 InputData::InputData(const json& input) : input(input)
 {
-    sim_id = input["simID"];
+    sim_id = input["sim_id"];
     work_dir = fs::current_path();
     sim_dir = work_dir / ("simulations/simID" + std::to_string(sim_id));
     data_dir = sim_dir / "data";
@@ -27,17 +27,17 @@ InputData::InputData(const json& input) : input(input)
 void InputData::saveInputJson(){
     std::ofstream fout(sim_dir / "input.json", std::ios::trunc);
     fout << std::setw(4) << input << std::endl;
-    fout.close();
 }
 
 
-void InputData::setMultiSinkLogger(){
+void InputData::setMultiSinkLogger()
+{
     auto log_path = sim_dir / "log.txt";
+
     auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    if (input["algorithmProperties"]["isDebug"].get<bool>()){
+    if (input["algorithm_properties"]["is_debug"].get<bool>()) {
         console_sink->set_level(spdlog::level::debug);
-    }
-    else{
+    } else {
         console_sink->set_level(spdlog::level::info);
     }
     console_sink->set_pattern("%^[%=8l] %v %$");
@@ -56,32 +56,32 @@ void InputData::setMultiSinkLogger(){
 
 
 json InputData::getTimestepProperties() const{
-    return input["timestepProperties"];
+    return input["timestep_properties"];
 }
 
 
 json InputData::getMeshProperties() const{
-    return input["meshProperties"];
+    return input["mesh_properties"];
 }
 
 
 json InputData::getReservoirProperties() const{
-    return input["reservoirProperties"];
+    return input["reservoir_properties"];
 }
 
 
 json InputData::getAlgorithmProperties() const{
-    return input["algorithmProperties"];
+    return input["algorithm_properties"];
 }
 
 
 json InputData::getScheduleProperties() const{
-    return input["scheduleProperties"];
+    return input["schedule_properties"];
 }
 
 
 json InputData::getMagmaProperties() const{
-    return input["magmaProperties"];
+    return input["magma_properties"];
 }
 
 

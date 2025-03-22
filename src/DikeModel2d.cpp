@@ -45,22 +45,25 @@ DikeModel2d::DikeModel2d(const std::string& input_path) :
 
 
 void DikeModel2d::setAlgorithmProperties(){
-    MIN_MOBILITY_WIDTH = algorithm_properties["minMobilityWidth"];
-    MIN_WIDTH = algorithm_properties["minWidth"];
-    VISCOSITY_APPROXIMATION = algorithm_properties["viscosityApproximation"].get<std::string>();
-    SHEAR_HEATING = algorithm_properties["shearHeating"].get<bool>() ? 1.0 : 0.0;
-    LATENT_HEAT = algorithm_properties["latentHeatCrystallization"].get<bool>() ? 1.0 : 0.0;
+    MIN_MOBILITY_WIDTH = algorithm_properties["min_mobility_width"];
+    MIN_WIDTH = algorithm_properties["min_width"];
+    VISCOSITY_APPROXIMATION = algorithm_properties["viscosity_approximation"].get<std::string>();
+    SHEAR_HEATING = algorithm_properties["shear_heating"].get<bool>() ? 1.0 : 0.0;
+    LATENT_HEAT = algorithm_properties["latent_heat_crystallization"].get<bool>() ? 1.0 : 0.0;
+    
     ADD_ELEMENTS = 3;
-    if (algorithm_properties.contains("additionalElementsAfterTip")){
-        ADD_ELEMENTS = algorithm_properties["additionalElementsAfterTip"].get<int>();
+    if (algorithm_properties.contains("additional_elements_after_tip")){
+        ADD_ELEMENTS = algorithm_properties["additional_elements_after_tip"].get<int>();
     }
-    if (algorithm_properties["isCohesiveStress"].get<bool>()){
+    
+    if (algorithm_properties["is_cohesive_stress"].get<bool>()){
         auto [E, nu, K1c] = reservoir->getElasticityParameters();
         int Ncoh = 6; // number of cohesive elements (cohesive zone)
-        if (algorithm_properties.contains("cohesiveElements")) Ncoh = algorithm_properties["cohesiveElements"];
+        if (algorithm_properties.contains("cohesive_elements")){
+            Ncoh = algorithm_properties["cohesive_elements"].get<int>();
+        }
         cohesive_model = std::make_shared<CohesiveModel>(mesh.get(), E, nu, K1c, Ncoh);
     }
-    return;
 }
 
 
@@ -138,6 +141,7 @@ void DikeModel2d::implicitSolver(){
     magma_state->updateViscosity(dike.get());
     magma_state->updateDensity(dike.get());
     magma_state->updateEquilibriumCrystallization(dike.get());
+    magma_state->updateRelaxationCrystallization(dike.get());
     dike->setMagmaStateAfterTip();
     JUST_TIMER_STOP(Update magma state);
 
@@ -179,12 +183,12 @@ void DikeModel2d::solveEnergyBalance(){
     const auto& ybr = reservoir->yb;
     const auto& dyr = reservoir->dy;
 
-    double rhoc0 = magma_state->density_properties["rhoc0"].get<double>();
+    double rhoc0 = magma_state->density_model["crystal_density"].get<double>();
     const auto& beta = dike->beta;
     const auto& alpha = dike->alpha;
     const auto& betaeq = dike->betaeq;
     double Lm = magma_state->getLatentHeat();
-    double tau = input->getMagmaProperties()["constantRelaxationCrystallization"]["tau"].get<double>();
+    const auto& tau = dike->tau;
     const auto& shear_heat = dike->shear_heat;
 
     double E0 = 0.5 * schedule->getMassRate(t1, t1 + dt) * schedule->getMagmaChamberTemperature() * Cm;
@@ -215,7 +219,7 @@ void DikeModel2d::solveEnergyBalance(){
         b[0] = h[ix]*rho[0]*Cm*(Vnew/dt + qx(ix+1, 0) + vtp) + dx*km/dyt;
         c[0] = h[ix]*rho[1]*Cm*vtm - dx*km/dyt;
         rhs[0] = h[ix]*rho_old[0]*Cm*Told[0]*Vold/dt + h[ix]*Ein[0];
-        rhs[0] += LATENT_HEAT*h[ix]*(1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau
+        rhs[0] += LATENT_HEAT*h[ix]*(1.0 - alpha(ix, 0))*rhoc0*Lm*Vnew*(betaeq(ix, 0) - beta(ix, 0))/tau(ix, 0)
                 + SHEAR_HEATING * h[ix]*shear_heat(ix, 0);
 
         for (int iy = 1; iy < ny-1; iy++){
@@ -229,7 +233,7 @@ void DikeModel2d::solveEnergyBalance(){
             b[iy] = h[ix]*rho[iy]*Cm*(Vnew/dt + qx(ix+1, iy) + vtp - vbm) + dx*km*(1.0/dyt + 1.0/dyb);
             c[iy] = h[ix]*rho[iy+1]*Cm*vtm - dx*km/dyt;
             rhs[iy] = h[ix]*rho_old[iy]*Cm*Told[iy]*Vold/dt + h[ix]*Ein[iy];
-            rhs[iy] += LATENT_HEAT*h[ix]*(1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau + 
+            rhs[iy] += LATENT_HEAT*h[ix]*(1.0 - alpha(ix, iy))*rhoc0*Lm*Vnew*(betaeq(ix, iy) - beta(ix, iy))/tau(ix, iy) + 
                      + SHEAR_HEATING * h[ix]*shear_heat(ix, iy);
         }
         dyt = yb[ny] - yc[ny-1];
@@ -240,7 +244,7 @@ void DikeModel2d::solveEnergyBalance(){
         b[ny-1] = h[ix]*rho[ny-1]*Cm*(Vnew/dt + qx(ix+1, ny-1) - vbm) + dx*km*(1.0/dyt + 1.0/dyb);
         c[ny-1] = -dx*km/dyt;
         rhs[ny-1] = h[ix]*rho_old[ny-1]*Cm*Told[ny-1]*Vold/dt + h[ix]*Ein[ny-1];
-        rhs[ny-1] += LATENT_HEAT * h[ix]*(1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau + 
+        rhs[ny-1] += LATENT_HEAT * h[ix]*(1.0 - alpha(ix, ny-1))*rhoc0*Lm*Vnew*(betaeq(ix, ny-1) - beta(ix, ny-1))/tau(ix, ny-1) + 
                    + SHEAR_HEATING * h[ix]*shear_heat(ix, ny-1);
         a[ny] = -dx*km/dyt;
         b[ny] = dx*km/dyt;
@@ -308,7 +312,6 @@ void DikeModel2d::updateCrystallization(){
     const auto& yb = dike->yb;
     const auto& yc = dike->yc;
     double dy = yb[1] - yb[0];
-    double tau = input->getMagmaProperties()["constantRelaxationCrystallization"]["tau"].get<double>();
 
     int tip_old = old_dike->tip_element;
     int Nx = std::min({tip_old + 2, nx - 1}) + 1;
@@ -318,6 +321,7 @@ void DikeModel2d::updateCrystallization(){
         std::vector<double> a(ny, 0.0), b(ny, 0.0), c(ny, 0.0), rhs(ny, 0.0);
         const ArrayXd bold = old_dike->beta.row(ix);
         const ArrayXd beq = dike->betaeq.row(ix);
+        const ArrayXd tau = dike->tau.row(ix);
         ArrayXd Ein = ArrayXd::Zero(ny);
         const ArrayXd alpha = dike->alpha.row(ix);
         const ArrayXd alpha_old = old_dike->alpha.row(ix);
@@ -332,9 +336,9 @@ void DikeModel2d::updateCrystallization(){
         vtp = std::max(qy(ix, 1), 0.0); // qy in top
         vtm = -std::max(-qy(ix, 1), 0.0); // 0 if qy > 0 in top
         a[0] = 0;
-        b[0] = (1.0 - alpha[0])*(h[ix]*dx*dy/dt + qx(ix+1, 0) + vtp) + (1.0 - alpha[0])*h[ix]*dx*dy/tau;
+        b[0] = (1.0 - alpha[0])*(h[ix]*dx*dy/dt + qx(ix+1, 0) + vtp) + (1.0 - alpha[0])*h[ix]*dx*dy/tau[0];
         c[0] = (1.0 - alpha[1])*vtm;
-        rhs[0] = (1.0 - alpha_old[0])*bold[0]*hold[ix]*dx*dy/dt + Ein[0] + (1.0 - alpha[0])*beq[0]*h[ix]*dx*dy/tau;
+        rhs[0] = (1.0 - alpha_old[0])*bold[0]*hold[ix]*dx*dy/dt + Ein[0] + (1.0 - alpha[0])*beq[0]*h[ix]*dx*dy/tau[0];
 
         for (int iy = 1; iy < ny-1; iy++){
             vtp = std::max(qy(ix, iy+1), 0.0); // qy in top
@@ -342,16 +346,16 @@ void DikeModel2d::updateCrystallization(){
             vbp = std::max(qy(ix, iy), 0.0); // qy in bot
             vbm = -std::max(-qy(ix, iy), 0.0); // 0 if qy > 0 in bot
             a[iy] = -(1.0 - alpha[iy-1])*vbp;
-            b[iy] = (1.0 - alpha[iy])*(h[ix]*dx*dy/dt + qx(ix+1, iy) + vtp - vbm) + (1.0 - alpha[iy])*h[ix]*dx*dy/tau;
+            b[iy] = (1.0 - alpha[iy])*(h[ix]*dx*dy/dt + qx(ix+1, iy) + vtp - vbm) + (1.0 - alpha[iy])*h[ix]*dx*dy/tau[iy];
             c[iy] = (1.0 - alpha[iy+1])*vtm;
-            rhs[iy] = (1.0 - alpha_old[iy])*bold[iy]*hold[ix]*dx*dy/dt + Ein[iy] + (1.0 - alpha[iy])*beq[iy]*h[ix]*dx*dy/tau;
+            rhs[iy] = (1.0 - alpha_old[iy])*bold[iy]*hold[ix]*dx*dy/dt + Ein[iy] + (1.0 - alpha[iy])*beq[iy]*h[ix]*dx*dy/tau[iy];
         }
         vbp = std::max(qy(ix, ny-1), 0.0); // qy in bot
         vbm = -std::max(-qy(ix, ny-1), 0.0); // 0 if qy > 0 in bot
         a[ny-1] = -(1.0 - alpha[ny-2])*vbp;
-        b[ny-1] = (1.0 - alpha[ny-1])*(h[ix]*dx*dy/dt + qx(ix+1, ny-1) - vbm) + (1.0 - alpha[ny-1])*h[ix]*dx*dy/tau;
+        b[ny-1] = (1.0 - alpha[ny-1])*(h[ix]*dx*dy/dt + qx(ix+1, ny-1) - vbm) + (1.0 - alpha[ny-1])*h[ix]*dx*dy/tau[ny-1];
         c[ny-1] = 0;
-        rhs[ny-1] = (1.0 - alpha_old[ny-1])*bold[ny-1]*hold[ix]*dx*dy/dt + Ein[ny-1] + (1.0 - alpha[ny-1])*beq[ny-1]*h[ix]*dx*dy/tau;
+        rhs[ny-1] = (1.0 - alpha_old[ny-1])*bold[ny-1]*hold[ix]*dx*dy/dt + Ein[ny-1] + (1.0 - alpha[ny-1])*beq[ny-1]*h[ix]*dx*dy/tau[ny-1];
 
         /* Solve tridiagonal system */
         auto sol = Utils::tridiagonal_solver(a, b, c, rhs);
@@ -458,7 +462,7 @@ void DikeModel2d::implicitMassBalance(){
             Ipp(i, i) += -coef;
         }
         rhs(seq(N, last)) += rhsp;
-        if (algorithm_properties["isSparseElasticity"].get<bool>() == false){
+        if (algorithm_properties["is_sparse_elasticity"].get<bool>() == false){
             mat << Iww, Iwp, Ipw, Ipp;
         }
         else{
@@ -467,7 +471,7 @@ void DikeModel2d::implicitMassBalance(){
             mat << IwwA, Iwp, Ipw, Ipp;
         }
 
-        if (algorithm_properties["isCohesiveStress"].get<bool>()){
+        if (algorithm_properties["is_cohesive_stress"].get<bool>()){
             VectorXd rhs_coh = VectorXd::Zero(N);
             if (N > cohesive_model->getCohesiveElementsSize()){
                 for (int i = N - cohesive_model->getCohesiveElementsSize(); i < N; i++){

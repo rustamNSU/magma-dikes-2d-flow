@@ -16,28 +16,22 @@ MagmaState::MagmaState(Mesh* mesh, json&& properties, InputData* input) :
 {
     setDensityModel();
     setViscosityModel();
-    thermal_conductivity = this->properties["thermalConductivity"];
-    specific_heat = this->properties["specificHeatCapacity"];
-    latent_heat = this->properties["latentHeat"];
-    saturation_model = SaturationModel::MIXED_H2O_CO2;
+    crystallization_model = properties["crystallization_model"];
+    thermal_conductivity = this->properties["thermal_conductivity"];
+    specific_heat = this->properties["specific_heat_capacity"];
+    latent_heat = this->properties["latent_heat"];
 }
 
 
 void MagmaState::setDensityModel(){
-    auto model = properties["densityModel"].get<std::string>();
-    if (model == DensityModel::constant){
-        density_model = DensityModel::CONSTANT;
-        density_properties = properties["constantDensity"];
-    }
-    else if (model == DensityModel::mixed_h2o_co2){
-        density_model = DensityModel::MIXED_H2O_CO2;
-        density_properties = properties["mixed_h2o_co2"];
+    density_model = properties["density_model"];
+    if (density_model["name"] == DensityModel::mixed_h2o_co2){
         auto sim_dir = input->getSimDir();
         std::string filepath;
-        filepath = density_properties["dissolved_data_path"].get<std::string>();
+        filepath = density_model["dissolved_data_path"].get<std::string>();
         auto dissolved_data_path = sim_dir / "dissolved_data.json";
         std::filesystem::copy(filepath, dissolved_data_path, std::filesystem::copy_options::overwrite_existing);
-        filepath = density_properties["gas_density_data_path"].get<std::string>();
+        filepath = density_model["gas_density_data_path"].get<std::string>();
         auto gas_density_data_path = sim_dir / "gas_density_data.json";
         std::filesystem::copy(filepath, gas_density_data_path, std::filesystem::copy_options::overwrite_existing);
 
@@ -62,57 +56,33 @@ void MagmaState::setDensityModel(){
         gas_h2o_co2_density = std::make_unique<UniformInterpolation3d>(pressure, xh2og, temperature, gas_density);
         file.close();
     }
-    else{
-        throw std::invalid_argument("Density model is incorrect!\n");
-    }
     return;
 }
 
 
 void MagmaState::setViscosityModel(){
-    auto model = properties["viscosityModel"].get<std::string>();
-    if (model == ViscosityModel::constant){
-        viscosity_model = ViscosityModel::CONSTANT;
-        viscosity_properties = properties["constantViscosity"];
-    }
-    else if (model == ViscosityModel::vft_const_coeff){
-        viscosity_model = ViscosityModel::VFT_CONST_COEFF;
-        viscosity_properties = properties["vftConstantViscosity"];
-    }
-    else if (model == ViscosityModel::vft_const_coeff_avg){
-        viscosity_model = ViscosityModel::VFT_CONST_COEFF_AVG;
-        viscosity_properties = properties["vftConstantViscosity"];
-    }
-    else if (model == ViscosityModel::vft_const_coeff_cryst){
-        viscosity_model = ViscosityModel::VFT_CONST_COEFF_CRYST;
-        viscosity_properties = properties["vftConstantViscosity"];
-    }
-    else if (model == ViscosityModel::grdmodel08){
-        viscosity_model = ViscosityModel::GRDMODEL08;
-        viscosity_properties = properties[ViscosityModel::grdmodel08];
-        auto composition = viscosity_properties["composition"].get<std::array<double, 11>>();
+    viscosity_model = properties["viscosity_model"];
+    if (viscosity_model["name"] == ViscosityModel::grdmodel08){
+        auto composition = viscosity_model["composition"].get<std::array<double, 11>>();
         sio2 = composition[0];
         grdvisc_model.setComposition(composition);
-    }
-    else{
-        throw std::invalid_argument("Viscosity model is incorrect (ro not realized)!\n");
     }
     return;
 }
 
 
 void MagmaState::updateDensity(DikeData* dike) const{
-    if (density_model == DensityModel::CONSTANT){
-        double rho = density_properties["rho"].get<double>();
+    if (density_model["name"] == DensityModel::constant){
+        double rho = density_model["rho"].get<double>();
         dike->density.fill(rho);
     }
-    else if (density_model == DensityModel::MIXED_H2O_CO2){
+    else if (density_model["name"] == DensityModel::mixed_h2o_co2){
         int nx = dike->meshX->size();
         int ny = dike->getLayersNumber();
-        double rhom0 = density_properties["rhom0"].get<double>();
-        double rhoh2o0 = density_properties["rhoh2o0"].get<double>();
-        double rhoco20 = density_properties["rhoco20"].get<double>();
-        double rhoc0 = density_properties["rhoc0"].get<double>();
+        double rhom0 = density_model["melt_density"].get<double>();
+        double rhoh2o0 = density_model["dissolved_h2o_density"].get<double>();
+        double rhoco20 = density_model["dissolved_co2_density"].get<double>();
+        double rhoc0 = density_model["crystal_density"].get<double>();
         for (int ix = 0; ix <= dike->tip_element; ix++){
             for (int iy = 0; iy < ny; iy++){
                 double p = dike->pressure(ix);
@@ -151,46 +121,13 @@ void MagmaState::updateDensity(DikeData* dike) const{
 
 
 void MagmaState::updateViscosity(DikeData* dike) const{
-    if (viscosity_model == ViscosityModel::VFT_CONST_COEFF_CRYST){
+    if (viscosity_model["name"] == ViscosityModel::vft_const_coeff){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
-        const double A = viscosity_properties["A"].get<double>();
-        const double B = viscosity_properties["B"].get<double>();
-        const double C = viscosity_properties["C"].get<double>();
-        double mu_max = viscosity_properties["muMaxLimit"].get<double>();
-        double K = 273.15;
-        const auto& T = dike->temperature;
-        const auto& beta = dike->beta;
-        auto& viscosity = dike->viscosity;
-        // #pragma omp parallel for
-        const auto& hw = dike->hw;
-        for (int ix = 0; ix < nx; ix++){
-            int il = std::max(0, ix-1);
-            int ir = std::min(nx-1, ix+1);
-            if (std::max({hw[il], hw[ix], hw[ir]}) < 1e-13 && ix > std::min(10, nx)){
-                viscosity.row(ix).fill(mu_max);
-            }
-            else{
-                for (int iy = 0; iy < ny; iy++){
-                    double theta = theta_coef(beta(ix, iy));
-                    // double mu_melt = T(ix, iy) + K > C ? VFT_constant_viscosity(T(ix, iy) + K, A, B, C) : mu_max;
-                    double mu_melt = VFT_constant_viscosity(T(ix, iy) + K, A, B, C);
-                    viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
-                }
-            }
-        }
-        // viscosity = T.binaryExpr()
-    }
-    else if (viscosity_model == ViscosityModel::CONSTANT){
-        dike->viscosity.fill(viscosity_properties["mu"]);
-    }
-    else if (viscosity_model == ViscosityModel::VFT_CONST_COEFF){
-        int nx = dike->meshX->size();
-        int ny = dike->ny;
-        double A = viscosity_properties["A"];
-        double B = viscosity_properties["B"];
-        double C = viscosity_properties["C"];
-        double mu_max = viscosity_properties["muMaxLimit"];
+        const double A = viscosity_model["A"].get<double>();
+        const double B = viscosity_model["B"].get<double>();
+        const double C = viscosity_model["C"].get<double>();
+        const double mu_max = viscosity_model["maximum_viscosity"].get<double>();
         double K = 273.15;
         auto func = [=](double T){
             double mu = T + K > C ? VFT_constant_viscosity(T + K, A, B, C) : mu_max; 
@@ -198,28 +135,13 @@ void MagmaState::updateViscosity(DikeData* dike) const{
         };
         dike->viscosity = dike->temperature.unaryExpr(func);
     }
-    else if (viscosity_model == ViscosityModel::VFT_CONST_COEFF_AVG){
-        int nx = mesh->size();
-        int ny = dike->getLayersNumber();
-        double A = viscosity_properties["A"];
-        double B = viscosity_properties["B"];
-        double C = viscosity_properties["C"];
-        double mu_max = viscosity_properties["muMaxLimit"];
-        double K = 273.15;
-        auto func = [=](double T){
-            double mu = T + K > C ? VFT_constant_viscosity(T + K, A, B, C) : mu_max; 
-            return std::min(mu, mu_max);
-        };
-        MatrixXd Tavg = dike->temperature;
-        for (int ix = 0; ix < nx; ix++){
-            Tavg.row(ix).fill(dike->temperature.row(ix).mean());
-        }
-        dike->viscosity = Tavg.unaryExpr(func);
+    else if (viscosity_model["name"] == ViscosityModel::constant){
+        dike->viscosity.fill(viscosity_model["mu"].get<double>());
     }
-    else if (viscosity_model == ViscosityModel::GRDMODEL08){
+    else if (viscosity_model["name"] == ViscosityModel::grdmodel08){
         int nx = mesh->size();
         int ny = dike->getLayersNumber();
-        double mu_max = viscosity_properties["muMaxLimit"].get<double>();
+        double mu_max = viscosity_model["maximum_viscosity"].get<double>();
         double K = 273.15;
         const auto& T = dike->temperature;
         const auto& beta = dike->beta;
@@ -233,6 +155,28 @@ void MagmaState::updateViscosity(DikeData* dike) const{
                 viscosity(ix, iy) = std::min(theta*mu_melt, mu_max);
             }
         }
+    }
+}
+
+
+void MagmaState::updateRelaxationCrystallization(DikeData* dike) const{
+    if (crystallization_model["name"] == CrystallizationModel::constant_relaxation_crystallization){
+        dike->tau.fill(crystallization_model["tau"].get<double>());
+        return;
+    }
+    if (crystallization_model["name"] == CrystallizationModel::arrhenius_relaxation_crystallization){
+        int nx = dike->meshX->size();
+        int ny = dike->ny;
+        const double tau0 = crystallization_model["tau0"].get<double>();
+        const double E = crystallization_model["E"].get<double>();
+        const double R = crystallization_model["R"].get<double>();
+        for (int ix = 0; ix <= dike->tip_element; ix++){
+            for (int iy = 0; iy < ny; iy++){
+                double T_K = dike->temperature(ix, iy) + 273.15;
+                dike->tau(ix, iy) = tau0 * std::exp(E / (R * T_K));
+            }
+        }
+        return;
     }
 }
 
@@ -253,7 +197,6 @@ void MagmaState::updateEquilibriumCrystallization(DikeData* dike) const{
             dike->Tsolidus(ix, iy) = Ts;
         }
     }
-    return;
 }
 
 
@@ -274,7 +217,7 @@ void MagmaState::setChamberInitialState(
     chamber.pressure = pressure_chamber;
     chamber.temperature = temperature_chamber;
     chamber.alpha = 0.0;
-    if (density_model == DensityModel::MIXED_H2O_CO2){
+    if (density_model["name"] == DensityModel::mixed_h2o_co2){
         chamber.wth2o = dissolved_weighted_h2o->getValue(chamber.pressure);
         chamber.wtco2 = dissolved_weighted_co2->getValue(chamber.pressure);
         chamber.gamma = chamber.wth2o + chamber.wtco2;
@@ -283,10 +226,10 @@ void MagmaState::setChamberInitialState(
         chamber.Tl = liquidus_temperature(chamber.pressure, chamber.xh2od, sio2);
         chamber.Ts = solidus_temperature(chamber.pressure, chamber.xh2od);
         chamber.beta = beta_equilibrium(chamber.pressure, chamber.temperature, chamber.Tl, chamber.Ts);
-        double rhom0 = density_properties["rhom0"].get<double>();
-        double rhoh2o0 = density_properties["rhoh2o0"].get<double>();
-        double rhoco20 = density_properties["rhoco20"].get<double>();
-        double rhoc0 = density_properties["rhoc0"].get<double>();
+        double rhom0 = density_model["melt_density"].get<double>();
+        double rhoh2o0 = density_model["dissolved_h2o_density"].get<double>();
+        double rhoco20 = density_model["dissolved_co2_density"].get<double>();
+        double rhoc0 = density_model["crystal_density"].get<double>();
         chamber.rhom_liquid = melt_density(rhom0, rhoh2o0, rhoco20, chamber.wth2o, chamber.wtco2);
         chamber.rhom = (1.0 - chamber.beta) * chamber.rhom_liquid;
         chamber.rhoc = rhoc0 * chamber.beta;
@@ -310,7 +253,7 @@ std::vector<double> arrayxxd_to_rowwise(const ArrayXXd& arr){
 
 
 void MagmaState::test() const{
-    if (density_model == DensityModel::MIXED_H2O_CO2){
+    if (density_model == DensityModel::mixed_h2o_co2){
         json data;
         ArrayXd pressure = ArrayXd::LinSpaced(101, 0.0, 1000e6);
         ArrayXd temperature = ArrayXd::LinSpaced(51, 500.0, 1000.0);

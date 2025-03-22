@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/debug/bin/runner",
             "cwd": "${workspaceFolder}",
-            "args": ["${workspaceFolder}/input.json"],
+            "args": ["${workspaceFolder}/runner.json"],
             "stopAtEntry": false,
             "externalConsole": false,
             "internalConsoleOptions":"neverOpen",

@@ -15,24 +15,24 @@ ReservoirData::ReservoirData(Mesh* mesh, json properties) :
     properties(properties)
 {
     int nx = mesh->size();
-    ny = properties["numberOfLayers"];
-    L = properties["reservoirWidth"];
-    C = properties["specificHeatCapacity"];
-    k = properties["thermalConductivity"];
-    E = properties["E"];
-    nu = properties["nu"];
-    g = properties["g"];
+    ny = properties["number_of_layers"];
+    L = properties["reservoir_width"];
+    C = properties["specific_heat_capacity"];
+    k = properties["thermal_conductivity"];
+    E = properties["youngs_modulus"];
+    nu = properties["poisson_ratio"];
+    g = properties["gravitational_acceleration"];
     KIc = properties["KIc"];
-    if (properties["meshRefinementAlgorithm"] == "cosine"){
+    if (properties["mesh_refinement_algorithm"] == "cosine") {
         generateCosineRefinementMesh();
     }
 
-    density_model = properties["densityModel"];
-    temperature_model = properties["temperatureModel"];
+    density_model = properties["density_model"];
+    temperature_model = properties["temperature_model"];
     calculateDensity();
     calculateReservoirTemperature();
     temperature = ArrayXXd::Zero(nx, ny);
-    for (int iy = 0; iy < ny; iy++){
+    for (int iy = 0; iy < ny; iy++) {
         temperature.col(iy) = initial_temperature;
     }
 }
@@ -50,7 +50,6 @@ const ArrayXXd& ReservoirData::getTemperature() const{
 
 void ReservoirData::setTemperature(ArrayXXd&& T){
     temperature = std::move(T);
-    return;
 }
 
 
@@ -74,9 +73,8 @@ std::tuple<double, double, double> ReservoirData::getElasticityParameters() cons
 
 void ReservoirData::calculateDensity(){
     int nx = mesh->size();
-    if (density_model == "constant"){
-        auto density_properties = properties["constantDensity"];
-        density = ArrayXd::Constant(nx, density_properties["rho"]);
+    if (density_model["name"] == "constant_density"){
+        density = ArrayXd::Constant(nx, density_model["rho"]);
     }
     calculateLithostaticPressure();
 }
@@ -99,11 +97,10 @@ void ReservoirData::calculateLithostaticPressure(){
 
 
 void ReservoirData::calculateReservoirTemperature(){
-    if (temperature_model == "constant_gradient"){
-        auto temperature_properties = properties["constantTemperatureGradient"];
-        double dT = temperature_properties["dT"];
-        double Tmax = temperature_properties["maximum_temperature"];
-        double Tmin = temperature_properties["minimum_temperature"];
+    if (temperature_model["name"] == "constant_temperature_gradient"){
+        double dT = temperature_model["temperature_gradient"];
+        double Tmax = temperature_model["maximum_temperature"];
+        double Tmin = temperature_model["minimum_temperature"];
 
         auto x = mesh->getx();
         Eigen::ArrayXd tmpT = -dT * x;

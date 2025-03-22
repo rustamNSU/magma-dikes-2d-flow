@@ -35,6 +35,7 @@ class DikeData{
         Eigen::ArrayXXd Tsolidus; // Solidus temperature
         Eigen::ArrayXXd betaeq; // Equlibrium crystallization
         Eigen::ArrayXXd beta; // Crystal volume concentration in melt
+        Eigen::ArrayXXd tau; // Crystallization relaxation (tau)
         Eigen::ArrayXXd alpha; // Exsolved gas volume concentration
         Eigen::ArrayXXd gamma; // Dissolved gas weight concentration in melt
         Eigen::ArrayXXd xh2og; // Gas water weight ratio
