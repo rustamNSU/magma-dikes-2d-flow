@@ -1,0 +1,38 @@
+100 - base case: tau0 = 1e-6, Tch = 900, wt_h20 = 6.18
+101 - tau0 = 1e-5
+102 - tau0 = 1e-7
+103 - beta_eq, tau = const = 20 s
+104 - Tch = 850
+105 - no latent heat (100)
+106 - no latent heat , beta_eq, tau = const = 20 s (103)
+107 - wt_h2o = 3.85
+108 - wt_h2o = 9.57
+
+110 - tau0 = 1e-6 - pump time 15000s (x1.5)
+111 - tau0 = 1e-5 - pump time 15000s (x1.5)
+112 - tau0 = 1e-7 - pump time 15000s (x1.5)
+113 - beta_eq - pump time 15000s (x1.5)
+
+115 - 110, no latent heat
+116 - (113), no latent heat
+
+117 - (110), 1d
+118 - (113), 1d
+
+119 - (104), pump time 15000s (x1.5)
+
+120 - (107)
+121 - (108)
+
+130 - (110), \Delta x = 50 m.
+131 - (110), Ny = 50
+
+140 - (110), E = 50 GPa
+141 - (110), KIc = 10 MPa m1/2
+142 - (110), KIc = 100 MPa m1/2
+
+153 - (113), tau_c = 10000
+154 - (113), tau_c = 1 week
+155 - (113), tau_c = 2 week
+156 - (113), tau_c = 7 week
+157 - (154), tau_c = 1 week, two pump

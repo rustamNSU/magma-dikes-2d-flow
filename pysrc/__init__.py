@@ -9,6 +9,7 @@ from .input_generator import (
     MeshProperties,
     SimulationInput,
 )
+from .dike_data import DikeData
 
 __all__ = [
     "AlgorithmProperties", 
@@ -20,4 +21,5 @@ __all__ = [
     "ScheduleProperties",
     "MeshProperties",
     "SimulationInput",
+    "DikeData",
 ]

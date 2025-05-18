@@ -70,11 +70,12 @@ void DikeModel2d::setAlgorithmProperties(){
 void DikeModel2d::setInitialData(){
     auto plith = reservoir->getLithostaticPressure();
     auto tlith = reservoir->getInitialTemperature();
-    magma_state->setChamberInitialState(plith[0], tlith[0]);
+    magma_state->setChamberInitialState(plith[0], schedule->getMagmaChamberTemperature());
     schedule->setMagmaChamberCrystallization(magma_state->chamber.beta);
     dike->setInitialPressure(plith);
     dike->setInitialTemperature(tlith);
     magma_state->updateEquilibriumCrystallization(dike.get());
+    magma_state->updateRelaxationCrystallization(dike.get());
     dike->beta.setZero();
     dike->beta.row(0) = magma_state->chamber.beta;
     magma_state->updateDensity(dike.get());
@@ -651,6 +652,7 @@ void DikeModel2d::saveData(const std::string &savepath){
     dump(file, "beta", dike->beta);
     dump(file, "gamma", dike->gamma);
     dump(file, "betaeq", dike->betaeq);
+    dump(file, "tau", dike->tau);
     dump(file, "Tliquidus", dike->Tliquidus);
     dump(file, "Tsolidus", dike->Tsolidus);
     dump(file, "TotalFluxElements", dike->Qx);
@@ -693,6 +695,11 @@ void DikeModel2d::updateData(){
         std::string reservoir_path = (input->getReservoirDir() / "data_").string() + std::to_string(save_timestep) + ".h5";
         reservoir->saveData(reservoir_path);
         summary.print();
+        std::ofstream output(input->getSimDir() / "front_unique.txt", std::ios::trunc);
+        for (int i = 0; i < dike_front_unique.time.size(); i++){
+            output << dike_front_unique.time[i] << ";" << dike_front_unique.front[i];
+            if (i != dike_front_unique.time.size() - 1) output << "\n";
+        }
         JUST_TIMER_STOP(Data saving time);
     }
 }

@@ -10,13 +10,13 @@ import matplotlib.gridspec as gridspec
 from matplotlib.widgets import Slider, Button
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from py_scripts.utils import set_matplotlib_settings, create_layers_mask
-from py_scripts.DikeData import DikeData
+from pysrc import *
 
 FIG_SIZE = [10, 8]
 set_matplotlib_settings()
-simID = 3
+simID = 110
 sim_path = sim_dir + f"/simID{simID}"
-dike = DikeData(sim_path, step_rate=1)
+dike = DikeData(sim_path, step_rate=10)
 data = dike.data
 wlim = (0, 3)
 plim = (0, 900)

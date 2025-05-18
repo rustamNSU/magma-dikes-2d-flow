@@ -10,21 +10,23 @@ import matplotlib.gridspec as gridspec
 from matplotlib.widgets import Slider, Button
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from py_scripts.utils import set_matplotlib_settings, create_layers_mask
-from py_scripts.DikeData import DikeData
+from matplotlib.widgets import Button
+from pysrc import *
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
 
-simID = 2
+simID = 110
+step_rate = 10
+timestep = 100
 sim_path = sim_dir + f"/simID{simID}"
-dike = DikeData(sim_path, step_rate=10)
-timestep = 90
+dike = DikeData(sim_path, step_rate=step_rate)
 data = dike.data[timestep]
-xind = [45, 160, 180]
+xind = [50, 150, 225]
 colors = ["k", "k", "k"]
 linestyles = ["-", "--", "-."]
 markers = ["None", "None", "None"]
 nx = len(xind)
-xlim = (-30, -10)
+xlim = (-30, -5)
 
 fig = plt.figure(figsize=(6.5, 5.5), layout="constrained")
 row1 = 7
@@ -68,12 +70,12 @@ for axU1d in axU1ds:
     axU1d.set_ylabel(r"Velocity (m/s)")
     axU1d.grid()
 
-xc = data["xc"] / 1e3
-yc = data["yc"]
-xb = data["xb"] / 1e3
-yb = data["yb"]
-dx = xb[1]-xb[0]
-hw = data["halfwidth"]
+xc = data.xc / 1e3
+yc = data.yc
+xb = data.xb / 1e3
+yb = data.yb
+dx = xb[1] - xb[0]
+hw = data.halfwidth
 hwb = (0.5*(hw[0:-1] + hw[1:])).tolist()
 hwb = np.array([hw[0], *hwb, hw[-1]])
 hwb[hwb < 1e-4] = 1e-4
@@ -89,17 +91,17 @@ y2dc = np.array([
     a*yb for a in hw
 ])
 
-T = data["Tmask"]
+T = np.where(data.open_mask[:, None], data.temperature, np.nan)
 pcmT = axT.pcolormesh(y2db, x2db, T, shading='flat', cmap='jet')
 cbT = fig.colorbar(pcmT, cax=caxT)
 
-beta = data["beta"]
+beta = data.beta
 pcmB = axB.pcolormesh(y2db, x2db, beta, shading='flat', cmap='jet')
 cbB = fig.colorbar(pcmB, cax=caxB)
 
 # Velocity field
-As = [data["A"][xi, :] for xi in xind]
-Cs = [data["C"][xi, :] for xi in xind]
+As = [data.A[xi, :] for xi in xind]
+Cs = [data.C[xi, :] for xi in xind]
 Ny = 200
 Y = np.linspace(0, 1, Ny)
 yid = create_layers_mask(yb, Y)
@@ -109,6 +111,8 @@ def velocity(A, C):
     Cy = np.array([C[iy] for iy in yid])
     return Ay*Y*Y + Cy
 
+velocity_arrays = [velocity(As[i], Cs[i]) for i in range(nx)]
+common_ylim = [min(np.min(v) for v in velocity_arrays), max(np.max(v) for v in velocity_arrays)]
 for ix in range(nx):
     xi = xind[ix]
     x = xb[xi+1]
@@ -116,8 +120,17 @@ for ix in range(nx):
     axB.axhline(x, lw=2, ls=linestyles[ix], color=colors[ix], marker=markers[ix])
     axU1ds[ix].plot(Y * hwb[xi+1], velocity(As[ix], Cs[ix]), lw=2,  color=colors[ix], ls=linestyles[ix], marker=markers[ix])
     axU1ds[ix].set_xlim([0, hwb[xi+1]])
+    axU1ds[ix].set_ylim(common_ylim)
     
 savepath = repository_dir + "/images/article2024"
 if not os.path.exists(savepath): os.makedirs(savepath)
-plt.savefig(savepath + "/vertical.svg")
+
+ax_button = plt.axes([0.7, 0.15, 0.2, 0.075])
+def call(event):
+    print("button clicked")
+    ax_button.set_visible(False)
+    plt.savefig(savepath + f"/vertical_simID{simID}_timestep{step_rate*timestep}.png", dpi=600)
+    
+button = Button(ax_button, 'Save image')
+button.on_clicked(call)
 plt.show()

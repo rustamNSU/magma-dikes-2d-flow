@@ -173,7 +173,8 @@ void MagmaState::updateRelaxationCrystallization(DikeData* dike) const{
         for (int ix = 0; ix <= dike->tip_element; ix++){
             for (int iy = 0; iy < ny; iy++){
                 double T_K = dike->temperature(ix, iy) + 273.15;
-                dike->tau(ix, iy) = tau0 * std::exp(E / (R * T_K));
+                double tau = tau0 * std::exp(E / (R * T_K));
+                dike->tau(ix, iy) = tau;
             }
         }
         return;

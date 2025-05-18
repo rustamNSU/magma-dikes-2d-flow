@@ -57,7 +57,7 @@ def save_pdf(pdf_final_filename):
 def save_png(png_final_filename):
     png_ext = '.png'
     png_final_filename_with_ext = png_final_filename + png_ext
-    plt.savefig(png_final_filename_with_ext, dpi=300, bbox_inches='tight', pad_inches=0, format="pdf")
+    plt.savefig(png_final_filename_with_ext, dpi=600, bbox_inches='tight', pad_inches=0, format="png")
     
 
 def save_eps(eps_final_filename):

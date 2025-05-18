@@ -1,4 +1,5 @@
 add_library(utils ViscosityModels.cpp LinearSolver.cpp uniform_interp.cpp)
-target_link_libraries(utils Eigen3::Eigen SuiteSparse::umfpack)
+# target_link_libraries(utils Eigen3::Eigen SuiteSparse::umfpack)
+target_link_libraries(utils Eigen3::Eigen SuiteSparse::UMFPACK_static)
 target_include_directories(utils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 install(TARGETS utils DESTINATION lib)

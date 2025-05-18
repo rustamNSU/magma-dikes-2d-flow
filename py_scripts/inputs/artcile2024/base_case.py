@@ -9,14 +9,14 @@ import h5py
 from py_scripts.input_utils import *
 
 simulation_input = SimulationInput(
-    sim_id=1,
+    sim_id=1000,
     repository_dir=repository_dir,
     algorithm_properties=AlgorithmProperties(
         is_debug=True,
         number_of_layers=30,
         min_width=1e-5,
         min_mobility_width=1e-4,
-        viscosity_approximation=ViscosityApproximation.mean,
+        viscosity_approximation=ViscosityApproximation.harmonic,
         shear_heating=True,
         latent_heat_crystallization=True,
         solver_name=SolverName.umfpack,
@@ -37,7 +37,7 @@ simulation_input = SimulationInput(
         ),
         temperature_model=ReservoirProperties.ConstantTemperatureGradient(
             temperature_gradient=30e-3,
-            maximum_temperature=850,
+            maximum_temperature=900,
             minimum_temperature=0
         ),
     ),
@@ -57,7 +57,7 @@ simulation_input = SimulationInput(
             composition=[64.6, 0.53, 16.5, 4.47, 0.01, 2.39, 5.23, 4.49, 1.54, 0.04, 0]
         ),
         crystallization_model=MagmaProperties.ArrheniusRelaxationCrystallization(
-            tau0 = 3.9e-4,
+            tau0 = 1e-6,
             E=210e3
         )
     ),
@@ -65,12 +65,12 @@ simulation_input = SimulationInput(
         volume_rate=[1.0, 0.0],
         time=[0.0, 10000],
         density=2000.0,
-        temperature=850,
+        temperature=900,
         beta=0.0
     ),
     timestep_properties=TimestepProperties(
         start_time=0.0,
-        end_time=200000.0,
+        end_time=300000.0,
         dt_list=[1.0, 2.0],
         dt_time=[0.0, 20000.0],
         saverate_list=[100, 100]

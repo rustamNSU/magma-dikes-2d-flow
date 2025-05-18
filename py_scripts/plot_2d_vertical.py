@@ -14,10 +14,10 @@ from py_scripts.DikeData import DikeData
 set_matplotlib_settings(DEFAULT_SIZE=12, LEGEND_SIZE=12)
 
 
-simID = 30
+simID = 2
 sim_path = sim_dir + f"/simID{simID}"
 dike = DikeData(sim_path, step_rate=10)
-timestep = 98
+timestep = 100
 data = dike.data[timestep]
 xind = [45, 100, 157]
 colors = ["r", "k", "b"]
