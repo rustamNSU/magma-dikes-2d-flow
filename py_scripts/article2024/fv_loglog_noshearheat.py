@@ -7,18 +7,20 @@ sys.path.append(str(repository_dir))
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 from itertools import cycle
 from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
 
-simIDs = [110, 141, 142]
+# simIDs = [101, 100, 102]
+simIDs = [110, 162, 115]
 simLegends = [
-    r"$K_{Ic} = 1$ MPa·m$^{1/2}$",
-    r"$K_{Ic} = 10$ MPa·m$^{1/2}$",
-    r"$K_{Ic} = 100$ MPa·m$^{1/2}$",
+    r"base case",
+    r"no shear heating",
+    r"no latent heat",
 ]
-colors = cycle(['k', 'r', 'g', 'b'])
+colors = cycle(['k', 'r', 'b', 'b'])
 linestyles = cycle(['-', '--', '-.'])
 markers = cycle(['o', 's', 'D'])  # circle, square, diamond
 
@@ -89,6 +91,45 @@ for ax in (ax1, ax2):
 props = dict(ha='center', va='top', fontsize=14)
 ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
 ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
+
+
+
+
+# # Inset for ax1
+# axins = inset_axes(ax1, width="20%", height="40%", loc='lower right')
+# axins.set_xscale("log")
+# axins.set_xlim(5, 40)
+# axins.set_ylim(-17, -5)
+# axins.tick_params(
+#     axis='both',
+#     which='both',
+#     bottom=False,
+#     left=False,
+#     labelbottom=False,
+#     labelleft=False
+# )
+# axins.grid(True, which='major', linestyle='--', linewidth=0.8, alpha=0.5)
+# axins.grid(True, which='minor', linestyle=':', linewidth=0.5, alpha=0.3)
+# axins.minorticks_on()
+
+# colors = cycle(['k', 'r', 'b', 'b'])
+# linestyles = cycle(['-', '--', '-.'])
+# markers = cycle(['None']) 
+# for i in range(len(simIDs)):
+#     color = next(colors)
+#     linestyle = next(linestyles)
+#     marker = next(markers)
+
+#     axins.plot(timeList[i], frontList[i] / 1000,
+#                lw=2, ls=linestyle, color=color, marker=marker,
+#                markevery=0.3)
+
+# mark_inset(ax1, axins, loc1=1, loc2=3, fc="none", ec="0.5")
+
+
+
+
+
 
 ax_button = plt.axes([0.7, 0.05, 0.2, 0.075])  # Position of the button
 def save_image(event):

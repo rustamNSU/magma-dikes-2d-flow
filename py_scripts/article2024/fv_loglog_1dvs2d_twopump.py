@@ -12,15 +12,17 @@ from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
 
-simIDs = [110, 141, 142]
+# simIDs = [101, 100, 102]
+simIDs = [110, 117, 160, 161]
 simLegends = [
-    r"$K_{Ic} = 1$ MPa·m$^{1/2}$",
-    r"$K_{Ic} = 10$ MPa·m$^{1/2}$",
-    r"$K_{Ic} = 100$ MPa·m$^{1/2}$",
+    r"quasi-2d",
+    r"1d",
+    r"quasi-2d, episodic",
+    r"1d, episodic",
 ]
-colors = cycle(['k', 'r', 'g', 'b'])
-linestyles = cycle(['-', '--', '-.'])
-markers = cycle(['o', 's', 'D'])  # circle, square, diamond
+colors = cycle(['k', 'r', 'b', 'g'])
+linestyles = cycle(['-', '--'])
+markers = cycle(['o', 's'])  # circle, square, diamond
 
 hour = 3600
 time_shift = 100  # avoid log(0)

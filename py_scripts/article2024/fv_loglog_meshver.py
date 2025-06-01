@@ -22,6 +22,7 @@ colors = cycle(['k', 'r', 'g', 'b'])
 linestyles = cycle(['-', '--', '-.'])
 markers = cycle(['o', 's', 'D'])  # circle, square, diamond
 
+hour = 3600
 time_shift = 100  # avoid log(0)
 timeList, frontList, vtimeList, vList = [], [], [], []
 
@@ -30,14 +31,14 @@ for simID in simIDs:
 
     time, front = np.genfromtxt(simPath / "front.txt", delimiter=";").T
     time += time_shift
-    timeList.append(time)
+    timeList.append(time / hour)
     frontList.append(front)
 
     time_u, front_u = np.genfromtxt(simPath / "front_unique.txt", delimiter=";").T
     time_u += time_shift
     v = np.diff(front_u)[1:] / np.diff(time_u)[1:]
     vtime = time_u[2:]
-    vtimeList.append(vtime)
+    vtimeList.append(vtime / hour)
     vList.append(v)
 
 # --- Plot ---
@@ -47,8 +48,9 @@ fig.subplots_adjust(hspace=0.4)
 # Global X limits and ticks
 xmin = min(min(t) for t in timeList)
 xmax = max(max(t) for t in timeList)
-xticks = [3600, 36000, 360000]
-xticklabels = ["1h", "10h", "100h"]
+xticks = [1, 10, 100]
+xticklabels = ["1", "10", "100"]
+
 
 for ax in (ax1, ax2):
     ax.set_xscale("log")

@@ -9,15 +9,15 @@ import h5py
 from py_scripts.input_utils import *
 
 simulation_input = SimulationInput(
-    sim_id=121,
+    sim_id=162,
     repository_dir=repository_dir,
     algorithm_properties=AlgorithmProperties(
         is_debug=True,
-        number_of_layers=10,
+        number_of_layers=30,
         min_width=1e-5,
         min_mobility_width=1e-4,
         viscosity_approximation=ViscosityApproximation.harmonic,
-        shear_heating=True,
+        shear_heating=False,
         latent_heat_crystallization=True,
         solver_name=SolverName.umfpack,
         is_sparse_elasticity=True,
@@ -50,7 +50,7 @@ simulation_input = SimulationInput(
             dissolved_h2o_density=900.0,
             dissolved_co2_density=1400.0,
             crystal_density=2700.0,
-            dissolved_data_path="./data/pinatubo/dissolved_10.json",
+            dissolved_data_path="./data/pinatubo/dissolved_06.json",
             gas_density_data_path="./data/pinatubo/h2o_co2_gas_density.json"
         ),
         viscosity_model=MagmaProperties.GRDModel08(
@@ -70,13 +70,13 @@ simulation_input = SimulationInput(
     ),
     timestep_properties=TimestepProperties(
         start_time=0.0,
-        end_time=40000.0,
-        dt_list=[0.1, 0.1],
+        end_time=400000.0,
+        dt_list=[1.0, 2.0],
         dt_time=[0.0, 40000.0],
-        saverate_list=[1000, 2000]
+        saverate_list=[100, 100]
     ),
     mesh_properties=MeshProperties(
-        n=150,
+        n=300,
         xmin=-30000.0,
         xmax=0.0
     )

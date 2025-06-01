@@ -36,3 +36,11 @@
 155 - (113), tau_c = 2 week
 156 - (113), tau_c = 7 week
 157 - (154), tau_c = 1 week, two pump
+
+160 - (110) - two pump (half mass)
+161 - (117) - 1d, two pump
+
+162 - (110) - no shear heating
+
+170 - (113, 117) - 1d
+171 - (154, 117) - 1d

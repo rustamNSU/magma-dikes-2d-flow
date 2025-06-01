@@ -14,31 +14,31 @@ from matplotlib.widgets import Button
 from pysrc import *
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
-# simID = 110
-# step_rate = 10
-# timestep = 100
-# sim_path = sim_dir / f"simID{simID}"
-# dike = DikeData(str(sim_path), step_rate=step_rate)
-# data = dike.data[timestep]
-# xind = [50, 150, 225]
-# colors = ["k", "k", "k"]
-# linestyles = ["-", "--", "-."]
-# markers = ["None", "None", "None"]
-# nx = len(xind)
-# xlim = (-30, -5)
-simID = 157
+simID = 110
 step_rate = 10
-timestep = 360
+timestep = 100
 sim_path = sim_dir / f"simID{simID}"
 dike = DikeData(str(sim_path), step_rate=step_rate)
 data = dike.data[timestep]
-xind = [50, 150, 215]
-# xind = [50, 150, 225]
+xind = [50, 150, 220]
 colors = ["k", "k", "k"]
 linestyles = ["-", "--", "-."]
 markers = ["None", "None", "None"]
 nx = len(xind)
-xlim = (-30, -5)
+xlim = (-30, 0)
+# simID = 157
+# step_rate = 10
+# timestep = 360
+# sim_path = sim_dir / f"simID{simID}"
+# dike = DikeData(str(sim_path), step_rate=step_rate)
+# data = dike.data[timestep]
+# xind = [50, 150, 215]
+# # xind = [50, 150, 225]
+# colors = ["k", "k", "k"]
+# linestyles = ["-", "--", "-."]
+# markers = ["None", "None", "None"]
+# nx = len(xind)
+# xlim = (-30, 0)
 
 print(f"data.time = {data.time} s.")
 
@@ -70,6 +70,10 @@ axT.set_ylim(xlim)
 axT.grid()
 axT.spines['top'].set_visible(False)
 axT.spines['right'].set_visible(False)
+axT.grid(which='major', linestyle='-', linewidth=0.75)
+axT.grid(which='minor', linestyle='-', linewidth=0.5)
+axT.minorticks_on()
+axT.set_axisbelow(True)
 
 axB = axs1[1]
 caxB = caxs1[1]
@@ -77,8 +81,12 @@ axB.set_title(r"\bf Crystal concentration")
 axB.set_xlabel(r"Halfwidth (m)")
 axT.sharey(axB)
 axB.set_ylim(xlim)
-axB.set_xlim([0, 1])
+# axB.set_xlim([0, 1])
 axB.grid()
+axB.grid(which='major', linestyle='-', linewidth=0.75)
+axB.grid(which='minor', linestyle='-', linewidth=0.5)
+axB.minorticks_on()
+axB.set_axisbelow(True)
 axB.spines['top'].set_visible(False)
 axB.spines['right'].set_visible(False)
 
@@ -91,6 +99,10 @@ axV.set_ylim(xlim)
 axV.grid()
 axV.spines['top'].set_visible(False)
 axV.spines['right'].set_visible(False)
+axV.grid(which='major', linestyle='-', linewidth=0.75)
+axV.grid(which='minor', linestyle='-', linewidth=0.5)
+axV.minorticks_on()
+axV.set_axisbelow(True)
 
 axU1ds = [fig.add_subplot(gs2[-ix-1, 0]) for ix in range(nx)]
 axU1ds[-1].set_title(r"\bf Vertical velocity")
@@ -151,6 +163,7 @@ for ix in range(nx):
     x = xb[xi+1]
     axT.axhline(x, lw=2, ls=linestyles[ix], color=colors[ix], marker=markers[ix])
     axB.axhline(x, lw=2, ls=linestyles[ix], color=colors[ix], marker=markers[ix])
+    axV.axhline(x, lw=2, ls=linestyles[ix], color=colors[ix], marker=markers[ix])
     axU1ds[ix].plot(Y * hwb[xi+1], velocity(As[ix], Cs[ix]), lw=2,  color=colors[ix], ls=linestyles[ix], marker=markers[ix])
     axU1ds[ix].set_xlim([0, hwb[xi+1]])
     axU1ds[ix].set_ylim(common_ylim)

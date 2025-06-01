@@ -12,13 +12,13 @@ from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
 
-simIDs = [110, 141, 142]
+simIDs = [110, 113, 154]
 simLegends = [
-    r"$K_{Ic} = 1$ MPa·m$^{1/2}$",
-    r"$K_{Ic} = 10$ MPa·m$^{1/2}$",
-    r"$K_{Ic} = 100$ MPa·m$^{1/2}$",
+    r"$\tau_c(T) = \tau_0 \exp\left(\frac{E_a}{R T}\right)$",
+    r"$\tau_c = 20$ s",
+    r"$\tau_c = 1$ week",
 ]
-colors = cycle(['k', 'r', 'g', 'b'])
+colors = cycle(['k', 'r', 'b', 'b'])
 linestyles = cycle(['-', '--', '-.'])
 markers = cycle(['o', 's', 'D'])  # circle, square, diamond
 
@@ -50,6 +50,7 @@ xmin = min(min(t) for t in timeList)
 xmax = max(max(t) for t in timeList)
 xticks = [1, 10, 100]
 xticklabels = ["1", "10", "100"]
+# xticklabels = ["1h", "10h", "100h"]
 
 for ax in (ax1, ax2):
     ax.set_xscale("log")

@@ -19,8 +19,8 @@ simLegends = [
     r"$\tau_0 = 10^{-6}$",
     r"$\tau_0 = 10^{-7}$",
 ]
-colors = cycle(['r', 'k', 'g', 'b'])
-linestyles = cycle(['--', '-', '-.'])
+colors = cycle(['k', 'r', 'b', 'b'])
+linestyles = cycle(['-', '--', '-.'])
 markers = cycle(['o', 's', 'D'])  # circle, square, diamond
 
 time_shift = 100  # avoid log(0)

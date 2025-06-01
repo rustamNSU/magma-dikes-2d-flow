@@ -9,11 +9,11 @@ import h5py
 from py_scripts.input_utils import *
 
 simulation_input = SimulationInput(
-    sim_id=121,
+    sim_id=170,
     repository_dir=repository_dir,
     algorithm_properties=AlgorithmProperties(
         is_debug=True,
-        number_of_layers=10,
+        number_of_layers=30,
         min_width=1e-5,
         min_mobility_width=1e-4,
         viscosity_approximation=ViscosityApproximation.harmonic,
@@ -42,7 +42,7 @@ simulation_input = SimulationInput(
         ),
     ),
     magma_properties=MagmaProperties(
-        thermal_conductivity=2.0,
+        thermal_conductivity=2000,
         specific_heat_capacity=1200,
         latent_heat=350000,
         density_model=MagmaProperties.MixedH2OCO2(
@@ -50,15 +50,14 @@ simulation_input = SimulationInput(
             dissolved_h2o_density=900.0,
             dissolved_co2_density=1400.0,
             crystal_density=2700.0,
-            dissolved_data_path="./data/pinatubo/dissolved_10.json",
+            dissolved_data_path="./data/pinatubo/dissolved_06.json",
             gas_density_data_path="./data/pinatubo/h2o_co2_gas_density.json"
         ),
         viscosity_model=MagmaProperties.GRDModel08(
             composition=[64.6, 0.53, 16.5, 4.47, 0.01, 2.39, 5.23, 4.49, 1.54, 0.04, 0]
         ),
-        crystallization_model=MagmaProperties.ArrheniusRelaxationCrystallization(
-            tau0 = 1e-6,
-            E=210e3
+        crystallization_model=MagmaProperties.ConstantRelaxationCrystallization(
+            tau=20.0
         )
     ),
     schedule_properties=ScheduleProperties(
@@ -70,13 +69,13 @@ simulation_input = SimulationInput(
     ),
     timestep_properties=TimestepProperties(
         start_time=0.0,
-        end_time=40000.0,
-        dt_list=[0.1, 0.1],
+        end_time=400000.0,
+        dt_list=[1.0, 2.0],
         dt_time=[0.0, 40000.0],
-        saverate_list=[1000, 2000]
+        saverate_list=[100, 100]
     ),
     mesh_properties=MeshProperties(
-        n=150,
+        n=300,
         xmin=-30000.0,
         xmax=0.0
     )

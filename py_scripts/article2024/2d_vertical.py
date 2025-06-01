@@ -15,18 +15,20 @@ from pysrc import *
 set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10)
 
 
-simID = 110
+simID = 154
 step_rate = 10
 timestep = 100
 sim_path = sim_dir + f"/simID{simID}"
 dike = DikeData(sim_path, step_rate=step_rate)
 data = dike.data[timestep]
-xind = [50, 150, 225]
+xind = [50, 150, 220]
 colors = ["k", "k", "k"]
 linestyles = ["-", "--", "-."]
 markers = ["None", "None", "None"]
 nx = len(xind)
-xlim = (-30, -5)
+xlim = (-30, 0)
+Tlim = (200, 900)
+blim = (0, 0.5)
 
 fig = plt.figure(figsize=(6.5, 5.5), layout="constrained")
 row1 = 7
@@ -52,7 +54,11 @@ axT.set_title(r"\bf Temperature (C$^\circ$)")
 axT.set_xlabel(r"Halfwidth (m)")
 axT.set_ylabel(r"Depth (km)")
 axT.set_ylim(xlim)
-axT.grid()
+axT.grid(which='major', linestyle='-', linewidth=0.75)
+axT.grid(which='minor', linestyle='-', linewidth=0.5)
+axT.minorticks_on()
+axT.set_axisbelow(True)
+
 axT.spines['top'].set_visible(False)
 axT.spines['right'].set_visible(False)
 
@@ -62,6 +68,11 @@ axB.set_xlabel(r"Halfwidth (m)")
 axT.sharey(axB)
 axB.set_ylim(xlim)
 axB.grid()
+axB.grid(which='major', linestyle='-', linewidth=0.75)
+axB.grid(which='minor', linestyle='-', linewidth=0.5)
+axB.minorticks_on()
+axB.set_axisbelow(True)
+
 axB.spines['top'].set_visible(False)
 axB.spines['right'].set_visible(False)
 
@@ -92,11 +103,11 @@ y2dc = np.array([
 ])
 
 T = np.where(data.open_mask[:, None], data.temperature, np.nan)
-pcmT = axT.pcolormesh(y2db, x2db, T, shading='flat', cmap='jet')
+pcmT = axT.pcolormesh(y2db, x2db, T, shading='flat', cmap='jet', vmin=Tlim[0], vmax=Tlim[1])
 cbT = fig.colorbar(pcmT, cax=caxT)
 
 beta = data.beta
-pcmB = axB.pcolormesh(y2db, x2db, beta, shading='flat', cmap='jet')
+pcmB = axB.pcolormesh(y2db, x2db, beta, shading='flat', cmap='jet', vmin=blim[0], vmax=blim[1])
 cbB = fig.colorbar(pcmB, cax=caxB)
 
 # Velocity field

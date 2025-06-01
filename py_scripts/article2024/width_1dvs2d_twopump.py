@@ -12,27 +12,23 @@ from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=12)
 
-simIDs = [110, 117]
-timesteps = [200, 200, 200]
+timesteps = [20, 20, 36, 36]
+simIDs = [110, 117, 160, 161]
 simLegends = [
     r"quasi-2d",
     r"1d",
+    r"quasi-2d, episodic",
+    r"1d, episodic",
 ]
-simIDs = [110, 113, 154]
-simLegends = [
-    r"$\tau_c(T) = \tau_0 \exp\left(\frac{E_a}{R T}\right)$",
-    r"$\tau_c = 20$ s",
-    r"$\tau_c = 1$ week",
-]
-colors = cycle(['k', 'r', 'g', 'b'])
-linestyles = cycle(['-', '--', '-.'])
-markers = cycle(['o', 's', 'D'])  # circle, square, diamond
+colors = cycle(['k', 'r', 'b', 'g'])
+linestyles = cycle(['-', '--'])
+markers = cycle(['o', 's'])  # circle, square, diamond
 
 
 fig, ax = plt.subplots(1, 1, figsize=(7, 3))
 fig.tight_layout()
 simPaths = [sim_dir / f"simID{simID}" for simID in simIDs]
-dikes = [DikeData(str(sim_path), step_rate=10) for sim_path in simPaths]
+dikes = [DikeData(str(sim_path), step_rate=100) for sim_path in simPaths]
 xmin = -30000
 xmax = -30000
 for i, dike in enumerate(dikes):
