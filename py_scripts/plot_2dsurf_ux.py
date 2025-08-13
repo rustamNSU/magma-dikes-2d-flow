@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from py_scripts.utils import set_matplotlib_settings
-from py_scripts.DikeData import DikeData
+from pysrc import *
 set_matplotlib_settings()
 
 

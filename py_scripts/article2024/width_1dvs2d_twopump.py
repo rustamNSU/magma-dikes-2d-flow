@@ -13,13 +13,20 @@ from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=12)
 
 timesteps = [20, 20, 36, 36]
-simIDs = [110, 117, 160, 161]
+simIDs = [110, 117]
 simLegends = [
     r"quasi-2d",
     r"1d",
     r"quasi-2d, episodic",
     r"1d, episodic",
 ]
+# simIDs = [110, 117, 160, 161]
+# simLegends = [
+#     r"quasi-2d",
+#     r"1d",
+#     r"quasi-2d, episodic",
+#     r"1d, episodic",
+# ]
 colors = cycle(['k', 'r', 'b', 'g'])
 linestyles = cycle(['-', '--'])
 markers = cycle(['o', 's'])  # circle, square, diamond

@@ -288,6 +288,7 @@ void DikeModel2d::solveEnergyBalance(){
         reservoir->temperature.row(ix) =  Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(sol.data() + ny+1, nr);
         dike->magma_to_rock_heat_flux[ix] = heat_coef * (sol[ny+1] - sol[ny]);
     }
+    dike->temperature = dike->temperature.max(400.0);
     auto energy = dike->getElementsHalfEnergy(Cm);
     auto energy_total = energy.sum();
     double error = std::abs((total_injected_energy - energy_total)) / total_injected_energy;
