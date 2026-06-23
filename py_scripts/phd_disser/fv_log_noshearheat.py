@@ -7,21 +7,21 @@ sys.path.append(str(repository_dir))
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes, mark_inset
 from itertools import cycle
 from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
 
 # simIDs = [101, 100, 102]
-simIDs = [107, 100, 108]
-simIDs = [120, 110, 121]
+simIDs = [110, 162, 115]
 simLegends = [
-    r"$3.85$ wt.$\%$", 
-    r"$6.18$ wt.$\%$",
-    r"$9.57$ wt.$\%$"
+    r"base case",
+    r"no shear heating",
+    r"no latent heat",
 ]
-colors = cycle(['r', 'k', 'g', 'b'])
-linestyles = cycle(['--', '-', '-.'])
+colors = cycle(['k', 'r', 'b', 'b'])
+linestyles = cycle(['-', '--', '-.'])
 markers = cycle(['o', 's', 'D'])  # circle, square, diamond
 
 hour = 3600
@@ -47,16 +47,17 @@ for simID in simIDs:
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 8), sharex=True)
 fig.subplots_adjust(hspace=0.4)
 
-# Global X limits and ticks
-xmin = min(min(t) for t in timeList)
-xmax = max(max(t) for t in timeList)
-xticks = [1, 10, 100]
-xticklabels = ["1", "10", "100"]
+# # Global X limits and ticks
+# xmin = min(min(t) for t in timeList)
+# xmax = max(max(t) for t in timeList)
+# xticks = [1, 10, 100]
+# xticklabels = ["1", "10", "100"]
+
 for ax in (ax1, ax2):
-    ax.set_xscale("log")
-    ax.set_xlim([xmin, 2 * xmax])
-    ax.set_xticks(xticks)
-    ax.set_xticklabels(xticklabels)
+    # ax.set_xscale("log")
+    ax.set_xlim([0, 20])
+    # ax.set_xticks(xticks)
+    # ax.set_xticklabels(xticklabels)
     ax.grid(True, which='major', linestyle='--', linewidth=0.8, alpha=0.5)
     ax.grid(True, which='minor', linestyle=':', linewidth=0.5, alpha=0.3)
     
@@ -66,8 +67,8 @@ ax1.set_ylabel("Front (km)")
 ax2.set_xlabel("Time (h)")
 ax2.set_ylabel("Velocity (m/s)")
 ax2.set_yscale("log")
-ax2.set_yticks([1, 0.1, 0.01])
-ax2.set_yticklabels(["1", "0.1", "0.01"])
+ax2.set_yticks([1, 0.1, 0.01, 0.001])
+ax2.set_yticklabels(["1", "0.1", "0.01", "0.001"])
 
 # Plot curves
 for i in range(len(simIDs)):
@@ -91,9 +92,47 @@ for ax in (ax1, ax2):
 # ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
 # ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
 
+fig.tight_layout()
+
+
+# Inset for ax2
+axins = inset_axes(ax2, width="40%", height="20%", loc='lower left')
+axins.set_xlim(0, 5)
+axins.set_ylim(0.6, 0.9)
+axins.tick_params(
+    axis='both',
+    which='both',
+    bottom=True,
+    left=True,
+    labelbottom=False,
+    labelleft=False
+)
+axins.grid(True, which='major', linestyle='--', linewidth=0.8, alpha=0.5)
+axins.grid(True, which='minor', linestyle=':', linewidth=0.5, alpha=0.3)
+axins.minorticks_on()
+
+colors = cycle(['k', 'r', 'b', 'b'])
+linestyles = cycle(['-', '--', '-.'])
+markers = cycle(['None']) 
+for i in range(len(simIDs)):
+    color = next(colors)
+    linestyle = next(linestyles)
+    marker = next(markers)
+
+    axins.plot(vtimeList[i], vList[i],
+               lw=2, ls=linestyle, color=color, marker=marker,
+               markevery=0.3)
+
+mark_inset(ax2, axins, loc1=1, loc2=3, fc="none", ec="0.1")
+axins.set_yscale("log")
+
+
+
+
+
 ax_button = plt.axes([0.7, 0.05, 0.2, 0.075])  # Position of the button
 def save_image(event):
-    savepath = repository_dir / "images/article2024" / f"FV_{'_'.join(map(str, simIDs))}"
+    savepath = repository_dir / "images/article2024" / f"FVnologtime_{'_'.join(map(str, simIDs))}"
     savepath.parent.mkdir(parents=True, exist_ok=True)
     ax_button.set_visible(False)
     fig.savefig(str(savepath) + ".png", dpi=600, bbox_inches='tight', pad_inches=0)

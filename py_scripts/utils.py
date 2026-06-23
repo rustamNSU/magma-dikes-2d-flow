@@ -14,11 +14,16 @@ def set_matplotlib_settings(DEFAULT_SIZE=10, LEGEND_SIZE=10, MAC_OS=False):
     rc('ytick', labelsize=DEFAULT_SIZE)    # fontsize of the tick labels
     rc('legend', fontsize=LEGEND_SIZE)    # legend fontsize
     rc('figure', titlesize=DEFAULT_SIZE)  # fontsize of the figure title
-    matplotlib.rcParams['text.latex.preamble']= \
-        r"\usepackage[utf8]{inputenc} \usepackage{amsmath} \usepackage{amssymb} \usepackage{bm}"
+    
     matplotlib.rcParams['font.family'] = 'serif'
-    if (MAC_OS):
-        matplotlib.use('MacOSX')
+    matplotlib.rcParams['text.latex.preamble'] = (
+        r'\usepackage[T2A]{fontenc}'
+        r'\usepackage[utf8]{inputenc}'
+        r'\usepackage[russian,english]{babel}'
+        r'\usepackage{amsmath}'
+        r'\usepackage{amssymb}'
+        r'\usepackage{bm}'
+    )
 
 
 def createXData(XC, DX):

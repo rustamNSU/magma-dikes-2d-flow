@@ -13,18 +13,16 @@ from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
 
 # simIDs = [101, 100, 102]
-simIDs = [107, 100, 108]
-simIDs = [120, 110, 121]
+simIDs = [111, 110, 112]
 simLegends = [
-    r"$3.85$ wt.$\%$", 
-    r"$6.18$ wt.$\%$",
-    r"$9.57$ wt.$\%$"
+    r"$\tau_0 = 10^{-5}$",
+    r"$\tau_0 = 10^{-6}$",
+    r"$\tau_0 = 10^{-7}$",
 ]
-colors = cycle(['r', 'k', 'g', 'b'])
-linestyles = cycle(['--', '-', '-.'])
+colors = cycle(['k', 'r', 'b', 'b'])
+linestyles = cycle(['-', '--', '-.'])
 markers = cycle(['o', 's', 'D'])  # circle, square, diamond
 
-hour = 3600
 time_shift = 100  # avoid log(0)
 timeList, frontList, vtimeList, vList = [], [], [], []
 
@@ -33,14 +31,14 @@ for simID in simIDs:
 
     time, front = np.genfromtxt(simPath / "front.txt", delimiter=";").T
     time += time_shift
-    timeList.append(time / hour)
+    timeList.append(time)
     frontList.append(front)
 
     time_u, front_u = np.genfromtxt(simPath / "front_unique.txt", delimiter=";").T
     time_u += time_shift
     v = np.diff(front_u)[1:] / np.diff(time_u)[1:]
     vtime = time_u[2:]
-    vtimeList.append(vtime / hour)
+    vtimeList.append(vtime)
     vList.append(v)
 
 # --- Plot ---
@@ -50,8 +48,9 @@ fig.subplots_adjust(hspace=0.4)
 # Global X limits and ticks
 xmin = min(min(t) for t in timeList)
 xmax = max(max(t) for t in timeList)
-xticks = [1, 10, 100]
-xticklabels = ["1", "10", "100"]
+xticks = [3600, 36000, 360000]
+xticklabels = ["1h", "10h", "100h"]
+
 for ax in (ax1, ax2):
     ax.set_xscale("log")
     ax.set_xlim([xmin, 2 * xmax])
@@ -87,9 +86,9 @@ for i in range(len(simIDs)):
 for ax in (ax1, ax2):
     ax.legend(fontsize=12, loc="best").set_draggable(True)
 
-# props = dict(ha='center', va='top', fontsize=14)
-# ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
-# ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
+props = dict(ha='center', va='top', fontsize=14)
+ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
+ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
 
 ax_button = plt.axes([0.7, 0.05, 0.2, 0.075])  # Position of the button
 def save_image(event):

@@ -12,13 +12,10 @@ from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
 set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
 
-# simIDs = [101, 100, 102]
-simIDs = [107, 100, 108]
-simIDs = [120, 110, 121]
+simIDs = [119, 110]
 simLegends = [
-    r"$3.85$ wt.$\%$", 
-    r"$6.18$ wt.$\%$",
-    r"$9.57$ wt.$\%$"
+    r"$T_{ch} = 850$ C$^\circ$",
+    r"$T_{ch} = 900$ C$^\circ$",
 ]
 colors = cycle(['r', 'k', 'g', 'b'])
 linestyles = cycle(['--', '-', '-.'])
@@ -47,11 +44,11 @@ for simID in simIDs:
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 8), sharex=True)
 fig.subplots_adjust(hspace=0.4)
 
-# Global X limits and ticks
 xmin = min(min(t) for t in timeList)
 xmax = max(max(t) for t in timeList)
 xticks = [1, 10, 100]
 xticklabels = ["1", "10", "100"]
+
 for ax in (ax1, ax2):
     ax.set_xscale("log")
     ax.set_xlim([xmin, 2 * xmax])
@@ -87,9 +84,9 @@ for i in range(len(simIDs)):
 for ax in (ax1, ax2):
     ax.legend(fontsize=12, loc="best").set_draggable(True)
 
-# props = dict(ha='center', va='top', fontsize=14)
-# ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
-# ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
+props = dict(ha='center', va='top', fontsize=14)
+ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
+ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
 
 ax_button = plt.axes([0.7, 0.05, 0.2, 0.075])  # Position of the button
 def save_image(event):

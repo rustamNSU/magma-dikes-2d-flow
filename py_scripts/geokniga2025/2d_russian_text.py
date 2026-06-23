@@ -31,8 +31,8 @@ markers = ["None", "None", "None"]
 nx = len(xind)
 xlim = (-30, -5)
 Tlim = (400, 900)
-blim = (0, 1.0)
-Mlim = (3, 10)
+blim = (0, 0.6)
+Mlim = (3, 8)
 
 
 # simID = 113
@@ -145,12 +145,12 @@ rect = Rectangle(
 axM.add_patch(rect)
 
 axU1ds = [fig.add_subplot(gs2[-ix-1, 0]) for ix in range(nx)]
-axU1ds[-1].set_title(r"Vertical velocity")
+axU1ds[-1].set_title(r"Профиль скорости")
 
 
-axT.set_title(r"Temperature (C$^\circ$)")
-axT.set_xlabel(r"Halfwidth (m)")
-axT.set_ylabel(r"Depth (km)")
+axT.set_title(r"Температура (C$^\circ$)")
+# axT.set_xlabel(r"Полураскрытие (м)")
+axT.set_ylabel(r"Глубина (км)")
 axT.set_ylim(xlim)
 axT.grid(which='major', linestyle='-', linewidth=0.75)
 axT.grid(which='minor', linestyle='-', linewidth=0.5)
@@ -159,8 +159,8 @@ axT.set_axisbelow(True)
 axT.spines['top'].set_visible(False)
 axT.spines['right'].set_visible(False)
 
-axB.set_title(r"Crystal concentration")
-axB.set_xlabel(r"Halfwidth (m)")
+axB.set_title(r"Кристаллизация")
+axB.set_xlabel(r"Полураскрытие (м)")
 axB.sharey(axT)
 axB.set_ylim(xlim)
 axB.grid()
@@ -173,8 +173,8 @@ axB.spines['top'].set_visible(False)
 axB.spines['right'].set_visible(False)
 
 
-axM.set_title(r"Viscosity, $\log_{10}$ (Pa$\cdot$s)")
-axM.set_xlabel(r"Halfwidth (m)")
+axM.set_title(r"Вязкость, $\log_{10}$ (Па$\cdot$с)")
+# axM.set_xlabel(r"Полураскрытие (м)")
 axM.sharey(axT)
 axM.set_ylim(xlim)
 axM.grid()
@@ -187,8 +187,8 @@ axM.spines['top'].set_visible(False)
 axM.spines['right'].set_visible(False)
 
 for ax in axU1ds:
-    ax.set_xlabel(r"$y$ (m)")
-    ax.set_ylabel(r"Velocity (m/s)")
+    ax.set_xlabel(r"$y$ (м)")
+    ax.set_ylabel(r"Скорость (м/с)")
     ax.grid()
     
     # ax.yaxis.set_major_formatter(FormatStrFormatter("%.1e"))  # full scientific notation
@@ -263,7 +263,7 @@ for ix in range(nx):
     axU1ds[ix].set_xlim([0, hwb[xi+1]])
     axU1ds[ix].set_ylim(common_ylim)
     
-savepath = repository_dir + "/images/article2024"
+savepath = repository_dir + "/images/geokniga2025"
 if not os.path.exists(savepath): os.makedirs(savepath)
 
 ax_button = plt.axes([0.7, 0.15, 0.2, 0.075])

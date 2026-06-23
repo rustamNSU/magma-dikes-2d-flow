@@ -10,19 +10,25 @@ from matplotlib.widgets import Button
 from itertools import cycle
 from pysrc import *
 from py_scripts.utils import set_matplotlib_settings
-set_matplotlib_settings(DEFAULT_SIZE=14, LEGEND_SIZE=14)
+set_matplotlib_settings(DEFAULT_SIZE=12, LEGEND_SIZE=12)
 
-# simIDs = [101, 100, 102]
-simIDs = [107, 100, 108]
-simIDs = [120, 110, 121]
+# simIDs = [110, 117]
+# simLegends = [
+#     r"quasi-2d",
+#     r"1d",
+#     r"quasi-2d, episodic",
+#     r"1d, episodic",
+# ]
+simIDs = [110, 117, 160, 161]
 simLegends = [
-    r"$3.85$ wt.$\%$", 
-    r"$6.18$ wt.$\%$",
-    r"$9.57$ wt.$\%$"
+    r"quasi-2d",
+    r"1d",
+    r"quasi-2d, episodic",
+    r"1d, episodic",
 ]
-colors = cycle(['r', 'k', 'g', 'b'])
-linestyles = cycle(['--', '-', '-.'])
-markers = cycle(['o', 's', 'D'])  # circle, square, diamond
+colors = cycle(['k', 'r', 'b', 'g'])
+linestyles = cycle(['-', '--'])
+markers = cycle(['o', 's'])  # circle, square, diamond
 
 hour = 3600
 time_shift = 100  # avoid log(0)
@@ -44,7 +50,7 @@ for simID in simIDs:
     vList.append(v)
 
 # --- Plot ---
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 8), sharex=True)
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 6), sharex=True)
 fig.subplots_adjust(hspace=0.4)
 
 # Global X limits and ticks
@@ -52,6 +58,7 @@ xmin = min(min(t) for t in timeList)
 xmax = max(max(t) for t in timeList)
 xticks = [1, 10, 100]
 xticklabels = ["1", "10", "100"]
+
 for ax in (ax1, ax2):
     ax.set_xscale("log")
     ax.set_xlim([xmin, 2 * xmax])
@@ -85,15 +92,15 @@ for i in range(len(simIDs)):
 
 # Add legends
 for ax in (ax1, ax2):
-    ax.legend(fontsize=12, loc="best").set_draggable(True)
+    ax.legend(loc="best").set_draggable(True)
 
-# props = dict(ha='center', va='top', fontsize=14)
-# ax1.text(0.5, 1.11, r"\textbf{(a)}", transform=ax1.transAxes, **props)
-# ax2.text(0.5, 1.11, r"\textbf{(b)}", transform=ax2.transAxes, **props)
+props = dict(ha='center', va='top', fontsize=14)
+ax1.text(0.5, -0.25, r"а)", transform=ax1.transAxes, **props)
+ax2.text(0.5, -0.25, r"б)", transform=ax2.transAxes, **props)
 
 ax_button = plt.axes([0.7, 0.05, 0.2, 0.075])  # Position of the button
 def save_image(event):
-    savepath = repository_dir / "images/article2024" / f"FV_{'_'.join(map(str, simIDs))}"
+    savepath = repository_dir / "images/phd" / f"FV_{'_'.join(map(str, simIDs))}"
     savepath.parent.mkdir(parents=True, exist_ok=True)
     ax_button.set_visible(False)
     fig.savefig(str(savepath) + ".png", dpi=600, bbox_inches='tight', pad_inches=0)
@@ -103,5 +110,5 @@ def save_image(event):
 # Create save button
 button = Button(ax_button, 'Save image')
 button.on_clicked(save_image)
-
+ 
 plt.show()
